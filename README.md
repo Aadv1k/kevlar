@@ -20,7 +20,7 @@ Everything is located within the `bin/` directory
 
 These are all supported file loaders, that are used by kevlar, but all them can be compiled and used as standalone programs as well.
 
-### `recepies/rst2html.c`
+### `recipes/rst2html.c`
 
 Convert a documentation language based on reStructuredText (Not to specification) to html
 
