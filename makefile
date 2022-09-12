@@ -1,18 +1,16 @@
 CFLAGS= 
 CC=gcc
 rec := recipes
-out := bin
 
-all: clean main rst2html 
+$(shell mkdir -p ./bin/)
 
-main: bin ./main.c 
-	$(CC) $(CFLAGS) main.c -o ./$(out)/kevlar
+all: kevlar rst2html 
 
-rst2html: bin ./$(rec)/rst2html.c 
-	$(CC) $(CFLAGS) ./$(rec)/rst2html.c -o ./$(out)/rst2html
+kevlar: ./src/main.c ./src/kevlar_new.c
+	$(CC) $(CFLAGS) ./src/main.c ./src/kevlar_new.c -o ./bin/kevlar
 
-bin: 
-	mkdir $(out)
+rst2html: ./$(rec)/rst2html.c 
+	$(CC) $(CFLAGS) ./$(rec)/rst2html.c -o ./bin/rst2html
 
 clean: 
-	rm -rf ./$(out)/
+	rm -rf ./bin/

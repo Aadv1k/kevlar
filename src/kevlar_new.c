@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-
 #include "kevlar_new.h"
 
 // TODO: Put this in util
