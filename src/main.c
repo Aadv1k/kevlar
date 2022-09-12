@@ -4,7 +4,6 @@
 #include <assert.h>
 
 #include "kevlar_new.h"
-#include "kevlar_new.c"
 
 #define MAX_CMD_SIZE 16
 
