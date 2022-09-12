@@ -31,3 +31,23 @@ rst2html -[OPT] INPUT.rst OUTPUT.html
 ```
 
 for all the valid rst, refer to [examples/example.rst](./examples/example.rst)
+
+
+## Configuration
+When you create a new site using the `kevlar new` command, you may find a `config.toml` located within the site directory, you can use this to configure several things. Here is an exaustive list of all possible values
+
+```
+title=""
+
+author.name=""
+author.mail=""
+
+# Additional attributes will be added on a theme basis
+
+out_fol=""
+
+rst_loader=""
+markdown_loader=""
+```
+
+

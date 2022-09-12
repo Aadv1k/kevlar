@@ -11,17 +11,19 @@ Ontology includes questions of how entities are grouped into categories and whic
 
 Overview
 ========
+
 Ontology is closely associated with Aristotle's question of 'being qua being': the question of what all entities in the widest sense have in common. The Eleatic principle is one answer to this question: it states that being is inextricably tied to causation, that "Power is the mark of Being". 
 
 Particulars and universals
 --------------------------
+
 Particulars or individuals are usually contrasted with universals. Universals concern features that can be exemplified by various different particulars. For example, a tomato and a strawberry are two particulars that exemplify the universal redness.
 
 
 Abstract and concrete
 ---------------------
-Many philosophers agree that there is an exclusive and exhaustive distinction between concrete objects and abstract objects. Some philosophers consider this to be the most general division of being. Examples of concrete objects include plants, human beings and planets while things like numbers, sets and propositions are abstract objects
 
+Many philosophers agree that there is an exclusive and exhaustive distinction between concrete objects and abstract objects. Some philosophers consider this to be the most general division of being. Examples of concrete objects include plants, human beings and planets while things like numbers, sets and propositions are abstract objects
 
 Types of ontologies
 ===================
@@ -29,6 +31,5 @@ Types of ontologies
 - Flat vs polycategorical vs hierarchical
 - Thing ontologies vs fact ontologies 
 - Constituent ontologies vs blob theories
-
 
 ***Article taken from https://en.wikipedia.org/wiki/Ontology showcases what all is avaliable***
