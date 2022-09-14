@@ -3,37 +3,38 @@
 #include <string.h>
 #include <assert.h>
 
+#include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+#include "kevlar_build.h"
 
 #define MAX_CMD_SIZE 16
 
 enum COMMANDS {
-  help,
-  new,
-  serve,
-  server,
-  build,
-  end
+  cmdHelp,
+  cmdNew,
+  cmdBuild,
+  cmdServe,
+  cmdServer,
+  cmdTail
 };
 
 int argtype(char arg[]) {
-  enum COMMANDS com;
   char param[][MAX_CMD_SIZE] = {
     "help",
     "new",
+    "build",
     "serve",
     "server",
-    "build"
   };
-  for (int i = 0; i < end; i++) {
-    assert(end == sizeof(param)/MAX_CMD_SIZE);
+  for (int i = 0; i < cmdTail; i++) {
+    assert(cmdTail == sizeof(param)/MAX_CMD_SIZE);
     if (!strcmp(param[i], arg)) return i;
   }
   return -1;
 }
 
 void kevlar_usage_exit() {
-  printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n");
+  printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n\tbuild -- build if in a kevlar project");
   exit(2);
 }
 
@@ -43,18 +44,22 @@ int main(int argc, char **argv) {
   }
 
   switch(argtype(argv[1])) {
-    case 0:
+    case cmdHelp:
       kevlar_usage_exit();
       break;
-    case 1:
+    case cmdNew:
       if (argc == 2) {
         fprintf(stderr, "[kevlar] you need an provide a name for your project\n");
         exit(2);
       }
-      kev_handle_new_command(argv[3]);
+      kevlar_handle_new_command(argv[3]);
+     break;
+    case cmdBuild: ;
+      KevlarConfig config; 
+      kevlar_handle_build_command(".", &config);
       break;
-    case 2: 
-    case 3: 
+    case cmdServe: 
+    case cmdServer: 
       puts("SERVE CONTENT");
       break;
     default: 
