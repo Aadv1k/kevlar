@@ -1,2 +1,7 @@
-main
 bin/
+./src/*.o
+./src/*.out
+
+./recipes/*.o
+./recipes/*.out
+
