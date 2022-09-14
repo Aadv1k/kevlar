@@ -34,7 +34,7 @@ int argtype(char arg[]) {
 }
 
 void kevlar_usage_exit() {
-  printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n\tbuild -- build if in a kevlar project");
+  printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n\tbuild -- build if in a kevlar project\n");
   exit(2);
 }
 
