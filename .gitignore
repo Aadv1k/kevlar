@@ -1,7 +1,8 @@
 bin/
-./src/*.o
-./src/*.out
 
-./recipes/*.o
-./recipes/*.out
+src/*.o
+src/*.out
+
+recipes/*.o
+recipes/*.out
 

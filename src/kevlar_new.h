@@ -16,10 +16,10 @@ enum FolderStatus {
   folderNonEmpty
 };
 
-int kev_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]);
+int kevlar_get_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]);
 
-void kev_new_skeleton(KevlarSkeleton *skeleton);
+void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton);
 
-void kev_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]);
+void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]);
 
 #endif

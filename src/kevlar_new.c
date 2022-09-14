@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include "kevlar_new.h"
+#include "kevlar_handle_config.h"
 
 // TODO: Put this in util
 void prepend(char prefix[], char str[]) {
@@ -14,7 +15,7 @@ void prepend(char prefix[], char str[]) {
   free(temp_str);
 }
 
-int kev_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]) {
+int kevlar_get_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]) {
   DIR *dir_stream;
   struct dirent *dir_obj; 
 
@@ -29,24 +30,20 @@ int kev_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]) {
   return folderEmpty;
 }
 
-void kev_new_skeleton(KevlarSkeleton *skeleton) {
-  FILE *config_file;
-
+void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   if (mkdir(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
-    mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1 || 
-    (config_file = fopen(skeleton->skel_config_file_path, "w")) == NULL)
+    mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
   {
     fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
-    fclose(config_file);
     exit(-1);
   }
 
+  kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
   printf("[kevlar] Successfully created the skeleton; happy hacking ✨!\n");
-  fclose(config_file);
 }
 
-void kev_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
-  switch (kev_folder_status(folder_path)) {
+void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
+  switch (kevlar_get_folder_status(folder_path)) {
     case folderNonEmpty:
       fprintf(stderr, "[kevlar] folder \"%s\" already exists and is not empty!\n", folder_path);
       exit(1);
@@ -54,19 +51,21 @@ void kev_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
     case folderNull: 
       printf("[kevlar] \"%s\" not found, creating new folder\n", folder_path);
       mkdir(folder_path, 0777);
+      [[__fallthrough__]];
+
     case folderEmpty: ;
 
       KevlarSkeleton skel = {
         "/templates/", 
         "/posts/", 
-        "/config.toml"
+        "/config.ini"
       };
 
       prepend(folder_path, skel.skel_template_folder_path);
       prepend(folder_path, skel.skel_posts_folder_path);
       prepend(folder_path, skel.skel_config_file_path);
 
-      kev_new_skeleton(&skel);
+      kevlar_generate_new_skeleton(&skel);
       break; 
   }
 }
