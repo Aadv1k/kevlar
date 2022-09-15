@@ -7,11 +7,7 @@
 #include "kevlar_build.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
-
-// FOUND IN RST2HTML.c put it in a util
-void truncateLast(char *target) {
-  target[strlen(target)-1] = '\0';
-}
+#include "../utils/utils.h"
 
 void kevlar_check_if_kevlar_proj(char file_path[MAX_FOLDER_PATH_SIZE], KevlarSkeleton skeleton) {
   DIR * dir_stream; 
@@ -36,8 +32,8 @@ void kevlar_check_if_kevlar_proj(char file_path[MAX_FOLDER_PATH_SIZE], KevlarSke
     i++;
   }
 
-  truncateLast(skeleton.skel_posts_folder_path);
-  truncateLast(skeleton.skel_template_folder_path);
+  utl_truncateLast(skeleton.skel_posts_folder_path);
+  utl_truncateLast(skeleton.skel_template_folder_path);
 
   if (
     strcmp(items[0], skeleton.skel_template_folder_path) != 0 ||
