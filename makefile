@@ -19,6 +19,9 @@ kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h
 kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h
 	$(CMD) ./src/kevlar_handle_config.c
 
+kevlar/handle_templates: ./src/kevlar_handle_templates.c ./src/kevlar_handle_templates.h kevlar/handle_config
+	$(CMD)./src/kevlar_handle_templates.c
+
 kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h 
 	$(CMD) ./src/kevlar_build.c
 
@@ -27,6 +30,7 @@ rst2html: ./recipes/rst2html.c
 	$(CMD) ./recipes/rst2html.c -o ./bin/rst2html
 
 all: kevlar rst2html
+
 
 clean: 
 	rm -rf ./src/*.o
