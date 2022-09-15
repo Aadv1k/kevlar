@@ -4,7 +4,7 @@
 
 #include "kevlar_handle_config.h"
 
-void kevlar_load_config(char file_path[MAX_PATH_SIZE], KevlarConfig* config_struct) {
+void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* config_struct) {
   FILE * file_buf;
 
   if (!(file_buf = fopen(file_path, "r"))) {
@@ -14,11 +14,11 @@ void kevlar_load_config(char file_path[MAX_PATH_SIZE], KevlarConfig* config_stru
 
   int line_count = 0;
   while (!feof(file_buf)) {
-    char cur_line[MAX_CONFIG_FILE_SIZE];
+    char cur_line[CONFIG_MAX_FILE_SIZE];
     char *target;
-    fgets(cur_line, MAX_CONFIG_FILE_SIZE, file_buf);
+    fgets(cur_line, CONFIG_MAX_FILE_SIZE, file_buf);
     target = strtok(cur_line, "=");
-    char command[2][MAX_CONFIG_OPT_SIZE] = {};
+    char command[2][CONFIG_MAX_OPT_SIZE] = {};
 
     // Only line comments for now
     if (cur_line[0] == '#') continue;
@@ -38,16 +38,25 @@ void kevlar_load_config(char file_path[MAX_PATH_SIZE], KevlarConfig* config_stru
       strcpy(config_struct->configAuthor, command[1]);
     } else if (strcmp(command[0], "title") == 0) { 
       strcpy(config_struct->configTitle, command[1]);
-    } else if (strcmp(command[0], "rst_loader") == 0) {
+    } 
+
+    if (strcmp(command[0], "rst_loader") == 0) {
       strcpy(config_struct->configRstLoader, command[1]);
     } else if (strcmp(command[0], "markdown_loader") == 0) {
       strcpy(config_struct->configMarkdownLoader, command[1]);
     }
+
+    if (strlen(config_struct->configMarkdownLoader) == 0) {
+      strcpy(config_struct->configMarkdownLoader, "./md2html");
+    } else if (strlen(config_struct->configRstLoader) == 0) {
+      strcpy(config_struct->configMarkdownLoader, "./rst2html");
+    }
+
     line_count++;
   }
 };
 
-void kevlar_generate_skeleton_config(char file_path[MAX_PATH_SIZE]) {
+void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
   FILE * file_buf;  
   if ((file_buf = fopen(file_path, "w")) == NULL) {
     fprintf(stderr, "[kevlar] something went wrong while generating sample config\n");

@@ -12,6 +12,7 @@ FILE *outfile;
 
 bool ERRORS = false;
 
+// TODO: Put in a utility file 
 void truncateLast(char *target) {
   target[strlen(target)-1] = '\0';
 }

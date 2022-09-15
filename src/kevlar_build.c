@@ -59,17 +59,8 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE], KevlarCon
 
   DIR * dir_stream; 
   struct dirent *dir_itm;
-
+  
   // We don't need handle this being NULL since kevlar_check_if_kevlar_proj()
   // already does so
-
   dir_stream = opendir(file_path);
 }
-
-/*
-int main () {
-  KevlarConfig config;
-  kevlar_load_config("../../kevlar_proj/config.ini", &config);
-  kevlar_handle_build_command("../../kevlar_proj", &config);
-  return 0;
-}*/
