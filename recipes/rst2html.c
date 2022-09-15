@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../utils/utils.h"
+
 #define MAX_LINE_LENGTH 999
 #define FIELD_LIST_SIZE 50
 
@@ -11,11 +13,6 @@ FILE *infile;
 FILE *outfile;
 
 bool ERRORS = false;
-
-// TODO: Put in a utility file 
-void truncateLast(char *target) {
-  target[strlen(target)-1] = '\0';
-}
 
 int rst_getFileLength(char filename[]) {
   FILE *infile = fopen(filename, "r");
@@ -240,11 +237,15 @@ int main(int argc, char *argv[]) {
     strcpy(html_file_path, argv[2]);
   }
 
+  if (strcmp(utl_strchrev(rst_file_path, '.'), ".rst") != 0) {
+    fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file", rst_file_path);
+  }
+
   infile = fopen(rst_file_path, "r");
   outfile = fopen(html_file_path, "w");
 
   if (infile == NULL) {
-    printf("the file \"%s\" doesn't exist.\n", rst_file_path);
+    fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);
     exit(1);
   }
 
@@ -254,7 +255,7 @@ int main(int argc, char *argv[]) {
   // Read contents of the input file into the file[]
   for (int i = 0; i < fileLength; i++) {
     fgets(file[i], MAX_LINE_LENGTH, infile);
-    truncateLast(file[i]);
+    utl_truncateLast(file[i]);
   }
   
   for (int currentLine = 0; currentLine < fileLength; currentLine++) {

@@ -3,6 +3,9 @@ bin/
 src/*.o
 src/*.out
 
+utils/*.out
+utils/*.o
+
 recipes/*.o
 recipes/*.out
 
