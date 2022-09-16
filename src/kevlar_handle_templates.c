@@ -1,12 +1,10 @@
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "kevlar_handle_config.h"
+#include "kevlar_handle_templates.h"
 #include "../utils/utils.h"
-
-#define TEMPLATE_MAX_TAG_SIZE 64
-#define TEMPLATE_MAX_LINE_SIZE 224
 
 void kevlar_write_html_string(char line[], char substr[], char content[], FILE * out_file_buffer) {
   char tail[TEMPLATE_MAX_TAG_SIZE];
@@ -46,8 +44,7 @@ void kevlar_parse_template(char file_path[CONFIG_MAX_PATH_SIZE], char out_file_p
   char line[TEMPLATE_MAX_LINE_SIZE];
 
   while ((fgets(line, TEMPLATE_MAX_LINE_SIZE, file_buffer)) != NULL) {
-    if (strstr(line, "--TITLE--")) {
-      kevlar_write_html_string(line, "--TITLE--", kev_config->configTitle, out_file_buffer);
+    if (strstr(line, "--TITLE--")) { kevlar_write_html_string(line, "--TITLE--", kev_config->configTitle, out_file_buffer);
       continue;
     } else if (strstr(line, "--AUTHOR--")) {
       kevlar_write_html_string(line, "--AUTHOR--", kev_config->configAuthor, out_file_buffer);
@@ -58,15 +55,3 @@ void kevlar_parse_template(char file_path[CONFIG_MAX_PATH_SIZE], char out_file_p
 
   fclose(file_buffer);
 };
-
-int main() {
-  KevlarConfig config = {
-    "Philip Mc revice",
-    "super awesome big meat site",
-    "default", 
-    "default",
-  };
-
-  kevlar_parse_template("../../kevlar_theme/index.html", "../../kevlar_theme/out.html", &config);
-  return 0;
-}

@@ -7,7 +7,44 @@
 #include "kevlar_build.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+
 #include "../utils/utils.h"
+
+void kevlar_convert_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char rst_loader[]) {
+  DIR * dir_buffer;
+  struct dirent *dir_item;
+
+  // This should probably not happen
+  if ((dir_buffer = opendir(folder_path)) == NULL) {
+    fprintf(stderr, "[kevlar] couldn't open %s, it might not be a folder", folder_path);
+    exit(1);
+  }
+
+  int i = 0;
+  while ((dir_item = readdir(dir_buffer)) != NULL) {
+    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".rst") == 0) {
+      char rst_file[100];
+      char html_file[100];
+      char system_command[100];
+
+      strcpy(rst_file, dir_item->d_name);
+      utl_prepend_str(folder_path, rst_file);
+
+      strcpy(html_file, rst_file);
+      html_file[strlen(html_file)-4] = '\0';
+      strcat(html_file, ".html");
+
+      sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
+
+      system(system_command);
+      i++;
+    }
+  }
+
+  if (i == 0) {
+    fprintf(stderr, "[kevlar] no .rst files were found in %s\n", folder_path);
+  }
+}
 
 void kevlar_check_if_kevlar_proj(char file_path[MAX_FOLDER_PATH_SIZE], KevlarSkeleton skeleton) {
   DIR * dir_stream; 

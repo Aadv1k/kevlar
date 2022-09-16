@@ -35,7 +35,7 @@ int argtype(char arg[]) {
 
 void kevlar_usage_exit() {
   printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n\tbuild -- build if in a kevlar project\n");
-  exit(2);
+  exit(1);
 }
 
 int main(int argc, char **argv) {
@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
     case cmdNew:
       if (argc == 2) {
         fprintf(stderr, "[kevlar] you need an provide a name for your project\n");
-        exit(2);
+        exit(1);
       }
-      kevlar_handle_new_command(argv[3]);
+      kevlar_handle_new_command(argv[2]);
      break;
     case cmdBuild: ;
       KevlarConfig config; 
@@ -62,8 +62,9 @@ int main(int argc, char **argv) {
     case cmdServer: 
       puts("SERVE CONTENT");
       break;
-    default: 
-      puts("COMMAND NOT FOUND");
+    default:
+      fprintf(stderr, "[kevlar] couldn't find command\n");
+      exit(127);
   }
 
   return 0;
