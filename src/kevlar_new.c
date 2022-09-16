@@ -24,8 +24,8 @@ int kevlar_get_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]) {
   if (dir_stream == NULL) return folderNull;
 
   dir_obj = readdir(dir_stream);
-  if (strcmp(dir_obj->d_name, ".") != 0 && 
-    strcmp(dir_obj->d_name, "..") != 0) return folderNonEmpty;
+  if (strcmp(dir_obj->d_name, ".") == 0 ||
+    strcmp(dir_obj->d_name, "..") == 0) return folderNonEmpty;
 
   return folderEmpty;
 }

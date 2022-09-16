@@ -1,4 +1,4 @@
-CFLAGS= 
+CFLAGS=
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
