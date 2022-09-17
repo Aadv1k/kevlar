@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
     usage();
   }
 
-  char rst_file_path[50], html_file_path[50];
+  char rst_file_path[999], html_file_path[999];
 
   int opt;
   while ((opt = getopt(argc, argv, ":h:")) != -1) {
@@ -238,11 +238,15 @@ int main(int argc, char *argv[]) {
   }
 
   if (strcmp(utl_strchrev(rst_file_path, '.'), ".rst") != 0) {
-    fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file", rst_file_path);
+    fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", rst_file_path);
+    exit(1);
   }
+
 
   infile = fopen(rst_file_path, "r");
   outfile = fopen(html_file_path, "w");
+
+  puts(rst_file_path);
 
   if (infile == NULL) {
     fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);

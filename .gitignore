@@ -9,3 +9,4 @@ utils/*.o
 recipes/*.o
 recipes/*.out
 
+dist/
