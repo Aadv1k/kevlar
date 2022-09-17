@@ -8,6 +8,7 @@ typedef struct KevlarSkeleton {
   char skel_template_folder_path[MAX_FOLDER_PATH_SIZE];
   char skel_posts_folder_path[MAX_FOLDER_PATH_SIZE];
   char skel_config_file_path[MAX_FOLDER_PATH_SIZE];
+  char skel_dist_file_path[MAX_FOLDER_PATH_SIZE];
 } KevlarSkeleton;
 
 enum FolderStatus {

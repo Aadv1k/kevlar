@@ -14,7 +14,7 @@
 
 #include "../utils/utils.h"
 
-//TODO: add a output folder param, since right now it odes so in the base directory 
+// TODO: add a output folder param, since right now it odes so in the base directory 
 void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader) {
   enum FolderStatus;
 
@@ -64,58 +64,34 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
   }
 }
 
-void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarSkeleton skeleton) {
-  DIR * dir_stream; 
-  struct dirent *dir_itm;
+// TODO: use the "stat" command instead of whatever this is 
+void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarSkeleton *skeleton) {
+  enum FolderStatus;
 
-  // TODO: maybe this could be used here instead 
-  // kevlar_get_folder_status(char *folder_path)?
   if (kevlar_get_folder_status(folder_path) == folderNull) {
     fprintf(stderr, "[kevlar] ran into a problem while opening %s; it may not exist\n", folder_path);
     exit(1);
   }
 
-  dir_stream = opendir(folder_path);
-
-  const int skeleton_size = sizeof(skeleton)/MAX_FOLDER_PATH_SIZE;
-  char items[skeleton_size][MAX_FOLDER_PATH_SIZE];
-
-  int i = 0;
-  while ((dir_itm = readdir(dir_stream)) != NULL && i < skeleton_size) {
-    if (strcmp(dir_itm->d_name, ".") == 0 || strcmp(dir_itm->d_name, "..") == 0) {
-      continue;
-    }
-    strcpy(items[i], dir_itm->d_name);
-    i++;
-  }
-
-  utl_truncateLast(skeleton.skel_posts_folder_path);
-  utl_truncateLast(skeleton.skel_template_folder_path);
-
   if (
-    strcmp(items[0], skeleton.skel_template_folder_path) != 0 ||
-    strcmp(items[1], skeleton.skel_posts_folder_path) != 0 ||
-    strcmp(items[2], skeleton.skel_config_file_path) != 0) {
+    (kevlar_get_folder_status(skeleton->skel_posts_folder_path) == folderNull) ||
+    (kevlar_get_folder_status(skeleton->skel_template_folder_path) == folderNull) ||
+    (kevlar_get_folder_status(skeleton->skel_config_file_path) != folderNull)
+  )  {
     fprintf(stderr, "[kevlar] %s doesn't seem to be a kevlar project, try running kevlar new for a new project\n", folder_path);
     exit(1);
   }
 }
 
 void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
-  KevlarSkeleton skel = {
-    "templates/", 
-    "posts/", 
-    "config.ini"
-  };
 
-  //kevlar_check_if_kevlar_proj(file_path, skel);
+  KevlarSkeleton skel = { "templates/", "posts/", "config.ini", "dist/" };
+
+  kevlar_check_if_kevlar_proj(file_path, &skel);
 
   DIR * dir_stream; 
   struct dirent *dir_itm;
 
-  //char dist_path[] = "/dist/";
-  //utl_prepend_str(file_path, dist_path);
-  // TODO: change this
   mkdir("./dist", FOLDER_ALL_PERMS);
 
   char config_path[] = "/config.ini";

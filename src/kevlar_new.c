@@ -8,6 +8,7 @@
 #include "kevlar_handle_config.h"
 #include "../utils/utils.h"
 
+// TODO: Use stat here
 int kevlar_get_folder_status(const char folder_path[MAX_FOLDER_PATH_SIZE]) {
   DIR *dir_stream;
   struct dirent *dir_obj; 

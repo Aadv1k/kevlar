@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
       kevlar_handle_new_command(argv[2]);
      break;
     case cmdBuild: ;
-      kevlar_handle_build_command("../kevlar_proj/");
+      kevlar_handle_build_command(".");
       break;
     case cmdServe: 
     case cmdServer: 
