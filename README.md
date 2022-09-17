@@ -12,7 +12,6 @@ $ git clone git@github.com/aadv1k
 $ make all
 $ ./bin/kevlar
 ```
-
 ### `kevlar new`
 
 This will create the following skeleton for a kevlar project
@@ -28,32 +27,64 @@ This will create the following skeleton for a kevlar project
 
 ### `kevlar build`
 
-**WIP** Checks if the given directory is a kevlar project and builds the file using the template and files within `posts/` directory,
+This command does the following in-order
+
+- Check if current directory is a "kevlar project" eg: Makes sure it has all the files from `kevlar new`
+- Loads the `config.ini` file and puts the information into a structure
+- [WIP] Parse rst files from "./posts" and outputs them to "./dist"; uses a loader specified in the `config.ini` file to convert rst to html
+- Iterate through all the `.html` file paths and put them inside `configListing` field in a config struct
+- [WIP] opens the template from the theme specified in the `config.ini` file and fills it with params.
 
 
 ## Configuration
 
-When you create a new site using the `kevlar new` command, you may find a `config.ini` located within the site directory, you can use this to configure several things. Here is an exaustive list of all possible values
+Kevlar uses a in-house `.ini` parser for configuration, so it might be a rough on edges. Here is what all you can configure
 
 ```ini
 author=
 title=
+theme=
+# ^ looks for theme inside the ./templates/ directory
 
 rst_loader=
-# ^ if you want to add a custom reStructuredText loader with arguments; By default `recipes/rst2html` will be used.
-
-markdown_loader=
-# ^ if you want to add a custom markdown loader with arguments
-
+# ^ could be anything; rst2html5, kevlar/bin/rst2html;
 ```
+Given the nature of how these files are parsed, html would be valid within these `config.ini` eg:  
+
+```ini
+author=<b>I am a bold author</b>
+```
+I call it a feature rather than a bug.
+
+## Templating
+
+Kevlar supports templating albeit basic, all fields will be parsed when you run the `kevlar build` command and have `config.ini` setup properly
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>--TITLE--</title>
+</head>
+<body>
+  <h1>--AUTHOR--</h1>
+  <ul>
+    --LISTING--
+  </ul>
+</body>
+</html>
+```
+
+- `--TITLE--`: fills in whatever title you filled in config file. 
+- `--AUTHOR--`: fills in whatever author name you provided in config file
+- `--LISTING--`: provides links surrounded by `<li>` of all the html files in `./dist`
 
 ## Recipes
 
-These are all supported file loaders, that used by default by kevlar, but all them can be compiled and used as standalone programs as well.
+These are all in-house parsers programmed from scratch. Since I am not very good with developing languages nor with C, these by no means are a "to-spec" parser, mostly just implemented on top of my head with whatever I preferred and could remember.
 
 ### `recipes/rst2html.c`
-
-Converts rSt to text; However it is not to specficiation.
 
 ```shell
 $ make rst2html
