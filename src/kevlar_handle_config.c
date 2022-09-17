@@ -6,7 +6,7 @@
 #include "kevlar_handle_config.h"
 #include "../utils/utils.h"
 
-void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* config_struct) {
+void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* kev_config) {
   FILE * file_buf;
 
   if (!(file_buf = fopen(file_path, "r"))) {
@@ -36,35 +36,25 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* conf
       i++;
     }
 
+
     if (strcmp(command[0], "author") == 0) {
-      strcpy(config_struct->configAuthor, command[1]);
-    } else if (strcmp(command[0], "title") == 0) { 
-      strcpy(config_struct->configTitle, command[1]);
-    } 
-
-
-    if (strcmp(command[0], "rst_loader") == 0 && strlen(command[1]) != 0) {
-
       utl_truncateLast(command[1]);
-      strcpy(config_struct->configRstLoader, command[1]);
-
+      strcpy(kev_config->configAuthor, command[1]);
+    } else if (strcmp(command[0], "title") == 0) { 
+      utl_truncateLast(command[1]);
+      strcpy(kev_config->configTitle, command[1]);
+    } else if (strcmp(command[0], "theme") == 0) {
+      utl_truncateLast(command[1]);
+      strcpy(kev_config->configTheme, command[1]);
+    } else if (strcmp(command[0], "rst_loader") == 0 && strlen(command[1]) != 0) {
+      utl_truncateLast(command[1]);
+      strcpy(kev_config->configRstLoader, command[1]);
     } else if (strcmp(command[0], "markdown_loader") == 0) {
-      strcpy(config_struct->configMarkdownLoader, command[1]);
+      utl_truncateLast(command[1]);
+      strcpy(kev_config->configMarkdownLoader, command[1]);
     }
-
-
     line_count++;
   }
-
-
-  if (strlen(config_struct->configMarkdownLoader) == 0) {
-    strcpy(config_struct->configMarkdownLoader, "./bin/md2html");
-  } 
-
-  if (strlen(config_struct->configRstLoader) == 0) {
-    strcpy(config_struct->configRstLoader, "./bin/rst2html");
-  }
-
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
