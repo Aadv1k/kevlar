@@ -43,7 +43,7 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* conf
     } 
 
 
-    if (strcmp(command[0], "rst_loader") == 0) {
+    if (strcmp(command[0], "rst_loader") == 0 && strlen(command[1]) != 0) {
 
       utl_truncateLast(command[1]);
       strcpy(config_struct->configRstLoader, command[1]);
@@ -52,16 +52,19 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* conf
       strcpy(config_struct->configMarkdownLoader, command[1]);
     }
 
-    printf("%lu\n", strlen(config_struct->configRstLoader));
 
     line_count++;
   }
 
+
   if (strlen(config_struct->configMarkdownLoader) == 0) {
     strcpy(config_struct->configMarkdownLoader, "./bin/md2html");
-  } else if (strlen(config_struct->configRstLoader) == 0) {
+  } 
+
+  if (strlen(config_struct->configRstLoader) == 0) {
     strcpy(config_struct->configRstLoader, "./bin/rst2html");
   }
+
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
