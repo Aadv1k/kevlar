@@ -10,11 +10,52 @@
 
 #include "kevlar_build.h"
 #include "kevlar_handle_config.h"
+#include "kevlar_handle_templates.h"
 #include "kevlar_new.h"
 
 #include "../utils/utils.h"
 
-// TODO: add a output folder param, since right now it odes so in the base directory 
+void kevlar_check_if_theme_valid(char theme_path[CONFIG_MAX_PATH_SIZE]) {
+  enum FolderStatus;
+
+  char full_theme_path[CONFIG_MAX_PATH_SIZE];
+  strcpy(full_theme_path, "./templates/");
+  strcat(full_theme_path, theme_path);
+
+  if (kevlar_get_folder_status(full_theme_path) == folderNull) {
+    fprintf(stderr, "[kevlar] couldn't find theme %s\n", theme_path);
+    exit(1);
+  } else if (kevlar_get_folder_status(full_theme_path) == folderEmpty) {
+    fprintf(stderr, "[kevlar] the theme %s seems to be invalid\n", theme_path);
+    exit(1);
+  }
+}
+
+void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_config) {
+
+  DIR * dir_buf; 
+  struct dirent * dir_item;
+
+  if ((dir_buf = opendir(dist_path)) == NULL) {
+    fprintf(stderr, "[kevlar] something went wrong while opening folder");
+    exit(1);
+  }
+
+
+  while ((dir_item = readdir(dir_buf)) != NULL) {
+    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".html") == 0) {
+
+      char *tmp = strdup(dir_item->d_name);
+      dir_item->d_name[strlen(dir_item->d_name)-5] = '\0';
+      char current_line[200];
+      sprintf(current_line, "<li><a href=\"./%s\">%s</a></li>\n", tmp, dir_item->d_name);
+      strcat(kev_config->configListing, current_line);
+      free(tmp);
+    }
+  }
+  closedir(dir_buf);
+}
+
 void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader) {
   enum FolderStatus;
 
@@ -26,12 +67,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
     exit(1);
   }
 
-  // We don't need to wrap this with a guard since the above already handles it
   dir_buffer = opendir(folder_path);
-
-  
-  // TODO: implement this? 
-  //if (kevlar_get_folder_status(out_folder_path) == folderNonEmpty) { fprintf(stderr, "[kevlar] cannot output .html files to %s as it is not empty\n", out_folder_path); exit(1); }
 
   mkdir(out_folder_path, FOLDER_ALL_PERMS);
 
@@ -53,14 +89,16 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       utl_prepend(html_file, out_folder_path);
 
       sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
-      //fprintf(stdout, "%s %s %s\n", rst_loader, rst_file, html_file);
       system(system_command);
+
+      // TODO: insert information here
+
       i++;
     }
   }
 
   if (i == 0) {
-    fprintf(stderr, "[kevlar] no .rst files were found in %s\n", folder_path);
+    fprintf(stderr, "[kevlar] found no .rst in %s\n", folder_path);
   }
 }
 
@@ -86,11 +124,7 @@ void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarS
 void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
 
   KevlarSkeleton skel = { "templates/", "posts/", "config.ini", "dist/" };
-
   kevlar_check_if_kevlar_proj(file_path, &skel);
-
-  DIR * dir_stream; 
-  struct dirent *dir_itm;
 
   mkdir("./dist", FOLDER_ALL_PERMS);
 
@@ -98,10 +132,14 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
   utl_prepend(config_path, file_path);
 
   KevlarConfig kev_config;
+
   kevlar_load_config(config_path, &kev_config);
 
-  char posts_path[] = "/posts/";
-  utl_prepend(posts_path, file_path);
+
+  char posts_path[100] = "/posts/";
+  utl_prepend_str(file_path, posts_path);
 
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader);
+  kevlar_generate_listings("./dist", &kev_config);
+  kevlar_parse_template("./templates/kwolek/index.html", "./dist/index.html", &kev_config);
 }

@@ -4,7 +4,7 @@ CMD := $(CC) $(CFLAGS)
 
 $(shell mkdir -p ./bin/)
 
-kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./utils/utils.o
+kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_handle_templates.o ./utils/utils.o
 
 kevlar: $(kevlar_files)
 	mkdir -p bin

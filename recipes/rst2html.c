@@ -197,6 +197,7 @@ void rst_handleConfig(char file[][MAX_LINE_LENGTH], int line) {
       strncat(param, &cur, 1);
     }
   }
+
   if (open || strlen(param) == 0 || strlen(opt) < 1 || opt[0] != ' ') {
     printf("RST Line %d: PARAM OR OPT FORMAT NOT CORRET\n", line + 1);
     return;
@@ -246,7 +247,9 @@ int main(int argc, char *argv[]) {
   infile = fopen(rst_file_path, "r");
   outfile = fopen(html_file_path, "w");
 
-  puts(rst_file_path);
+  if (ERRORS) {
+    puts(rst_file_path);
+  }
 
   if (infile == NULL) {
     fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);

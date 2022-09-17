@@ -44,12 +44,19 @@ void kevlar_parse_template(char file_path[CONFIG_MAX_PATH_SIZE], char out_file_p
   char line[TEMPLATE_MAX_LINE_SIZE];
 
   while ((fgets(line, TEMPLATE_MAX_LINE_SIZE, file_buffer)) != NULL) {
-    if (strstr(line, "--TITLE--")) { kevlar_write_html_string(line, "--TITLE--", kev_config->configTitle, out_file_buffer);
+    if (strstr(line, "--TITLE--")) { 
+      kevlar_write_html_string(line, "--TITLE--", kev_config->configTitle, out_file_buffer);
       continue;
     } else if (strstr(line, "--AUTHOR--")) {
+
+      //puts(kev_config->configAuthor);
+
       kevlar_write_html_string(line, "--AUTHOR--", kev_config->configAuthor, out_file_buffer);
       continue;
-    } 
+    } else if (strstr(line, "--LISTING--")) {
+      kevlar_write_html_string(line, "--LISTING--", kev_config->configListing, out_file_buffer);
+      continue;
+    }
     fprintf(out_file_buffer, "%s", line);
   }
 
