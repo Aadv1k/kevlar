@@ -16,7 +16,7 @@ kevlar/main: ./src/main.c
 utils: ./utils/utils.c
 	$(CMD) ./utils/utils.c
 
-kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h
+kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h utils
 	$(CMD) ./src/kevlar_new.c
 
 kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h utils

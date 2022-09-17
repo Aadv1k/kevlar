@@ -6,16 +6,9 @@
 
 #include "kevlar_new.h"
 #include "kevlar_handle_config.h"
+#include "../utils/utils.h"
 
-// TODO: Put this in util
-void prepend(char prefix[], char str[]) {
-  char *temp_str = strdup(str);
-  strcpy(str, prefix);
-  strcat(str, temp_str);
-  free(temp_str);
-}
-
-int kevlar_get_folder_status(char folder_path[MAX_FOLDER_PATH_SIZE]) {
+int kevlar_get_folder_status(const char folder_path[MAX_FOLDER_PATH_SIZE]) {
   DIR *dir_stream;
   struct dirent *dir_obj; 
 
@@ -61,9 +54,9 @@ void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
         "/config.ini"
       };
 
-      prepend(folder_path, skel.skel_template_folder_path);
-      prepend(folder_path, skel.skel_posts_folder_path);
-      prepend(folder_path, skel.skel_config_file_path);
+      utl_prepend_str(folder_path, skel.skel_template_folder_path);
+      utl_prepend_str(folder_path, skel.skel_posts_folder_path);
+      utl_prepend_str(folder_path, skel.skel_config_file_path);
 
       kevlar_generate_new_skeleton(&skel);
       break; 

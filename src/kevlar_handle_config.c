@@ -1,8 +1,10 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "kevlar_handle_config.h"
+#include "../utils/utils.h"
 
 void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* config_struct) {
   FILE * file_buf;
@@ -40,19 +42,25 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* conf
       strcpy(config_struct->configTitle, command[1]);
     } 
 
+
     if (strcmp(command[0], "rst_loader") == 0) {
+
+      utl_truncateLast(command[1]);
       strcpy(config_struct->configRstLoader, command[1]);
+
     } else if (strcmp(command[0], "markdown_loader") == 0) {
       strcpy(config_struct->configMarkdownLoader, command[1]);
     }
 
-    if (strlen(config_struct->configMarkdownLoader) == 0) {
-      strcpy(config_struct->configMarkdownLoader, "./md2html");
-    } else if (strlen(config_struct->configRstLoader) == 0) {
-      strcpy(config_struct->configMarkdownLoader, "./rst2html");
-    }
+    printf("%lu\n", strlen(config_struct->configRstLoader));
 
     line_count++;
+  }
+
+  if (strlen(config_struct->configMarkdownLoader) == 0) {
+    strcpy(config_struct->configMarkdownLoader, "./bin/md2html");
+  } else if (strlen(config_struct->configRstLoader) == 0) {
+    strcpy(config_struct->configRstLoader, "./bin/rst2html");
   }
 };
 
