@@ -10,16 +10,16 @@
 
 #include "kevlar_build.h"
 #include "kevlar_handle_config.h"
-#include "kevlar_handle_templates.h"
 #include "kevlar_new.h"
 
 #include "../utils/utils.h"
+#include "kevlar_templating.h"
 
 void kevlar_check_if_theme_valid(char theme_path[CONFIG_MAX_PATH_SIZE]) {
   enum FolderStatus;
 
   char full_theme_path[CONFIG_MAX_PATH_SIZE];
-  strcpy(full_theme_path, "./templates/");
+  strcpy(full_theme_path, "templates/");
   strcat(full_theme_path, theme_path);
 
   if (kevlar_get_folder_status(full_theme_path) == folderNull) {
@@ -56,7 +56,7 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
   closedir(dir_buf);
 }
 
-void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader) {
+void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader, KevlarConfig * kev_config) {
   enum FolderStatus;
 
   DIR * dir_buffer;
@@ -88,10 +88,34 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       utl_prepend(html_file, "/");
       utl_prepend(html_file, out_folder_path);
 
+
       sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
       system(system_command);
 
-      // TODO: insert information here
+      FILE * html_file_buf = fopen(html_file, "r");
+
+      if (html_file_buf == NULL) {
+        fprintf(stderr, "[kevlar] was not able to open html files for further processing, maybe the system command went wrong?\n");
+        exit(1);
+      }
+      
+      char * contents;
+      int html_file_len;
+
+      fseek(html_file_buf, 0, SEEK_END);
+      html_file_len = ftell(html_file_buf);
+      fseek(html_file_buf, 0, SEEK_SET);
+      contents = malloc(html_file_len);
+      fread(contents, 1, html_file_len, html_file_buf);
+      fclose(html_file_buf);
+
+      strcpy(kev_config->configHtmlContents, contents);
+      
+      // FIXME ADD EXTRA FIELD IN CONFIG
+      //kevlar_build_template("./templates/awesome/post.html", html_file, kev_config);
+      // FIXME ADD EXTRA FIELD IN CONFIG
+
+      free(contents);
 
       i++;
     }
@@ -128,18 +152,18 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
 
   mkdir("./dist", FOLDER_ALL_PERMS);
 
-  char config_path[] = "/config.ini";
-  utl_prepend(config_path, file_path);
+  char config_path[MAX_FOLDER_PATH_SIZE];
+  sprintf(config_path, "%s%s", file_path, "/config.ini");
 
   KevlarConfig kev_config;
-
   kevlar_load_config(config_path, &kev_config);
 
+  char posts_path[MAX_FOLDER_PATH_SIZE];
+  sprintf(posts_path, "%s%s", file_path, "/posts/");
 
-  char posts_path[100] = "/posts/";
-  utl_prepend_str(file_path, posts_path);
+  kevlar_check_if_theme_valid(kev_config.configTheme);
+  kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
 
-  kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader);
-  kevlar_generate_listings("./dist", &kev_config);
-  kevlar_parse_template("./templates/kwolek/index.html", "./dist/index.html", &kev_config);
+  //kevlar_generate_listings("./dist", &kev_config);
+  //kevlar_parse_template("./templates/kwolek/index.html", "./dist/index.html", &kev_config);
 }

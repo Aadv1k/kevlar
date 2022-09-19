@@ -5,6 +5,7 @@
 
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+#include "kevlar_templating.h"
 #include "kevlar_build.h"
 
 #define MAX_CMD_SIZE 16
@@ -55,6 +56,7 @@ int main(int argc, char **argv) {
       kevlar_handle_new_command(argv[2]);
      break;
     case cmdBuild: ;
+      //kevlar_build_template("../kwolek/index.html", "../kwolek/out.html", &temp);
       kevlar_handle_build_command(".");
       break;
     case cmdServe: 
