@@ -4,7 +4,7 @@ CMD := $(CC) $(CFLAGS)
 
 $(shell mkdir -p ./bin/)
 
-kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_handle_templates.o ./utils/utils.o
+kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_templating.o ./utils/utils.o
 
 kevlar: $(kevlar_files)
 	mkdir -p bin
@@ -22,7 +22,7 @@ kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h utils
 kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h utils
 	$(CMD) ./src/kevlar_handle_config.c
 
-kevlar/handle_templates: ./src/kevlar_handle_templates.c ./src/kevlar_handle_templates.h kevlar/handle_config utils
+kevlar/templating: ./src/kevlar_templating.c.c ./src/kevlar_templating.c.h kevlar/handle_config utils
 	$(CMD)./src/kevlar_handle_templates.c
 
 kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h 

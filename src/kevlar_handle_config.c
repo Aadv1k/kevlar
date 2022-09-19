@@ -5,6 +5,7 @@
 
 #include "kevlar_handle_config.h"
 #include "../utils/utils.h"
+#include "kevlar_new.h"
 
 void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* kev_config) {
   FILE * file_buf;
@@ -36,25 +37,29 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* kev_
       i++;
     }
 
+    utl_truncateLast(command[1]);
+    // technically this should never happen
+    if (strlen(command[1]) == 0) {
+      continue;
+    }
 
     if (strcmp(command[0], "author") == 0) {
-      utl_truncateLast(command[1]);
       strcpy(kev_config->configAuthor, command[1]);
     } else if (strcmp(command[0], "title") == 0) { 
-      utl_truncateLast(command[1]);
       strcpy(kev_config->configTitle, command[1]);
     } else if (strcmp(command[0], "theme") == 0) {
-      utl_truncateLast(command[1]);
       strcpy(kev_config->configTheme, command[1]);
-    } else if (strcmp(command[0], "rst_loader") == 0 && strlen(command[1]) != 0) {
-      utl_truncateLast(command[1]);
+    } else if (strcmp(command[0], "rst_loader") == 0 ) {
       strcpy(kev_config->configRstLoader, command[1]);
     } else if (strcmp(command[0], "markdown_loader") == 0) {
-      utl_truncateLast(command[1]);
       strcpy(kev_config->configMarkdownLoader, command[1]);
     }
     line_count++;
   }
+
+  sprintf(kev_config->configFooterPath, "./%s/%s/%s", "templates", kev_config->configTheme, "footer.html");
+  sprintf(kev_config->configHeaderPath, "./%s/%s/%s", "templates", kev_config->configTheme, "header.html");
+  sprintf(kev_config->configCSSPath, "./%s/%s/%s", "templates", kev_config->configTheme, "main.css");
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
