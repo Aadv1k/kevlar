@@ -16,8 +16,9 @@ typedef struct {
   char configCSSPath[CONFIG_MAX_OPT_SIZE];
   char configHeaderPath[CONFIG_MAX_OPT_SIZE];
   char configFooterPath[CONFIG_MAX_OPT_SIZE];
-
   char configHtmlContents[CONFIG_MAX_FILE_SIZE];
+  char configIndexPath[CONFIG_MAX_OPT_SIZE];
+  char configPostPath[CONFIG_MAX_OPT_SIZE];
 } KevlarConfig;
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]);

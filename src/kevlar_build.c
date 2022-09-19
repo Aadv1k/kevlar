@@ -41,9 +41,9 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
     exit(1);
   }
 
-
   while ((dir_item = readdir(dir_buf)) != NULL) {
-    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".html") == 0) {
+    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".html") == 0 
+      && strcmp(dir_item->d_name, "index.html") != 0) {
 
       char *tmp = strdup(dir_item->d_name);
       dir_item->d_name[strlen(dir_item->d_name)-5] = '\0';
@@ -111,9 +111,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
       strcpy(kev_config->configHtmlContents, contents);
       
-      // FIXME ADD EXTRA FIELD IN CONFIG
-      //kevlar_build_template("./templates/awesome/post.html", html_file, kev_config);
-      // FIXME ADD EXTRA FIELD IN CONFIG
+      kevlar_build_template(kev_config->configPostPath, html_file, kev_config);
 
       free(contents);
 
@@ -163,7 +161,6 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
 
   kevlar_check_if_theme_valid(kev_config.configTheme);
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
-
-  //kevlar_generate_listings("./dist", &kev_config);
-  //kevlar_parse_template("./templates/kwolek/index.html", "./dist/index.html", &kev_config);
+  kevlar_generate_listings("./dist", &kev_config);
+  kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
 }
