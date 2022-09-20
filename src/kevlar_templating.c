@@ -40,10 +40,9 @@ void kevlar_parse_stylesheet(char *stylesheet_path, char *output) {
 void kevlar_parse_template(FILE * in_file_buffer, FILE * out_file_buffer, KevlarConfig *kev_config) {
   char file[TEMPLATE_MAX_FILE_SIZE];
   char line[TEMPLATE_MAX_LINE_SIZE];
-
+  
 
   while ((fgets(line, TEMPLATE_MAX_LINE_SIZE, in_file_buffer)) != NULL) {
-
     if (strstr(line, "--TITLE--")) { 
       kevlar_parse_template_token(line, "--TITLE--", kev_config->configTitle, out_file_buffer);
       continue;
@@ -53,10 +52,17 @@ void kevlar_parse_template(FILE * in_file_buffer, FILE * out_file_buffer, Kevlar
     } else if (strstr(line, "--LISTING--")) {
       kevlar_parse_template_token(line, "--LISTING--", kev_config->configListing, out_file_buffer);
       continue;
-    } else if (strstr(line, "--STYLES--") || strstr(line, "--STYLE--")) {
+    } else if (strstr(line, "--STYLE")) {
+
+
+      char stylesheet_path[CONFIG_MAX_PATH_SIZE];
+      sprintf(stylesheet_path, "%s/%s/%s", "templates", kev_config->configTheme, strchr(line, '/')+1);
+      *(strchr(stylesheet_path, '-')) = '\0';
+
       char stylesheet[TEMPLATE_MAX_FILE_SIZE];
-      kevlar_parse_stylesheet(kev_config->configCSSPath, stylesheet);
-      kevlar_parse_template_token(line, "--STYLE--", stylesheet, out_file_buffer);
+
+      kevlar_parse_stylesheet(stylesheet_path, stylesheet);
+      kevlar_parse_template_token(line, "--STYLE", stylesheet, out_file_buffer);
       continue;
 
     } else if (strstr(line, "--HEADER--")) {
