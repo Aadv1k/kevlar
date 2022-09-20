@@ -13,7 +13,6 @@ typedef struct {
   char configTheme[CONFIG_MAX_OPT_SIZE];
   char configListing[CONFIG_MAX_FILE_SIZE];
 
-  char configCSSPath[CONFIG_MAX_OPT_SIZE];
   char configHeaderPath[CONFIG_MAX_OPT_SIZE];
   char configFooterPath[CONFIG_MAX_OPT_SIZE];
   char configHtmlContents[CONFIG_MAX_FILE_SIZE];
