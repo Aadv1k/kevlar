@@ -22,17 +22,17 @@ kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h utils
 kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h utils
 	$(CMD) ./src/kevlar_handle_config.c
 
-kevlar/templating: ./src/kevlar_templating.c.c ./src/kevlar_templating.c.h kevlar/handle_config utils
+kevlar/templating: ./src/kevlar_templating.c ./src/kevlar_templating.h kevlar/handle_config utils
 	$(CMD)./src/kevlar_handle_templates.c
 
 kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h 
 	$(CMD) ./src/kevlar_build.c
 
-rst2html: ./recipes/rst2html.c utils
+kev_rst2html: ./recipes/kev_rst2html.c utils
 	mkdir -p bin
-	$(CMD) ./recipes/rst2html.c ./utils/utils.c -o ./bin/rst2html
+	$(CMD) ./recipes/kev_rst2html.c ./utils/utils.c -o ./bin/kev_rst2html
 
-all: kevlar rst2html
+all: kevlar kev_rst2html
 
 clean: 
 	rm -rf ./src/*.o
