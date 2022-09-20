@@ -20,27 +20,28 @@ void kevlar_parse_template_token(char line[], char substr[], char content[], FIL
   fprintf(out_file_buffer, "%s %s %s", line, content, tail);
 };
 
-void kevlar_parse_stylesheet(char *stylesheet_path, char *output) {
-  FILE * file_buffer;
-  char style_line[TEMPLATE_MAX_LINE_SIZE];
-  char file[TEMPLATE_MAX_FILE_SIZE];
+void kevlar_parse_stylesheet(char *stylesheet_path, char output[TEMPLATE_MAX_FILE_SIZE]) {
+  FILE * css_file_buffer;
+  char file_line[TEMPLATE_MAX_LINE_SIZE];
+  char file_content[TEMPLATE_MAX_FILE_SIZE];
 
-  if ((file_buffer = fopen(stylesheet_path, "r")) == NULL) {
+  if ((css_file_buffer = fopen(stylesheet_path, "r")) == NULL) {
     fprintf(stderr, "[kevlar] couldn't open stylesheet! Perhaps your theme is invalid?\n");
     exit(1);
   }
 
-  strcat(output, "<style>\n");
-  while ((fgets(style_line, TEMPLATE_MAX_LINE_SIZE, file_buffer)) != NULL) {
-    strcat(output, style_line);
-  } 
-  strcat(output, "</style>\n");
+  while (!feof(css_file_buffer)) {
+    fgets(file_line, TEMPLATE_MAX_LINE_SIZE, css_file_buffer);
+    strcat(file_content, file_line);
+  }
+
+  sprintf(output, "<style>\n%s\n</style>", file_content);
+  fclose(css_file_buffer);
 };
 
 void kevlar_parse_template(FILE * in_file_buffer, FILE * out_file_buffer, KevlarConfig *kev_config) {
   char file[TEMPLATE_MAX_FILE_SIZE];
   char line[TEMPLATE_MAX_LINE_SIZE];
-  
 
   while ((fgets(line, TEMPLATE_MAX_LINE_SIZE, in_file_buffer)) != NULL) {
     if (strstr(line, "--TITLE--")) { 
@@ -53,32 +54,49 @@ void kevlar_parse_template(FILE * in_file_buffer, FILE * out_file_buffer, Kevlar
       kevlar_parse_template_token(line, "--LISTING--", kev_config->configListing, out_file_buffer);
       continue;
     } else if (strstr(line, "--STYLE")) {
-
-
       char stylesheet_path[CONFIG_MAX_PATH_SIZE];
+      char stylesheet[TEMPLATE_MAX_FILE_SIZE] = "";
+
       sprintf(stylesheet_path, "%s/%s/%s", "templates", kev_config->configTheme, strchr(line, '/')+1);
       *(strchr(stylesheet_path, '-')) = '\0';
 
-      char stylesheet[TEMPLATE_MAX_FILE_SIZE];
+      FILE * css_file_buffer;
+      char file_line[TEMPLATE_MAX_LINE_SIZE];
 
-      kevlar_parse_stylesheet(stylesheet_path, stylesheet);
+      if ((css_file_buffer = fopen(stylesheet_path, "r")) == NULL) {
+        fprintf(stderr, "[kevlar] couldn't open stylesheet! Perhaps your theme is invalid?\n");
+        exit(1);
+      }
+
+      while ((fgets(file_line, TEMPLATE_MAX_LINE_SIZE, css_file_buffer)) != NULL) {
+        strcat(stylesheet, file_line);
+      }
+
+      utl_prepend(stylesheet, "<style>\n");
+      strcat(stylesheet, "</style>\n");
+
+      fclose(css_file_buffer);
+
       kevlar_parse_template_token(line, "--STYLE", stylesheet, out_file_buffer);
       continue;
+
 
     } else if (strstr(line, "--HEADER--")) {
       FILE * header_file = fopen(kev_config->configHeaderPath, "r");
       kevlar_parse_template(header_file, out_file_buffer, kev_config);
       fclose(header_file);
       continue;
+
     } else if (strstr(line, "--FOOTER--")) {
 
       FILE * footer_file = fopen(kev_config->configFooterPath, "r");
       kevlar_parse_template(footer_file, out_file_buffer, kev_config);
       fclose(footer_file);
-
       continue;
     } else if (strstr(line, "--CONTENT--")) {
+
       kevlar_parse_template_token(line, "--CONTENT--", kev_config->configHtmlContents, out_file_buffer);
+
       continue;
     } else {
       fprintf(out_file_buffer, "%s", line);
