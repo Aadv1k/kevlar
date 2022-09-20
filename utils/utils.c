@@ -11,11 +11,6 @@ char * utl_strchrev(char str[], char c) {
   return str;
 }
 
-void utl_strstr(char * haystack, char * needle) {
-  printf("%s\n", strchr(haystack, needle[0]));
-  //for (int i = 0; needle[i] != '\0'; i++) { }
-}
-
 void utl_prepend_str(char prefix[], char str[]) {
   char temp_str[strlen(str)+1];
   strcpy(temp_str, str);

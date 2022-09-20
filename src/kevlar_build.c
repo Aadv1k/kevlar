@@ -95,7 +95,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       FILE * html_file_buf = fopen(html_file, "r");
 
       if (html_file_buf == NULL) {
-        fprintf(stderr, "[kevlar] was not able to open html files for further processing, maybe the system command went wrong?\n");
+        fprintf(stderr, "[kevlar] was unable to open html files for further processing, maybe the system command went wrong?\n");
         exit(1);
       }
       
@@ -121,7 +121,9 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
   if (i == 0) {
     fprintf(stderr, "[kevlar] found no .rst in %s\n", folder_path);
-  }
+    return;
+  } 
+  kevlar_generate_listings("./dist", kev_config);
 }
 
 // TODO: use the "stat" command instead of whatever this is 
@@ -144,7 +146,6 @@ void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarS
 }
 
 void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
-
   KevlarSkeleton skel = { "templates/", "posts/", "config.ini", "dist/" };
   kevlar_check_if_kevlar_proj(file_path, &skel);
 
@@ -161,6 +162,5 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
 
   kevlar_check_if_theme_valid(kev_config.configTheme);
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
-  kevlar_generate_listings("./dist", &kev_config);
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
 }
