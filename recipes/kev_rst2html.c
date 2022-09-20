@@ -290,7 +290,7 @@ void rst_handleConfig(char file[][MAX_LINE_LENGTH], int line) {
 };
 
 void usage() {
-  puts("rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst exit "
+  puts("kev_rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst exit "
        "with error message\n");
   exit(2);
 }

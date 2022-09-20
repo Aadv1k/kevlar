@@ -81,9 +81,9 @@ These are all in-house parsers programmed from scratch. Since I am not very good
 ### `recipes/rst2html.c`
 
 ```shell
-$ make rst2html
-$ ./bin/rst2html
-rst2html -[OPT] INPUT.rst OUTPUT.html
+$ make kev_rst2html
+$ ./bin/kev_rst2html
+kev_rst2html -[OPT] INPUT.rst OUTPUT.html
         -h -- On invalid rst exit with error message
 ```
 
