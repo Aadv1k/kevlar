@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -31,6 +32,7 @@ int rst_isTextOnly(char file[][MAX_LINE_LENGTH], int line) {
   if ((file[line + 1][0] != '-' && file[line - 1][0] != '-') &&
       (file[line + 1][0] != '=' && file[line - 1][0] != '=') &&
       (file[line + 1][0] != '#' && file[line - 1][0] != '#') &&
+      (!isdigit(file[line + 1][0]) && !isdigit(file[line - 1][0])) &&
       (file[line + 1][0] != ' ' && file[line - 1][0] != ' ')) {
     return 1;
   }
@@ -63,7 +65,7 @@ void rst_handleEqual(char file[][MAX_LINE_LENGTH], int line) {
   }
 }
 
-void rst_handleText(char file[][MAX_LINE_LENGTH], int line, bool newLine) {
+char * rst_handleText(char file[][MAX_LINE_LENGTH], int line) {
   bool open = true;
   int style = 0;
   char res[999] = "";
@@ -120,20 +122,63 @@ void rst_handleText(char file[][MAX_LINE_LENGTH], int line, bool newLine) {
 
   if (
     (res[0] == '-' && res[1] == ' ') || 
-    (res[0] == '#' && res[1] == '.')
-
+    (res[0] == '#' && res[1] == '.') ||
+    (isdigit(res[0]) && res[1] == '.')
   ) {
     chopped = res + 2;
   } else {
     chopped = res;
   }
 
-  if (newLine) {
-    fprintf(outfile, "\n<p>%s</p>\n", chopped);
-  } else {
-    fprintf(outfile, "<p>%s</p>", chopped);
-  }
+  return chopped;
 }
+
+void rst_handlePara(char file[][MAX_LINE_LENGTH], int line) {
+  char *chopped = rst_handleText(file, line);
+  fprintf(outfile, "\n<p>%s</p>\n", chopped);
+}
+
+void rst_handleNumber(char file[][MAX_LINE_LENGTH], int line) {
+  static bool olListOpenNum = false;
+
+  if (file[line][1] == '.' && olListOpenNum == 0 && strlen(file[line - 1]) == 0) {
+    olListOpenNum = true;
+
+    fprintf(outfile, "<ol>\n\t<li>\n\t\t");
+    fprintf(outfile, "%s", rst_handleText(file, line));
+    fprintf(outfile, "\n\t</li>\n");
+
+  } else if (file[line][1] == '.' && olListOpenNum == 1 &&
+             strlen(file[line + 1]) != 0) {
+    
+    // This is the middle of the list, we don't need to surround by a <ul> or </ul>
+
+    fprintf(outfile, "\t<li>\n\t");
+    fprintf(outfile, "%s", rst_handleText(file, line));
+    fprintf(outfile, "</li>\n");
+
+  } else if (file[line][1] == '.' && olListOpenNum == 1 && !isdigit(file[line + 1][0])) {
+
+    // With this setup, only top level lists are supported, no nesting unfortunately
+    // End of the list, we append a </ul> at the end to close the list
+
+    olListOpenNum = false;
+
+    fprintf(outfile, "\t<li>\n\t\t");
+    fprintf(outfile, "%s", rst_handleText(file, line));
+    fprintf(outfile, "\n\t</li>\n</ol>\n\n");
+
+  } else {
+    if (ERRORS) {
+      printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
+             "title\n",
+             file[line], line + 1);
+      exit(1);
+    }
+  }
+
+}
+
 
 void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
   static bool olListOpen = false;
@@ -142,7 +187,7 @@ void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
     olListOpen = true;
 
     fprintf(outfile, "<ol>\n\t<li>\n\t\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "%s", rst_handleText(file, line));
     fprintf(outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 &&
@@ -151,7 +196,7 @@ void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
     // This is the middle of the list, we don't need to surround by a <ul> or </ul>
 
     fprintf(outfile, "\t<li>\n\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "%s", rst_handleText(file, line));
     fprintf(outfile, "</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 && file[line + 1][0] != '#') {
@@ -162,7 +207,7 @@ void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
     olListOpen = false;
 
     fprintf(outfile, "\t<li>\n\t\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "%s", rst_handleText(file, line));
     fprintf(outfile, "\n\t</li>\n</ol>\n\n");
   } else {
     if (ERRORS) {
@@ -188,8 +233,7 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
 
     listOpen = true;
 
-    fprintf(outfile, "<ul>\n\t<li>\n\t\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "<ul>\n\t<li>\n\t\t%s", rst_handleText(file, line));
     fprintf(outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 &&
@@ -197,8 +241,7 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
     
     // This is the middle of the list, we don't need to surround by a <ul> or </ul>
 
-    fprintf(outfile, "\t<li>\n\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "\t<li>\n\t%s", rst_handleText(file, line));
     fprintf(outfile, "</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 && file[line + 1][0] != '-') {
@@ -208,8 +251,7 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
 
     listOpen = false;
 
-    fprintf(outfile, "\t<li>\n\t\t");
-    rst_handleText(file, line, 0);
+    fprintf(outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
     fprintf(outfile, "\n\t</li>\n</ul>\n\n");
   } else {
     if (ERRORS) {
@@ -220,6 +262,7 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
     }
   }
 }
+
 
 void rst_handleConfig(char file[][MAX_LINE_LENGTH], int line) {
   char param[FIELD_LIST_SIZE] = "";
@@ -327,9 +370,13 @@ int main(int argc, char *argv[]) {
       // TODO: rst_handleSpace(arr, i);
       break;
     default:
+      if (isdigit(file[currentLine][0])) {
+          rst_handleNumber(file, currentLine);
+          break;
+      }
+
       if (rst_isTextOnly(file, currentLine) == 1) {
-        // TODO: Clean code principal - create a different implementation of this functiion that handles the new line 
-        rst_handleText(file, currentLine, 1);
+        rst_handlePara(file, currentLine);
       }
     }
   }
