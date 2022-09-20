@@ -78,6 +78,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       char html_file[CONFIG_MAX_PATH_SIZE];
       char system_command[BUILD_MAX_CMD_SIZE];
 
+
       strcpy(rst_file, dir_item->d_name);
       strcpy(html_file, rst_file);
       utl_prepend(rst_file, folder_path);
@@ -87,7 +88,6 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
       utl_prepend(html_file, "/");
       utl_prepend(html_file, out_folder_path);
-
 
       sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
       system(system_command);
@@ -99,21 +99,22 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
         exit(1);
       }
       
-      char * contents;
-      int html_file_len;
+      char contents[TEMPLATE_MAX_FILE_SIZE] = "";
+      char html_file_line[TEMPLATE_MAX_LINE_SIZE];
 
-      fseek(html_file_buf, 0, SEEK_END);
-      html_file_len = ftell(html_file_buf);
-      fseek(html_file_buf, 0, SEEK_SET);
-      contents = malloc(html_file_len);
-      fread(contents, 1, html_file_len, html_file_buf);
+      while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
+        strcat(contents, html_file_line);
+      }
+      
       fclose(html_file_buf);
 
       strcpy(kev_config->configHtmlContents, contents);
       
+      // I don't exactly know what was causing extra garbage string to be
+      // appended at last, but this is the simplest solution sooo
+      //kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1] != '>' ? kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1] = '\0' : kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1];
+      
       kevlar_build_template(kev_config->configPostPath, html_file, kev_config);
-
-      free(contents);
 
       i++;
     }
@@ -159,8 +160,10 @@ void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
 
   char posts_path[MAX_FOLDER_PATH_SIZE];
   sprintf(posts_path, "%s%s", file_path, "/posts/");
+  
 
   kevlar_check_if_theme_valid(kev_config.configTheme);
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
+
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
 }
