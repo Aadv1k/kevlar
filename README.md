@@ -39,7 +39,7 @@ make rst2html
 To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar.
 
 ```shell
-git clone git@github.com/aadv1k
+git clone https://github.com/aadv1k/kevlar
 make all
 ./bin/kevlar
 ```
