@@ -1,15 +1,34 @@
 # Kevlar 🪢
 
-An all-in-one batteries-included Static Site Generator built using pure C and 0 other dependencies.
-
-- [Installation](#installation)
-- [Usage](#usage)
+An _utterly_ simple and fast Static Site Generator built using C
 
 _NOTE_: This project is being continuously worked on, and is being built in fragments, so currently the full functionality might be missing.
 
-## Installation
+**elevator pitch**
 
-To get started with kevlar, you need `gcc` and `make`, after which you can:
+> maybe you take notes, or write articles in X format, you would like to quickly convert your project into a website without any extra baggage and minimal shift to your existing workflow, introducing kevlar, an utterly simple SSG.
+
+## Features
+
+- **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
+- **Highly extensible:** Support for basic yet scalable templating
+- **Simple:** Kevlar does not try to do too little or too less, just enough to get the job done.
+
+## Documentation
+
+- [Get started ASAP](#quickstart)
+- [Configuration](#configuration)
+- [Templating](#templating)
+  - [Header tag](#header-tag)
+  - [Footer tag](#footer-tag)
+  - [Content tag](#content-tag)
+  - [Listing tag](#listing-tag)
+  - [Additional tags](#additional-tags)
+- [Creating themes](#theming)
+
+### Quickstart
+
+To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar.
 
 ```shell
 $ git clone git@github.com/aadv1k
@@ -17,75 +36,80 @@ $ make all
 $ ./bin/kevlar
 ```
 
-## Usage
-
-Kevlar comes with a CLI which will provide you with almost everything you need to get building. To generate a new project use `kevlar new [NAME]` this will generate This will create the following skeleton for an empty kevlar project.
+You can, then using the kevlar CLI create a new project
 
 ```shell
-.
-├── config.ini
-├── posts
-└── templates
-```
-After this you can type in [WIP] `kevlar serve` to get started.
-
-
-## Configuration
-
-Kevlar uses an in-house `.ini` parser for configuration. Here is what all you can configure
-
-```ini
-author=
-title=
-theme=
-# ^ looks for theme inside the ./templates/ directory
-
-rst_loader=
-# ^ could be anything; rst2html5, kevlar/bin/rst2html;
+$ ./bin/kevlar new ../my-cool-project
 ```
 
-Given the nature of how these files are parsed, html would be valid within these `config.ini` eg:  
+### Templating
 
-```ini
-author=<b>I am a bold author</b>
-```
+Templating is supported out of the box, kevlar its own custom templating language
 
-## Templating
+#### Header tag
 
-Kevlar supports templating albeit basic, all fields will be parsed when you run the `kevlar build` command and have `config.ini` setup properly
-
+This tag looks for a `header.html` in your specified theme, it then parses the header with this templating and replaces the `--HEADER--` with it.
 
 ```html
-  --HEADER--
-  --STYLE--
-<body>
-  <h1>--AUTHOR--</h1>
-  <ul>
-    --LISTING--
-  </ul>
-</body>
-</html>
+--HEADER--
 ```
 
-- `--TITLE--`: fills in whatever title you filled in config file. 
-- `--AUTHOR--`: fills in whatever author name you provided in config file
-- `--LISTING--`: provides links surrounded by `<li>` of all the html files in `./dist`
-- `--HEADER--`: The text content for `header.html` inside your theme
-- `--FOOTER--`: The footer content for `header.html` inside your theme
-- `--STYLE--`: Stylesheet; looks for `main.css` in your theme
+#### Footer tag
 
-## Recipes
+This tag looks for a `footer.html` in your specified theme, it then parses the header with this templating and replaces the `--FOOTER--` with it.
 
-These are all in-house parsers programmed from scratch. Since I am not very good with developing languages nor with C, these by no means are a "to-spec" parser, mostly just implemented on top of my head with whatever I preferred and could remember.
-
-### `recipes/rst2html.c`
-
-```shell
-$ make kev_rst2html
-$ ./bin/kev_rst2html
-kev_rst2html -[OPT] INPUT.rst OUTPUT.html
-        -h -- On invalid rst exit with error message
+```html
+--FOOTER--
 ```
 
-for all the valid rst, refer to [examples/example.rst](./examples/example.rst)
+#### Style tag
 
+The `--STYLE--` will look for the specified css file and insert it's content as style tags within the html
+
+```html
+--STYLE ./style.css--
+```
+
+#### Listing tag
+
+You can add `--LISTING--` anywhere to get a list of all the files that were passed from `posts` to html.
+
+```html
+<ul>
+  --LISTING--
+</ul>
+```
+
+#### Content tag
+
+As each file is parsed into html, on success it is read internally stored inside a struct, putting `--CONTENT--` will simply load the contents of the string.
+
+This only works when called from `post.html` within your theme, since `post.html` is parsed everytime a new file is parsed from the posts folder.
+
+```html
+--CONTENT--
+```
+
+#### Additional tags
+
+Given you have a valid `config.ini` file inside your project, kevlar also proivdes you with the `--AUTHOR--` and `--TITLE--` tag which correspond to whatver option you provided to the `author` and `title` field.
+
+### Configuration
+
+Each kelvar project must have a `config.ini` file; kevlar uses a custom `.ini` parser which was hacked together under 10 minutes, so some advance `.ini` functionality might be missing. Here is a configuration with all the options
+
+```ini
+author=John Doe
+title=The title of my site
+rst_loader=rst2html
+# ^- You can specify your own program for parsing rst 
+theme=kyudo
+# ^- looks for themes inside ./templates dir
+```
+### Theming
+
+Kevlar supports theming with very specific archetypes, each theme must contain a
+- index.html: the end `index.html` in the `./dist` will be generated using this template. 
+- post.html: content from each individual post (as html after conversion) will be parsed through the template 
+- header.html: The header file called by `--HEADER--`
+- footer.html: The header file called by `--FOOTER--`
