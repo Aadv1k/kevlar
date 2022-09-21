@@ -29,11 +29,23 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
     mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
   {
     fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
-    exit(-1);
+    exit(1);
   }
 
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
-  printf("[kevlar] Successfully created the skeleton; happy hacking ✨!\n");
+
+
+  char clone_git_command[999];
+  sprintf(clone_git_command, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
+  system(clone_git_command);
+
+  // TODO: THIS IS TEMPORARYa
+  char write_post_command[999];
+  sprintf(write_post_command, "echo 'Welcome to kevlar!\n==================' > %s/hello-world.rst", skeleton->skel_posts_folder_path);
+  system(write_post_command);
+  /************************/
+
+  printf("[kevlar] Successfully created the skeleton; you can now run\n\n\tkevlar build\n\nto see your site in action ✨!\n");
 }
 
 void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
