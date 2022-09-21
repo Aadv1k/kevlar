@@ -64,12 +64,13 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig* kev_
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
-  FILE * file_buf;  
-  if ((file_buf = fopen(file_path, "w")) == NULL) {
+  FILE * file_buf = fopen(file_path, "w");
+  if (file_buf == NULL) {
     fprintf(stderr, "[kevlar] something went wrong while generating sample config\n");
     exit(1);
   };
-  
+
   // This works for now since the file we will be generating won't be that big
-  fprintf(file_buf, "author=John doe\ntitle=My example site\n# markdown_loader=\n# rst_loader=");
+  fprintf(file_buf, "author=John\ntitle=My example site\ntheme=kyudo\n");
+  fclose(file_buf);
 }
