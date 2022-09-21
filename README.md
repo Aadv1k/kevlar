@@ -48,6 +48,7 @@ You can, then using the kevlar CLI create a new project
 
 ```shell
 $ ./bin/kevlar new ../my-cool-project
+$ cd ../my-cool-project && ./kevlar/bin/kevlar build
 ```
 
 ### Templating
