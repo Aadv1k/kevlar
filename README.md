@@ -40,8 +40,8 @@ To get start with kevlar, you need `GCC` and `make` which are the primary build 
 
 ```shell
 git clone https://github.com/aadv1k/kevlar
-make all
-./bin/kevlar
+cd kevlar && make all
+./bin/kevlar help
 ```
 
 You can, then using the kevlar CLI create a new project
