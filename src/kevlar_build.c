@@ -14,6 +14,7 @@
 
 #include "../utils/utils.h"
 #include "kevlar_templating.h"
+#include "kevlar_rst_to_html.h"
 
 void kevlar_check_if_theme_valid(char theme_path[CONFIG_MAX_PATH_SIZE]) {
   enum FolderStatus;
@@ -89,8 +90,12 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       utl_prepend(html_file, "/");
       utl_prepend(html_file, out_folder_path);
 
-      sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
-      system(system_command);
+      if (strlen(kev_config->configRstLoader) != 0) {
+        sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
+        system(system_command);
+      } else {
+        rst_parse(rst_file, html_file);
+      }
 
       FILE * html_file_buf = fopen(html_file, "r");
 
