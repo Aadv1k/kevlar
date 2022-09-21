@@ -6,14 +6,12 @@
 #include <string.h>
 
 #include "../utils/utils.h"
+#include "./kevlar_rst_to_html.h"
 
-#define MAX_LINE_LENGTH 999
-#define FIELD_LIST_SIZE 50
+FILE *rst_infile; 
+FILE *rst_outfile;
 
-FILE *infile; 
-FILE *outfile;
-
-bool ERRORS = false;
+int ERRORS;
 
 int rst_getFileLength(char filename[]) {
   FILE *infile = fopen(filename, "r");
@@ -26,7 +24,7 @@ int rst_getFileLength(char filename[]) {
   return i;
 }
 
-int rst_isTextOnly(char file[][MAX_LINE_LENGTH], int line) {
+int rst_isTextOnly(char file[][RST_LINE_LENGTH], int line) {
   if (strlen(file[line]) == 0) return 0;
   // TODO: This is pretty messy and might cause troubles later on
   if ((file[line + 1][0] != '-' && file[line - 1][0] != '-') &&
@@ -39,7 +37,7 @@ int rst_isTextOnly(char file[][MAX_LINE_LENGTH], int line) {
   return 0;
 }
 
-void rst_handleEqual(char file[][MAX_LINE_LENGTH], int line) {
+void rst_handleEqual(char file[][RST_LINE_LENGTH], int line) {
   static int equalOpen = 0;
 
   if (line == equalOpen && line != 0) return;
@@ -49,11 +47,11 @@ void rst_handleEqual(char file[][MAX_LINE_LENGTH], int line) {
 
     equalOpen = line + 2;
 
-    fprintf(outfile, "<h1>%s</h1>\n", file[line+1]);
+    fprintf(rst_outfile, "<h1>%s</h1>\n", file[line+1]);
 
   } else if (strlen(file[line - 1]) == strlen(file[line]) && 
     strcmp(file[line - 2], file[line])) {
-    fprintf(outfile, "\n<h2>%s</h2>\n", file[line-1]);
+    fprintf(rst_outfile, "\n<h2>%s</h2>\n", file[line-1]);
 
   } else {
     if (ERRORS) {
@@ -65,7 +63,7 @@ void rst_handleEqual(char file[][MAX_LINE_LENGTH], int line) {
   }
 }
 
-char * rst_handleText(char file[][MAX_LINE_LENGTH], int line) {
+char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
   bool open = true;
   int style = 0;
   char res[999] = "";
@@ -133,29 +131,29 @@ char * rst_handleText(char file[][MAX_LINE_LENGTH], int line) {
   return chopped;
 }
 
-void rst_handlePara(char file[][MAX_LINE_LENGTH], int line) {
+void rst_handlePara(char file[][RST_LINE_LENGTH], int line) {
   char *chopped = rst_handleText(file, line);
-  fprintf(outfile, "\n<p>%s</p>\n", chopped);
+  fprintf(rst_outfile, "\n<p>%s</p>\n", chopped);
 }
 
-void rst_handleNumber(char file[][MAX_LINE_LENGTH], int line) {
+void rst_handleNumber(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpenNum = false;
 
   if (file[line][1] == '.' && olListOpenNum == 0 && strlen(file[line - 1]) == 0) {
     olListOpenNum = true;
 
-    fprintf(outfile, "<ol>\n\t<li>\n\t\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n");
+    fprintf(rst_outfile, "<ol>\n\t<li>\n\t\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == '.' && olListOpenNum == 1 &&
              strlen(file[line + 1]) != 0) {
     
     // This is the middle of the list, we don't need to surround by a <ul> or </ul>
 
-    fprintf(outfile, "\t<li>\n\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "</li>\n");
+    fprintf(rst_outfile, "\t<li>\n\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == '.' && olListOpenNum == 1 && !isdigit(file[line + 1][0])) {
 
@@ -164,9 +162,9 @@ void rst_handleNumber(char file[][MAX_LINE_LENGTH], int line) {
 
     olListOpenNum = false;
 
-    fprintf(outfile, "\t<li>\n\t\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n</ol>\n\n");
+    fprintf(rst_outfile, "\t<li>\n\t\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
 
   } else {
     if (ERRORS) {
@@ -180,24 +178,24 @@ void rst_handleNumber(char file[][MAX_LINE_LENGTH], int line) {
 }
 
 
-void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
+void rst_handleHash(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpen = false;
 
   if (file[line][1] == '.' && olListOpen == 0 && strlen(file[line - 1]) == 0) {
     olListOpen = true;
 
-    fprintf(outfile, "<ol>\n\t<li>\n\t\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n");
+    fprintf(rst_outfile, "<ol>\n\t<li>\n\t\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 &&
              strlen(file[line + 1]) != 0) {
     
     // This is the middle of the list, we don't need to surround by a <ul> or </ul>
 
-    fprintf(outfile, "\t<li>\n\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "</li>\n");
+    fprintf(rst_outfile, "\t<li>\n\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 && file[line + 1][0] != '#') {
 
@@ -206,9 +204,9 @@ void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
 
     olListOpen = false;
 
-    fprintf(outfile, "\t<li>\n\t\t");
-    fprintf(outfile, "%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n</ol>\n\n");
+    fprintf(rst_outfile, "\t<li>\n\t\t");
+    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
   } else {
     if (ERRORS) {
       printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
@@ -219,30 +217,30 @@ void rst_handleHash(char file[][MAX_LINE_LENGTH], int line) {
   }
 }
 
-void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
+void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
   static bool listOpen = false;
 
   if (strlen(file[line]) == strlen(file[line - 1]) && listOpen != 1) {
     
     // It a header with dashed underline or H3
 
-    fprintf(outfile, "\n<h3>%s</h3>\n", file[line-1]);
+    fprintf(rst_outfile, "\n<h3>%s</h3>\n", file[line-1]);
   } else if (file[line][1] == ' ' && listOpen == 0 && strlen(file[line - 1]) == 0) {
 
     // Start of the list, we append a <ul> at the beginning
 
     listOpen = true;
 
-    fprintf(outfile, "<ul>\n\t<li>\n\t\t%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n");
+    fprintf(rst_outfile, "<ul>\n\t<li>\n\t\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 &&
              strlen(file[line + 1]) != 0) {
     
     // This is the middle of the list, we don't need to surround by a <ul> or </ul>
 
-    fprintf(outfile, "\t<li>\n\t%s", rst_handleText(file, line));
-    fprintf(outfile, "</li>\n");
+    fprintf(rst_outfile, "\t<li>\n\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 && file[line + 1][0] != '-') {
 
@@ -251,8 +249,8 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
 
     listOpen = false;
 
-    fprintf(outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
-    fprintf(outfile, "\n\t</li>\n</ul>\n\n");
+    fprintf(rst_outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\n\t</li>\n</ul>\n\n");
   } else {
     if (ERRORS) {
       printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
@@ -264,9 +262,9 @@ void rst_handleDashAndUl(char file[][MAX_LINE_LENGTH], int line) {
 }
 
 
-void rst_handleConfig(char file[][MAX_LINE_LENGTH], int line) {
-  char param[FIELD_LIST_SIZE] = "";
-  char opt[FIELD_LIST_SIZE] = "";
+void rst_handleConfig(char file[][RST_LINE_LENGTH], int line) {
+  char param[RST_FIELD_LIST_SIZE] = "";
+  char opt[RST_FIELD_LIST_SIZE] = "";
   bool open = false;
 
   for (int i = 0, k = 0; file[line][i] != '\0'; i++, k++) {
@@ -292,61 +290,34 @@ void rst_handleConfig(char file[][MAX_LINE_LENGTH], int line) {
 void usage() {
   puts("kev_rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst exit "
        "with error message\n");
-  exit(2);
+  exit(1);
 }
 
-int main(int argc, char *argv[]) {
-
-  if (argc < 3) {
-    usage();
-  }
-
-  char rst_file_path[999], html_file_path[999];
-
-  int opt;
-  while ((opt = getopt(argc, argv, ":h:")) != -1) {
-    switch (opt) {
-    case 'h':
-      ERRORS = true;
-      strcpy(rst_file_path, optarg);
-      strcpy(html_file_path, argv[optind]);
-      break;
-    case ':':
-    case '?':
-      usage();
-      break;
-    }
-  }
-
-  if (!ERRORS) {
-    strcpy(rst_file_path, argv[1]);
-    strcpy(html_file_path, argv[2]);
-  }
+void rst_parse(char *rst_file_path, char *html_file_path) {
 
   if (strcmp(utl_strchrev(rst_file_path, '.'), ".rst") != 0) {
     fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", rst_file_path);
     exit(1);
   }
 
-
-  infile = fopen(rst_file_path, "r");
-  outfile = fopen(html_file_path, "w");
+  rst_infile = fopen(rst_file_path, "r");
+  rst_outfile = fopen(html_file_path, "w");
 
   if (ERRORS) {
     puts(rst_file_path);
   }
 
-  if (infile == NULL) {
+  if (rst_infile == NULL) {
     fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);
     exit(1);
   }
 
   int fileLength = rst_getFileLength(rst_file_path);
-  char file[fileLength][MAX_LINE_LENGTH];
+  char file[fileLength][RST_LINE_LENGTH];
 
   // Read contents of the input file into the file[]
   for (int i = 0; i < fileLength; i++) {
-    fgets(file[i], MAX_LINE_LENGTH, infile);
+    fgets(file[i], RST_LINE_LENGTH, rst_infile);
     utl_truncateLast(file[i]);
   }
   
@@ -381,8 +352,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  fclose(infile);
-  fclose(outfile);
-  return 0;
+  fclose(rst_infile);
+  fclose(rst_outfile);
 }
-

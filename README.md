@@ -14,6 +14,14 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
 - **Highly extensible:** Support for basic yet scalable templating
 - **Simple:** Kevlar does not try to do too little or too less, just enough to get the job done.
 
+## Recipes
+
+In the `./recipes/` folder you may find certain scripts these are adapted from their corresponding `./src/` files and can be compiled to individual programs. 
+
+```shell
+$ make rst2html
+```
+
 ## Documentation
 
 - [Get started ASAP](#quickstart)
