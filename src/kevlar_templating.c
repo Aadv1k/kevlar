@@ -40,7 +40,6 @@ void kevlar_parse_stylesheet(char *stylesheet_path, char output[TEMPLATE_MAX_FIL
 };
 
 void kevlar_parse_template(FILE * in_file_buffer, FILE * out_file_buffer, KevlarConfig *kev_config) {
-  char file[TEMPLATE_MAX_FILE_SIZE];
   char line[TEMPLATE_MAX_LINE_SIZE];
 
   while ((fgets(line, TEMPLATE_MAX_LINE_SIZE, in_file_buffer)) != NULL) {

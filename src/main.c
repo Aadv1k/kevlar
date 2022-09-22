@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
       break;
     case cmdNew:
       if (argc == 2) {
-        fprintf(stderr, "[kevlar] you need an provide a name for your project\n");
+        fprintf(stderr, "[kevlar] you need an provide a name for your project!\n");
         exit(1);
       }
       kevlar_handle_new_command(argv[2]);

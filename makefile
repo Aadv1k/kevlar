@@ -1,4 +1,4 @@
-CFLAGS=
+CFLAGS=-Wall -Wextra
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
