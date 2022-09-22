@@ -16,7 +16,7 @@
 #include "kevlar_templating.h"
 #include "kevlar_rst_to_html.h"
 
-void kevlar_check_if_theme_valid(char theme_path[CONFIG_MAX_PATH_SIZE]) {
+void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
   enum FolderStatus;
 
   char full_theme_path[CONFIG_MAX_PATH_SIZE];
@@ -48,9 +48,10 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
 
       char *tmp = strdup(dir_item->d_name);
       dir_item->d_name[strlen(dir_item->d_name)-5] = '\0';
-      char current_line[200];
-      sprintf(current_line, "<li><a href=\"./%s\">%s</a></li>\n", tmp, dir_item->d_name);
-      strcat(kev_config->configListing, current_line);
+
+      char html_li_link[CONFIG_MAX_FILE_LINE_SIZE];
+      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE + sizeof(dir_item->d_name), "<li><a href=\"./%s\">%s</a></li>\n", tmp, dir_item->d_name);
+      strcat(kev_config->configListing, html_li_link);
       free(tmp);
     }
   }
@@ -75,29 +76,29 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
     if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".rst") == 0) {
-      char rst_file[CONFIG_MAX_PATH_SIZE];
-      char html_file[CONFIG_MAX_PATH_SIZE];
+      char rst_file_path[CONFIG_MAX_PATH_SIZE];
+      char html_file_path[CONFIG_MAX_PATH_SIZE];
       char system_command[BUILD_MAX_CMD_SIZE];
 
+      strcpy(rst_file_path, dir_item->d_name);
 
-      strcpy(rst_file, dir_item->d_name);
-      strcpy(html_file, rst_file);
-      utl_prepend(rst_file, folder_path);
+      strcpy(html_file_path, rst_file_path);
+      utl_prepend(rst_file_path, folder_path);
       
-      html_file[strlen(html_file)-4] = '\0';
-      strcat(html_file, ".html");
+      html_file_path[strlen(html_file_path)-4] = '\0';
+      strcat(html_file_path, ".html");
 
-      utl_prepend(html_file, "/");
-      utl_prepend(html_file, out_folder_path);
+      utl_prepend(html_file_path, "/");
+      utl_prepend(html_file_path, out_folder_path);
 
       if (strlen(kev_config->configRstLoader) != 0) {
-        sprintf(system_command, "%s %s %s", rst_loader, rst_file, html_file);
+        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", rst_loader, rst_file_path, html_file_path);
         system(system_command);
       } else {
-        rst_parse(rst_file, html_file);
+        rst_parse(rst_file_path, html_file_path);
       }
 
-      FILE * html_file_buf = fopen(html_file, "r");
+      FILE * html_file_buf = fopen(html_file_path, "r");
 
       if (html_file_buf == NULL) {
         fprintf(stderr, "[kevlar] was unable to open html files for further processing, maybe the system command went wrong?\n");
@@ -115,12 +116,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
       strcpy(kev_config->configHtmlContents, contents);
       
-      // I don't exactly know what was causing extra garbage string to be
-      // appended at last, but this is the simplest solution sooo
-      //kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1] != '>' ? kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1] = '\0' : kev_config->configHtmlContents[strlen(kev_config->configHtmlContents)-1];
-      
-      kevlar_build_template(kev_config->configPostPath, html_file, kev_config);
-
+      kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
       i++;
     }
   }
@@ -133,7 +129,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 }
 
 // TODO: use the "stat" command instead of whatever this is 
-void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarSkeleton *skeleton) {
+void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE], KevlarSkeleton *skeleton) {
   enum FolderStatus;
 
   if (kevlar_get_folder_status(folder_path) == folderNull) {
@@ -151,23 +147,24 @@ void kevlar_check_if_kevlar_proj(char folder_path[MAX_FOLDER_PATH_SIZE], KevlarS
   }
 }
 
-void kevlar_handle_build_command(char file_path[MAX_FOLDER_PATH_SIZE]) {
+void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   KevlarSkeleton skel = { "templates/", "posts/", "config.ini", "dist/" };
   kevlar_check_if_kevlar_proj(file_path, &skel);
 
   mkdir("./dist", FOLDER_ALL_PERMS);
 
-  char config_path[MAX_FOLDER_PATH_SIZE];
-  sprintf(config_path, "%s%s", file_path, "/config.ini");
+  char config_path[CONFIG_MAX_PATH_SIZE];
+  snprintf(config_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/config.ini");
 
   KevlarConfig kev_config;
   kevlar_load_config(config_path, &kev_config);
 
-  char posts_path[MAX_FOLDER_PATH_SIZE];
-  sprintf(posts_path, "%s%s", file_path, "/posts/");
+  char posts_path[CONFIG_MAX_PATH_SIZE];
+  snprintf(posts_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/posts/");
   
+  char * const p_configTheme = kev_config.configTheme;
+  kevlar_check_if_theme_valid(p_configTheme);
 
-  kevlar_check_if_theme_valid(kev_config.configTheme);
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
 
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);

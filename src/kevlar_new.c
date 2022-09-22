@@ -9,7 +9,7 @@
 #include "../utils/utils.h"
 
 // TODO: Use stat here
-int kevlar_get_folder_status(const char folder_path[MAX_FOLDER_PATH_SIZE]) {
+int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
   DIR *dir_stream;
   struct dirent *dir_obj; 
 
@@ -34,21 +34,20 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
-
-  char clone_git_command[999];
-  sprintf(clone_git_command, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
+  char clone_git_command[NEW_SYS_CMD_LEN];  
+  snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
   system(clone_git_command);
 
   // TODO: THIS IS TEMPORARYa
-  char write_post_command[999];
-  sprintf(write_post_command, "echo 'Welcome to kevlar!\n==================' > %s/hello-world.rst", skeleton->skel_posts_folder_path);
+  char write_post_command[NEW_SYS_CMD_LEN];
+  snprintf(write_post_command, NEW_SYS_CMD_LEN, "echo 'Welcome to kevlar!\n==================\n\nif you are seeing this, everything has worked at intended' > %s/hello-world.rst", skeleton->skel_posts_folder_path);
   system(write_post_command);
   /************************/
 
   printf("[kevlar] Successfully created the skeleton; you can now run\n\n\tkevlar build\n\nto see your site in action ✨!\n");
 }
 
-void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
+void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
   switch (kevlar_get_folder_status(folder_path)) {
     case folderNonEmpty:
       fprintf(stderr, "[kevlar] folder \"%s\" already exists and is not empty!\n", folder_path);
@@ -64,7 +63,8 @@ void kevlar_handle_new_command(char folder_path[MAX_FOLDER_PATH_SIZE]) {
       KevlarSkeleton skel = {
         "/templates/", 
         "/posts/", 
-        "/config.ini"
+        "/config.ini",
+        "/dist",
       };
 
       utl_prepend_str(folder_path, skel.skel_template_folder_path);

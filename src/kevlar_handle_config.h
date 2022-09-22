@@ -3,7 +3,8 @@
 
 #define CONFIG_MAX_OPT_SIZE 32
 #define CONFIG_MAX_FILE_SIZE 100000
-#define CONFIG_MAX_PATH_SIZE 256
+#define CONFIG_MAX_FILE_LINE_SIZE 256
+#define CONFIG_MAX_PATH_SIZE 64
 
 typedef struct {
   char configAuthor[CONFIG_MAX_OPT_SIZE];
