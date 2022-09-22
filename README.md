@@ -19,7 +19,7 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
 In the `./recipes/` folder you may find certain scripts these are adapted from their corresponding `./src/` files and can be compiled to individual programs. 
 
 ```shell
-$ make rst2html
+make rst2html
 ```
 
 ## Documentation
@@ -39,16 +39,16 @@ $ make rst2html
 To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar.
 
 ```shell
-$ git clone git@github.com/aadv1k
-$ make all
-$ ./bin/kevlar
+git clone https://github.com/aadv1k/kevlar
+cd kevlar && make all
+./bin/kevlar help
 ```
 
 You can, then using the kevlar CLI create a new project
 
 ```shell
-$ ./bin/kevlar new ../my-cool-project
-$ cd ../my-cool-project && ./kevlar/bin/kevlar build
+./bin/kevlar new ../my-cool-project
+cd ../my-cool-project && ./kevlar/bin/kevlar build
 ```
 
 ### Templating
