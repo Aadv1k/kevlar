@@ -9,4 +9,6 @@ void utl_prepend(char* string, const char* prefix);
 
 void utl_truncateLast(char *str);
 
+void utl_mkdir_crossplatform(char * folder_path);
+
 #endif

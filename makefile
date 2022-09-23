@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra
+CFLAGS=-Wall -Wextra 
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
@@ -11,7 +11,6 @@ kevlar: $(kevlar_files)
 kevlar_win32: $(kevlar_files)
 	mkdir "bin"
 	$(CC) $(kevlar_files) -o ./bin/kevlar.exe
-
 
 kevlar/main: ./src/main.c
 	$(CMD) ./src/main.c
@@ -48,3 +47,7 @@ clean:
 	rm -rf ./src/*.o
 	rm -rf ./recipes/*.o
 	rm -rf ./bin
+
+clean_win32:
+	# Sorry to fellow window users, maybe just shift to WSL 
+	rmdir "bin"

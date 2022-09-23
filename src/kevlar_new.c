@@ -32,21 +32,8 @@ int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
 }
 
 void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
-   #if defined(_WIN32)
-    if (CreateDirectory(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
-      CreateDirectory(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
-    {
-      fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
-      exit(1);
-    }
-   #else 
-    if (mkdir(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
-      mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
-    {
-      fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
-      exit(1);
-    }
-   #endif
+  utl_mkdir_crossplatform(skeleton->skel_posts_folder_path);
+  utl_mkdir_crossplatform(skeleton->skel_template_folder_path);
 
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
@@ -63,6 +50,7 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   printf("[kevlar] Successfully created the skeleton; you can now run\n\n\tkevlar build\n\nto see your site in action ✨!\n");
 }
 
+
 void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
   switch (kevlar_get_folder_status(folder_path)) {
     case folderNonEmpty:
@@ -71,23 +59,21 @@ void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
       break;
     case folderNull: 
       printf("[kevlar] \"%s\" not found, creating new folder\n", folder_path);
-      mkdir(folder_path, 0777);
-      [[__fallthrough__]];
+      utl_mkdir_crossplatform(folder_path);
+      // fall through
+      case folderEmpty: ;
+        KevlarSkeleton skel = {
+          "/templates/", 
+          "/posts/", 
+          "/config.ini",
+          "/dist",
+        };
 
-    case folderEmpty: ;
+        utl_prepend_str(folder_path, skel.skel_template_folder_path);
+        utl_prepend_str(folder_path, skel.skel_posts_folder_path);
+        utl_prepend_str(folder_path, skel.skel_config_file_path);
 
-      KevlarSkeleton skel = {
-        "/templates/", 
-        "/posts/", 
-        "/config.ini",
-        "/dist",
-      };
-
-      utl_prepend_str(folder_path, skel.skel_template_folder_path);
-      utl_prepend_str(folder_path, skel.skel_posts_folder_path);
-      utl_prepend_str(folder_path, skel.skel_config_file_path);
-
-      kevlar_generate_new_skeleton(&skel);
-      break; 
+        kevlar_generate_new_skeleton(&skel);
+        break; 
+    }
   }
-}
