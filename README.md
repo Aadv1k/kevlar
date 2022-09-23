@@ -15,7 +15,7 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
   - Debian GNU/Linux 11 (bullseye) on Windows 10 x86_64 ([WSL](https://learn.microsoft.com/en-us/windows/wsl/))
 - **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
 - **Highly extensible:** Support for basic yet scalable templating
-- **Simple:** Kevlar does not try to do too little or too less, just enough to get the job done.
+- **Simple:** Kevlar does not try to do too little or too much, just enough to get the job done.
 
 ## Documentation
 
@@ -58,9 +58,22 @@ You can, then using the kevlar CLI create a new project (for unix-like)
 cd ../my-cool-project && ./kevlar/bin/kevlar build
 ```
 
+### Configuration
+
+Each kelvar project must have a `config.ini` file; kevlar uses a custom `.ini` parser which was hacked together under 30 minutes, so some advance `.ini` functionality might be missing. Here is a configuration with all the options
+
+```ini
+author=John Doe
+title=The title of my site
+rst_loader=rst2html
+# ^- You can specify your own program for parsing rst 
+theme=kyudo
+# ^- looks for themes inside ./templates dir
+```
+
 ### Templating
 
-Templating is supported out of the box, kevlar its own custom templating language
+Templating is supported out of the box, kevlar has its own custom templating language which is supported out the box
 
 #### Header tag
 
@@ -99,7 +112,6 @@ You can add `--LISTING--` anywhere to get a list of all the files that were pass
 #### Content tag
 
 As each file is parsed into html, on success it is read internally stored inside a struct, putting `--CONTENT--` will simply load the contents of the string.
-
 This only works when called from `post.html` within your theme, since `post.html` is parsed everytime a new file is parsed from the posts folder.
 
 ```html
@@ -110,25 +122,13 @@ This only works when called from `post.html` within your theme, since `post.html
 
 Given you have a valid `config.ini` file inside your project, kevlar also proivdes you with the `--AUTHOR--` and `--TITLE--` tag which correspond to whatver option you provided to the `author` and `title` field.
 
-### Configuration
-
-Each kelvar project must have a `config.ini` file; kevlar uses a custom `.ini` parser which was hacked together under 10 minutes, so some advance `.ini` functionality might be missing. Here is a configuration with all the options
-
-```ini
-author=John Doe
-title=The title of my site
-rst_loader=rst2html
-# ^- You can specify your own program for parsing rst 
-theme=kyudo
-# ^- looks for themes inside ./templates dir
-```
 ### Theming
 
 Kevlar supports theming with very specific archetypes, each theme must contain a
-- index.html: the end `index.html` in the `./dist` will be generated using this template. 
-- post.html: content from each individual post (as html after conversion) will be parsed through the template 
-- header.html: The header file called by `--HEADER--`
-- footer.html: The header file called by `--FOOTER--`
+- `index.html`: the end `index.html` in the `./dist` will be generated using this template. 
+- `post.html`: content from each individual post (as html after conversion) will be parsed through the template 
+- `header.html` (if called): The header file called by `--HEADER--`
+- `footer.html`(if called: The footer file called by `--FOOTER--`
 
 psst - you can check out the theme [kyudo](https://github.com/aadv1k/kyudo) to see the flexibility you get with this templating system
 
@@ -139,4 +139,3 @@ In the `./recipes/` folder you may find certain scripts these are adapted from t
 ```shell
 make rst2html
 ```
-
