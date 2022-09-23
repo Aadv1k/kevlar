@@ -10,17 +10,12 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
 
 ## Features
 
+- **Cross platform:** Runs both on windows and unix-like operating systems!, tested with - 
+  - windows 11 v21H2
+  - Debian GNU/Linux 11 (bullseye) on Windows 10 x86_64 ([WSL](https://learn.microsoft.com/en-us/windows/wsl/))
 - **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
 - **Highly extensible:** Support for basic yet scalable templating
 - **Simple:** Kevlar does not try to do too little or too less, just enough to get the job done.
-
-## Recipes
-
-In the `./recipes/` folder you may find certain scripts these are adapted from their corresponding `./src/` files and can be compiled to individual programs. 
-
-```shell
-make rst2html
-```
 
 ## Documentation
 
@@ -36,7 +31,9 @@ make rst2html
 
 ### Quickstart
 
-To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar.
+To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar, additionally 
+
+#### Unix-like 
 
 ```shell
 git clone https://github.com/aadv1k/kevlar
@@ -44,7 +41,17 @@ cd kevlar && make all
 ./bin/kevlar help
 ```
 
-You can, then using the kevlar CLI create a new project
+#### win32
+
+You may need something like [mingw32-make](https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/mingw32-make-3.80-3/), and gcc for windows for this to work
+
+```shell
+git clone https://github.com/aadv1k/kevlar
+cd kevlar && make kevlar_win32
+"bin/kevlar.exe help"
+```
+
+You can, then using the kevlar CLI create a new project (for unix-like)
 
 ```shell
 ./bin/kevlar new ../my-cool-project
@@ -122,3 +129,14 @@ Kevlar supports theming with very specific archetypes, each theme must contain a
 - post.html: content from each individual post (as html after conversion) will be parsed through the template 
 - header.html: The header file called by `--HEADER--`
 - footer.html: The header file called by `--FOOTER--`
+
+psst - you can check out the theme [kyudo](https://github.com/aadv1k/kyudo) to see the flexibility you get with this templating system
+
+## Recipes
+
+In the `./recipes/` folder you may find certain scripts these are adapted from their corresponding `./src/` files and can be compiled to individual programs. 
+
+```shell
+make rst2html
+```
+

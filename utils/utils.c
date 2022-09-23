@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+
+#if __has_include("windows.h")
+#include <windows.h>
+#endif
 
 char * utl_strchrev(char str[], char c) {
   for (int i = 1; &str[strlen(str)-i] != &str[0]; i++)  {
@@ -28,4 +33,14 @@ void utl_prepend(char* string, const char* prefix)
 
 void utl_truncateLast(char *str) {
   str[strlen(str)-1] = '\0';
+}
+
+void utl_mkdir_crossplatform(char * folder_path) {
+#if defined(_WIN32)
+  CreateDirectory(folder_path, NULL);
+#else
+  if (mkdir(folder_path, 0777) == -1) {
+    fprintf(stderr, "[kevlar] couldn't make folder %s", folder_path);
+  };
+#endif
 }

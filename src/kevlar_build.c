@@ -12,10 +12,6 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 
-#if __has_include("windows.h")
-#include <windows.h>
-#endif 
-
 #include "../utils/utils.h"
 #include "kevlar_templating.h"
 #include "kevlar_rst_to_html.h"
@@ -75,11 +71,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
   dir_buffer = opendir(folder_path);
 
-  #ifdef WIN_32
-    CreateDirectory(out_folder_path, FOLDER_ALL_PERMS);
-  #else
-    mkdir(out_folder_path, FOLDER_ALL_PERMS);
-  #endif
+  utl_mkdir_crossplatform(out_folder_path);
 
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
@@ -158,7 +150,7 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   KevlarSkeleton skel = { "templates/", "posts/", "config.ini", "dist/" };
   kevlar_check_if_kevlar_proj(file_path, &skel);
 
-  mkdir("./dist", FOLDER_ALL_PERMS);
+  utl_mkdir_crossplatform("./dist");
 
   char config_path[CONFIG_MAX_PATH_SIZE];
   snprintf(config_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/config.ini");
