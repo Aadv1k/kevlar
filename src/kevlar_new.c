@@ -4,6 +4,13 @@
 #include <string.h>
 #include <sys/stat.h>
 
+
+#if __has_include("windows.h")
+
+#include <windows.h>
+
+#endif
+
 #include "kevlar_new.h"
 #include "kevlar_handle_config.h"
 #include "../utils/utils.h"
@@ -25,12 +32,21 @@ int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
 }
 
 void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
-  if (mkdir(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
-    mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
-  {
-    fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
-    exit(1);
-  }
+   #if defined(_WIN32)
+    if (CreateDirectory(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
+      CreateDirectory(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
+    {
+      fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
+      exit(1);
+    }
+   #else 
+    if (mkdir(skeleton->skel_posts_folder_path, FOLDER_ALL_PERMS) == -1 || 
+      mkdir(skeleton->skel_template_folder_path, FOLDER_ALL_PERMS) == -1)
+    {
+      fprintf(stderr, "[kevlar] Something went wrong while creating skeleton\n");
+      exit(1);
+    }
+   #endif
 
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
@@ -40,7 +56,7 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 
   // TODO: THIS IS TEMPORARYa
   char write_post_command[NEW_SYS_CMD_LEN];
-  snprintf(write_post_command, NEW_SYS_CMD_LEN, "echo 'Welcome to kevlar!\n==================\n\nif you are seeing this, everything has worked at intended' > %s/hello-world.rst", skeleton->skel_posts_folder_path);
+  snprintf(write_post_command, NEW_SYS_CMD_LEN, "echo 'Welcome to kevlar!\n==================\n\nif you are seeing this, everything has worked as intended' > %s/hello-world.rst", skeleton->skel_posts_folder_path);
   system(write_post_command);
   /************************/
 

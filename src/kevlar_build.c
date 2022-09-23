@@ -12,6 +12,10 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 
+#if __has_include("windows.h")
+#include <windows.h>
+#endif 
+
 #include "../utils/utils.h"
 #include "kevlar_templating.h"
 #include "kevlar_rst_to_html.h"
@@ -71,7 +75,11 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
   dir_buffer = opendir(folder_path);
 
-  mkdir(out_folder_path, FOLDER_ALL_PERMS);
+  #ifdef WIN_32
+    CreateDirectory(out_folder_path, FOLDER_ALL_PERMS);
+  #else
+    mkdir(out_folder_path, FOLDER_ALL_PERMS);
+  #endif
 
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
@@ -128,7 +136,6 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
   kevlar_generate_listings("./dist", kev_config);
 }
 
-// TODO: use the "stat" command instead of whatever this is 
 void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE], KevlarSkeleton *skeleton) {
   enum FolderStatus;
 

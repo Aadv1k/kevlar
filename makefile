@@ -2,13 +2,16 @@ CFLAGS=-Wall -Wextra
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
-$(shell mkdir -p ./bin/)
-
 kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_templating.o ./utils/utils.o ./src/kevlar_rst_to_html.o
 
 kevlar: $(kevlar_files)
 	mkdir -p bin
 	$(CC) $(kevlar_files) -o ./bin/kevlar
+
+kevlar_win32: $(kevlar_files)
+	mkdir "bin"
+	$(CC) $(kevlar_files) -o ./bin/kevlar.exe
+
 
 kevlar/main: ./src/main.c
 	$(CMD) ./src/main.c
