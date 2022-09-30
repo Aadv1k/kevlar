@@ -36,21 +36,21 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   utl_mkdir_crossplatform(skeleton->skel_template_folder_path);
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
-// TODO: Fine some way for this to work on windows
+  // TODO: Fine some way for this to work on windows
 
   char clone_git_command[NEW_SYS_CMD_LEN];  
-  snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
+  snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo \"%s/kyudo\" >/dev/null 2>&1", skeleton->skel_template_folder_path);
 
 #if defined(_WIN32) 
   system(clone_git_command);
 #else
-  if (system("git 2> /dev/null") != 0) {
+  if (system("git --version >/dev/null 2>&1") != 0) {
     printf("[kevlar] couldn't find git on your system; not cloning any theme\n");
   } else {
+    printf("[kevlar] cloning theme into %s\n", skeleton->skel_template_folder_path);
     system(clone_git_command);
   }
 #endif
-
 
   char default_rst_file_path[CONFIG_MAX_PATH_SIZE];
   strcpy(default_rst_file_path, skeleton->skel_posts_folder_path);
@@ -62,7 +62,8 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   fprintf(default_rst_file_buf, "%s\n", "Welcome to kevlar!\n==================\n\nif you are seeing this, everything has worked as intended.");
   fclose(default_rst_file_buf);
 
-  printf("[kevlar] Successfully created the skeleton; you can now run\n\n\tkevlar build\n\nto see your site in action ✨!\n");
+  *(strchr(default_rst_file_path, '/')) = '\0';
+  printf("[kevlar] Successfully created the skeleton; you can now run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!\n", default_rst_file_path);
 }
 
 

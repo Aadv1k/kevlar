@@ -38,7 +38,7 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
   struct dirent * dir_item;
 
   if ((dir_buf = opendir(dist_path)) == NULL) {
-    fprintf(stderr, "[kevlar] something went wrong while opening folder");
+    fprintf(stderr, "[kevlar] something went wrong while opening ./dist/ to generate listings");
     exit(1);
   }
 
@@ -122,9 +122,10 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
   }
 
   if (i == 0) {
-    fprintf(stderr, "[kevlar] found no .rst in %s\n", folder_path);
+    fprintf(stderr, "[kevlar] found no .rst files in %s\n", folder_path);
     return;
   } 
+
   kevlar_generate_listings("./dist", kev_config);
 }
 
@@ -141,7 +142,7 @@ void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE], K
     (kevlar_get_folder_status(skeleton->skel_template_folder_path) == folderNull) ||
     (kevlar_get_folder_status(skeleton->skel_config_file_path) != folderNull)
   )  {
-    fprintf(stderr, "[kevlar] %s doesn't seem to be a kevlar project, try running kevlar new for a new project\n", folder_path);
+    fprintf(stderr, "[kevlar] %s doesn't seem to be a kevlar project, try running kevlar help for info\n", folder_path);
     exit(1);
   }
 }
