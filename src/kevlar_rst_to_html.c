@@ -11,7 +11,7 @@
 FILE *rst_infile; 
 FILE *rst_outfile;
 
-int ERRORS;
+int ERRORS = 1;
 
 int rst_getFileLength(char filename[]) {
   FILE *infile = fopen(filename, "r");
