@@ -28,8 +28,13 @@ Many philosophers agree that there is an exclusive and exhaustive distinction be
 Types of ontologies
 ===================
 
+1. Flat vs polycategorical vs hierarchical
+2. Thing ontologies vs fact ontologies 
+3. Constituent ontologies vs blob theories
+
 - Flat vs polycategorical vs hierarchical
 - Thing ontologies vs fact ontologies 
 - Constituent ontologies vs blob theories
+
 
 ***Article taken from https://en.wikipedia.org/wiki/Ontology showcases what all is avaliable***

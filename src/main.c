@@ -66,8 +66,8 @@ int main(int argc, char **argv) {
       puts("SERVE CONTENT");
       break;
     default:
-      fprintf(stderr, "[kevlar] couldn't find command\n");
-      exit(127);
+      fprintf(stderr, "[kevlar] couldn't find command \"%s\"\n", argv[1]);
+      exit(1);
   }
 
   return 0;
