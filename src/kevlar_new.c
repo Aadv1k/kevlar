@@ -15,7 +15,6 @@
 #include "kevlar_handle_config.h"
 #include "../utils/utils.h"
 
-// TODO: Use stat here
 int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
   DIR *dir_stream;
   struct dirent *dir_obj; 
@@ -38,13 +37,16 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
 // TODO: Fine some way for this to work on windows
-#if defined(WIN_32) 
+
+  char clone_git_command[NEW_SYS_CMD_LEN];  
+  snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
+
+#if defined(_WIN32) 
+  system(clone_git_command);
 #else
   if (system("git 2> /dev/null") != 0) {
     printf("[kevlar] couldn't find git on your system; not cloning any theme\n");
   } else {
-    char clone_git_command[NEW_SYS_CMD_LEN];  
-    snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo %s/kyudo", skeleton->skel_template_folder_path);
     system(clone_git_command);
   }
 #endif

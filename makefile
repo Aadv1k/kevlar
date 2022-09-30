@@ -9,7 +9,7 @@ kevlar: $(kevlar_files)
 	$(CC) $(kevlar_files) -o ./bin/kevlar
 
 kevlar_win32: $(kevlar_files)
-	mkdir "bin"
+	if not exist bin mkdir bin
 	$(CC) $(kevlar_files) -o ./bin/kevlar.exe
 
 kevlar/main: ./src/main.c
@@ -40,7 +40,6 @@ rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o
 	mkdir -p bin 
 	$(CC) ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o -o ./bin/rst2html
 
-
 all: kevlar rst2html
 
 clean: 
@@ -48,7 +47,3 @@ clean:
 	rm -rf ./recipes/*.o
 	rm -rf ./bin
 	rm -rf ./utils/*.o
-
-clean_win32:
-	# Sorry to fellow window users, maybe just shift to WSL 
-	rmdir "bin"
