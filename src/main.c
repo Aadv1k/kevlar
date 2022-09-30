@@ -35,8 +35,11 @@ int argtype(char arg[]) {
 }
 
 void kevlar_usage_exit() {
-  printf("kevlar <COMMAND> <OPT>\n\thelp -- print this help message\n\tnew -- create a new site skeleton\n\tbuild -- build if in a kevlar project\n");
-  exit(1);
+  printf("kevlar <cmd> <opt>\n");
+  printf("  help -- print this help message\n");
+  printf("  new -- create a new site skeleton\n");
+  printf("  build -- build if in a kevlar project\n");
+  exit(0);
 }
 
 int main(int argc, char **argv) {
@@ -50,7 +53,7 @@ int main(int argc, char **argv) {
       break;
     case cmdNew:
       if (argc == 2) {
-        fprintf(stderr, "[kevlar] you need an provide a name for your project!\n");
+        fprintf(stderr, "[kevlar] you need to provide a name for your project!\n");
         exit(1);
       }
       kevlar_handle_new_command(argv[2]);
