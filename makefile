@@ -47,6 +47,7 @@ clean:
 	rm -rf ./src/*.o
 	rm -rf ./recipes/*.o
 	rm -rf ./bin
+	rm -rf ./utils/*.o
 
 clean_win32:
 	# Sorry to fellow window users, maybe just shift to WSL 

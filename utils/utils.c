@@ -39,8 +39,8 @@ void utl_mkdir_crossplatform(char * folder_path) {
 #if defined(_WIN32)
   CreateDirectory(folder_path, NULL);
 #else
-  if (mkdir(folder_path, 0777) == -1) {
-    fprintf(stderr, "[kevlar] couldn't make folder %s", folder_path);
-  };
+  // It is quite unlikely that this might run into an error; We want to ignore
+  // the EEXIST error anyways.
+  mkdir(folder_path, 0777);
 #endif
 }
