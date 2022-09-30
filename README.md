@@ -73,7 +73,7 @@ theme=kyudo
 
 ### Templating
 
-Templating is supported out of the box, kevlar has its own custom templating language which is supported out the box
+kevlar has it's own custom templating language which is supported out of the box
 
 #### Header tag
 
