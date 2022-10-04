@@ -50,7 +50,7 @@ You may need something like [mingw32-make](https://sourceforge.net/projects/ming
 ```shell
 git clone https://github.com/aadv1k/kevlar
 cd kevlar && make kevlar_win32
-"bin/kevlar.exe help"
+"bin/kevlar.exe" help
 ```
 
 You can, then using the kevlar CLI create a new project (for unix-like)
