@@ -9,4 +9,6 @@ utils/*.o
 recipes/*.o
 recipes/*.out
 
+index.html
+
 dist/
