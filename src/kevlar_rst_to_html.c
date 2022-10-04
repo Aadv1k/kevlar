@@ -11,8 +11,6 @@
 FILE *rst_infile; 
 FILE *rst_outfile;
 
-int ERRORS = 1;
-
 int rst_getFileLength(char filename[]) {
   FILE *infile = fopen(filename, "r");
   int i;
@@ -54,12 +52,10 @@ void rst_handleEqual(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "\n<h2>%s</h2>\n", file[line-1]);
 
   } else {
-    if (ERRORS) {
       printf("[rst2html] Error while parsing title\n %d | %s\n>%d | %s %d | %s",
              line, file[line - 1], line + 1, file[line], line + 2,
              file[line + 1]);
       exit(1);
-    }
   }
 }
 
@@ -167,12 +163,10 @@ void rst_handleNumber(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
 
   } else {
-    if (ERRORS) {
-      printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-             "title\n",
-             file[line], line + 1);
-      exit(1);
-    }
+    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
+           "title\n",
+           file[line], line + 1);
+    exit(1);
   }
 
 }
@@ -208,12 +202,10 @@ void rst_handleHash(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "%s", rst_handleText(file, line));
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
   } else {
-    if (ERRORS) {
-      printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-             "title\n",
-             file[line], line + 1);
-      exit(1);
-    }
+    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
+           "title\n",
+           file[line], line + 1);
+    exit(1);
   }
 }
 
@@ -252,12 +244,10 @@ void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
     fprintf(rst_outfile, "\n\t</li>\n</ul>\n\n");
   } else {
-    if (ERRORS) {
-      printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-             "title\n",
-             file[line], line + 1);
-      exit(1);
-    }
+    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
+           "title\n",
+           file[line], line + 1);
+    exit(1);
   }
 }
 
@@ -303,9 +293,7 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
   rst_infile = fopen(rst_file_path, "r");
   rst_outfile = fopen(html_file_path, "w");
 
-  if (ERRORS) {
-    puts(rst_file_path);
-  }
+  puts(rst_file_path);
 
   if (rst_infile == NULL) {
     fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);
