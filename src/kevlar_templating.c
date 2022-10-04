@@ -107,6 +107,7 @@ void kevlar_build_template(char *in_file_path, char *out_file_path, KevlarConfig
   FILE * infile = fopen(in_file_path, "r");
   FILE * outfile = fopen(out_file_path, "w");
 
+
   if (infile == NULL) {
     fprintf(stderr, "[kevlar] couldn't find %s while building the template\n", in_file_path);
     exit(1);
