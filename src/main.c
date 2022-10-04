@@ -61,10 +61,6 @@ int main(int argc, char **argv) {
     case cmdBuild: ;
       kevlar_handle_build_command(".");
       break;
-    case cmdServe: 
-    case cmdServer: 
-      puts("SERVE CONTENT");
-      break;
     default:
       fprintf(stderr, "[kevlar] couldn't find command \"%s\"\n", argv[1]);
       exit(1);

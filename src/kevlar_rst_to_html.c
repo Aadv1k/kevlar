@@ -62,14 +62,59 @@ void rst_handleEqual(char file[][RST_LINE_LENGTH], int line) {
 char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
   bool open = true;
   int style = 0;
-  char res[999] = "";
+  char res[RST_LINE_LENGTH] = "";
   char content[strlen(file[line])];
   strcpy(content, file[line]);
   // Brace yourselves for whats about to come, it is NOT pretty
 
+  bool tickOpen = false;
+  char backTickContent[RST_LINE_LENGTH];
+
+
   for (int i = 0; content[i] != '\0'; i++) {
     // If we find an asterisk, we add to the style, style can keep track of how
     // many astersiks we have
+
+    if (tickOpen == true) {
+      strncat(backTickContent, &content[i], 1);
+    }
+    
+    if (content[i] == '`' && tickOpen == false) {
+      tickOpen = true;
+    } else if (content[i] == '_' && content[i-1] == '`' && tickOpen == true) {
+
+      utl_truncateLast(backTickContent);
+
+      char * html_link = strchr(backTickContent, ' ');
+      char html_link_tag[RST_LINE_LENGTH];
+
+      utl_truncateLast(html_link);
+
+      char html_link_name[RST_LINE_LENGTH];
+
+      strcpy(html_link_name, backTickContent);
+      *(strchr(html_link_name, ' ')) = '\0';
+      snprintf(html_link_tag, RST_LINE_LENGTH*3, "<a href=\"%s\">%s</a>", html_link+1, html_link_name);
+
+      strcat(res, html_link_tag);
+      backTickContent[0] = '\0';
+      tickOpen = false;
+      continue;
+    } else if (content[i] == ' ' && content[i-1] == '`' && tickOpen == true) {
+
+      char code_line[RST_LINE_LENGTH];
+
+      utl_truncateLast(backTickContent);
+      utl_truncateLast(backTickContent);
+
+      snprintf(code_line, RST_LINE_LENGTH*2, "<code>%s</code> ", backTickContent);
+      strcat(res, code_line);
+
+      backTickContent[0] = '\0';
+      tickOpen = false;
+      continue;
+    } 
+
     if (content[i] == '*') {
       style++;
 
@@ -103,7 +148,7 @@ char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
         // we default the open = true for the next asterisk.
         open = true;
       }
-    } else if (content[i] != '*') {
+    } else if (content[i] != '*' && tickOpen == false) {
       // We reset the style to 0 otherwise it will keep on adding, ideally, we
       // can extend this setup infinitely given how we can keep track of how
       // many asterisks we have
@@ -126,6 +171,7 @@ char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
 
   return chopped;
 }
+
 
 void rst_handlePara(char file[][RST_LINE_LENGTH], int line) {
   char *chopped = rst_handleText(file, line);
@@ -323,12 +369,8 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     case '#':
       rst_handleHash(file, currentLine);
       break;
-    case '\n':
-    case '\r':
-    case ' ':
-      // TODO: rst_handleSpace(arr, i);
-      break;
     default:
+
       if (isdigit(file[currentLine][0])) {
           rst_handleNumber(file, currentLine);
           break;
