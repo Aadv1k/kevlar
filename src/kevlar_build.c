@@ -115,8 +115,10 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       fclose(html_file_buf);
 
       strcpy(kev_config->configHtmlContents, contents);
+
       
       kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
+
       i++;
     }
   }
