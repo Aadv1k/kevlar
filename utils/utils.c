@@ -7,40 +7,37 @@
 #include <windows.h>
 #endif
 
-char * utl_strchrev(char str[], char c) {
-  for (int i = 1; &str[strlen(str)-i] != &str[0]; i++)  {
-    if (str[strlen(str)-i] == c) {
-      return &str[strlen(str)-i]; 
+char *utl_strchrev(char str[], char c) {
+    for (int i = 1; &str[strlen(str) - i] != &str[0]; i++) {
+        if (str[strlen(str) - i] == c) {
+            return &str[strlen(str) - i];
+        }
     }
-  }
-  return str;
+    return str;
 }
 
 void utl_prepend_str(char prefix[], char str[]) {
-  char temp_str[strlen(str)+1];
-  strcpy(temp_str, str);
-  strcpy(str, prefix);
-  strcat(str, temp_str);
+    char temp_str[strlen(str) + 1];
+    strcpy(temp_str, str);
+    strcpy(str, prefix);
+    strcat(str, temp_str);
 }
 
 // https://stackoverflow.com/questions/2328182/prepending-to-a-string
-void utl_prepend(char* string, const char* prefix)
-{
+void utl_prepend(char *string, const char *prefix) {
     size_t len = strlen(prefix);
     memmove(string + len, string, strlen(string) + 1);
     memcpy(string, prefix, len);
 }
 
-void utl_truncateLast(char *str) {
-  str[strlen(str)-1] = '\0';
-}
+void utl_truncateLast(char *str) { str[strlen(str) - 1] = '\0'; }
 
-void utl_mkdir_crossplatform(char * folder_path) {
+void utl_mkdir_crossplatform(char *folder_path) {
 #if defined(_WIN32)
-  CreateDirectory(folder_path, NULL);
+    CreateDirectory(folder_path, NULL);
 #else
-  // It is quite unlikely that this might run into an error; We want to ignore
-  // the EEXIST error anyways.
-  mkdir(folder_path, 0777);
+    // It is quite unlikely that this might run into an error; We want to ignore
+    // the EEXIST error anyways.
+    mkdir(folder_path, 0777);
 #endif
 }

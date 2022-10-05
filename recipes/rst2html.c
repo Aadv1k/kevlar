@@ -1,5 +1,5 @@
 #include "../src/kevlar_rst_to_html.h"
-#include "../utils/utils.h" 
+#include "../utils/utils.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +7,9 @@
 #define RST_MAX_PATH_SIZE 128
 
 void usage_exit() {
-    puts("kev_rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst exit "
-       "with error message\n");
+    puts("kev_rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst "
+         "exit "
+         "with error message\n");
     exit(1);
 }
 
@@ -23,7 +24,8 @@ int main(int argc, char *argv[]) {
     strcpy(out_file_path, argv[2]);
 
     if (strcmp(utl_strchrev(in_file_path, '.'), ".rst") != 0) {
-        fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", in_file_path);
+        fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n",
+                in_file_path);
         exit(1);
     }
 
@@ -31,4 +33,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
