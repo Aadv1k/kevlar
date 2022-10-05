@@ -11,15 +11,21 @@
 FILE *rst_infile; 
 FILE *rst_outfile;
 
-int rst_getFileLength(char filename[]) {
+long rst_getFileLength(char filename[]) {
   FILE *infile = fopen(filename, "r");
-  int i;
-  while (!feof(infile)) {
-    if (getc(infile) == '\n') {
-      i++;
-    }
+
+  long file_len;
+
+  for (char c = getc(infile); c != EOF; c = getc(infile)) {
+    if (c == '\n') file_len++;
   }
-  return i;
+  
+  return file_len;
+}
+
+void rst_throw_error(const char * message, int line, char context[][RST_LINE_LENGTH]) {
+  printf("[rst2html]: %s \n%d | %s\n>%d| %s\n%d | %s\n", message, line, context[line-1], line+1, context[line], line+2, context[line+1]);
+  exit(1);
 }
 
 int rst_isTextOnly(char file[][RST_LINE_LENGTH], int line) {
@@ -35,27 +41,31 @@ int rst_isTextOnly(char file[][RST_LINE_LENGTH], int line) {
   return 0;
 }
 
+
+
 void rst_handleEqual(char file[][RST_LINE_LENGTH], int line) {
-  static int equalOpen = 0;
 
-  if (line == equalOpen && line != 0) return;
+  static bool equalOpen = false;
 
-  if (strcmp(file[line + 2], file[line]) == 0 &&
-      strlen(file[line]) == strlen(file[line + 2])) {
+  if (equalOpen) {
+    equalOpen = false;
+    return;
+  }
 
-    equalOpen = line + 2;
+  if (
+    strcmp(file[line + 2], file[line]) == 0 &&
+    strlen(file[line]) == strlen(file[line + 2]) &&
+    equalOpen == false
+  ) {
 
     fprintf(rst_outfile, "<h1>%s</h1>\n", file[line+1]);
+    equalOpen = true;
 
   } else if (strlen(file[line - 1]) == strlen(file[line]) && 
     strcmp(file[line - 2], file[line])) {
     fprintf(rst_outfile, "\n<h2>%s</h2>\n", file[line-1]);
-
   } else {
-      printf("[rst2html] Error while parsing title\n %d | %s\n>%d | %s %d | %s",
-             line, file[line - 1], line + 1, file[line], line + 2,
-             file[line + 1]);
-      exit(1);
+     rst_throw_error("Error while parsing title", line, file);
   }
 }
 
@@ -213,10 +223,7 @@ void rst_handleNumber(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
 
   } else {
-    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-           "title\n",
-           file[line], line + 1);
-    exit(1);
+     //rst_throw_error("Error while parsing list item or h3", line, file);
   }
 
 }
@@ -252,21 +259,18 @@ void rst_handleHash(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "%s", rst_handleText(file, line));
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
   } else {
-    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-           "title\n",
-           file[line], line + 1);
-    exit(1);
+    // Ignore this string, we asume it is a comment 
   }
 }
 
 void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
   static bool listOpen = false;
 
-  if (strlen(file[line]) == strlen(file[line - 1]) && listOpen != 1) {
+  if (strlen(file[line]) == strlen(file[line - 1])) {
     
     // It a header with dashed underline or H3
-
     fprintf(rst_outfile, "\n<h3>%s</h3>\n", file[line-1]);
+
   } else if (file[line][1] == ' ' && listOpen == 0 && strlen(file[line - 1]) == 0) {
 
     // Start of the list, we append a <ul> at the beginning
@@ -294,10 +298,7 @@ void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
     fprintf(rst_outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
     fprintf(rst_outfile, "\n\t</li>\n</ul>\n\n");
   } else {
-    printf("%s\n[rst2html] LINE-%d: Error while parsing list item or dashed "
-           "title\n",
-           file[line], line + 1);
-    exit(1);
+     //rst_throw_error("Error while parsing unordered list item or h3", line, file);
   }
 }
 
@@ -348,43 +349,48 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     exit(1);
   }
 
-  int fileLength = rst_getFileLength(rst_file_path);
+  long fileLength = rst_getFileLength(rst_file_path);
   char file[fileLength][RST_LINE_LENGTH];
+
+  puts(rst_file_path);
+
 
   // Read contents of the input file into the file[]
   for (int i = 0; i < fileLength; i++) {
     fgets(file[i], RST_LINE_LENGTH, rst_infile);
     utl_truncateLast(file[i]);
   }
-  
-  for (int currentLine = 0; currentLine < fileLength; currentLine++) {
-    switch (file[currentLine][0]) {
-    case '=':
-      rst_handleEqual(file, currentLine);
-      break;
-    case '-':
-      rst_handleDashAndUl(file, currentLine);
-      break;
-    case ':':
-      rst_handleConfig(file, currentLine);
-      break;
-    case '#':
-      rst_handleHash(file, currentLine);
-      break;
-    case '\n':
-    case '\r':
-    case ' ':
-      // TODO: rst_handleSpace(arr, i);
-      break;
-    default:
-      if (isdigit(file[currentLine][0])) {
-          rst_handleNumber(file, currentLine);
-          break;
-      }
 
-      if (rst_isTextOnly(file, currentLine) == 1) {
-        rst_handlePara(file, currentLine);
-      }
+  
+  for (long currentLine = 0; currentLine < fileLength; currentLine++) {
+
+    switch (file[currentLine][0]) {
+      case '=':
+        rst_handleEqual(file, currentLine);
+        break;
+      case '-':
+        rst_handleDashAndUl(file, currentLine);
+        break;
+      case ':':
+        rst_handleConfig(file, currentLine);
+        break;
+      case '#':
+        rst_handleHash(file, currentLine);
+        break;
+      case '\n':
+      case '\r':
+      case ' ':
+        break;
+      default:
+
+        if (isdigit(file[currentLine][1])) {
+            rst_handleNumber(file, currentLine);
+            break;
+        }
+
+        if (rst_isTextOnly(file, currentLine) == 1) {
+          rst_handlePara(file, currentLine);
+        }
     }
   }
 
