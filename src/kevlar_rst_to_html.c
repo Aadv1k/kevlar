@@ -106,17 +106,15 @@ char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
 
       *(strrchr(html_link_name, ' ')) = '\0';
 
-      sprintf(html_link_tag, "<a href=\"%s\">%s</a>", html_link+1, html_link_name);
+      snprintf(html_link_tag, RST_LINE_LENGTH*2, "<a href=\"%s\">%s</a>", html_link+1, html_link_name);
       strcat(res, html_link_tag);
 
       backTickContent[0] = '\0';
       tickOpen = false;
       continue;
 
-    } else if (content[i] == ' ' && content[i-1] == '`' && tickOpen == true) {
+    } else if (content[i] != '_' && content[i-1] == '`' && tickOpen == true) {
       char code_line[RST_LINE_LENGTH];
-
-      puts("hello!");
 
       utl_truncateLast(backTickContent);
       utl_truncateLast(backTickContent);
