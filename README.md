@@ -100,6 +100,10 @@ Every other text is a paragraph; which supports *italic*, **bold** and ***bold i
 
 - **Unordered** list item 1
 - Unordered *list item* 2
+
+Inline-code blocks are supported: `printf("%s\n", "hello world")`
+
+Links are also supported; here is a `Link to this repository https://github.com/aadv1k/kevlar`_
 ```
 
 ### Templating
