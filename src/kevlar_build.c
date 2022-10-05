@@ -97,7 +97,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
       utl_prepend(html_file_path, out_folder_path);
 
       if (strlen(kev_config->configRstLoader) != 0) {
-        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", rst_loader, rst_file_path, html_file_path);
+        snprintf(system_command, BUILD_MAX_CMD_SIZE*3, "%s %s %s", rst_loader, rst_file_path, html_file_path);
         system(system_command);
       } else {
         rst_parse(rst_file_path, html_file_path);

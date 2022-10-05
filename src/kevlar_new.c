@@ -36,10 +36,10 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   utl_mkdir_crossplatform(skeleton->skel_template_folder_path);
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
 
-  // TODO: Fine some way for this to work on windows
+  // TODO: Find some way for this to work on windows
 
   char clone_git_command[NEW_SYS_CMD_LEN];  
-  snprintf(clone_git_command, NEW_SYS_CMD_LEN, "git clone https://github.com/aadv1k/kyudo \"%s/kyudo\" >/dev/null 2>&1", skeleton->skel_template_folder_path);
+  snprintf(clone_git_command, NEW_SYS_CMD_LEN*2, "git clone https://github.com/aadv1k/kyudo \"%s/kyudo\" >/dev/null 2>&1", skeleton->skel_template_folder_path);
 
 #if defined(_WIN32) 
   system(clone_git_command);
