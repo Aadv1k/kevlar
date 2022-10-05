@@ -3,8 +3,10 @@
 
 #include <stdio.h>
 #define TEMPLATE_MAX_TAG_SIZE 64
-#define TEMPLATE_MAX_LINE_SIZE 1000000
-#define TEMPLATE_MAX_FILE_SIZE 1000000
+
+// REVIEW: May overflow
+#define TEMPLATE_MAX_LINE_SIZE 10000
+#define TEMPLATE_MAX_FILE_SIZE 100000
 
 #include "kevlar_handle_config.h"
 

@@ -8,7 +8,6 @@
 #include "kevlar_templating.h"
 #include "kevlar_handle_config.h"
 
-
 void kevlar_parse_template_token(char line[], char substr[], char content[], FILE * out_file_buffer) {
   char tail[TEMPLATE_MAX_TAG_SIZE];
   strcpy(tail, utl_strchrev(strstr(line, substr), '-')+1);
