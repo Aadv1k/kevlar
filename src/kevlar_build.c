@@ -68,6 +68,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
     fprintf(stderr, "[kevlar] couldn't open %s, it might not be a folder\n", folder_path);
     exit(1);
   }
+  
 
   dir_buffer = opendir(folder_path);
 
@@ -75,10 +76,14 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
 
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
+
     if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".rst") == 0) {
+
+
       char rst_file_path[CONFIG_MAX_PATH_SIZE];
       char html_file_path[CONFIG_MAX_PATH_SIZE];
       char system_command[BUILD_MAX_CMD_SIZE];
+
 
       strcpy(rst_file_path, dir_item->d_name);
 
@@ -104,20 +109,25 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE], char o
         fprintf(stderr, "[kevlar] was unable to open html files for further processing, maybe the system command went wrong?\n");
         exit(1);
       }
+
+
       
       char contents[TEMPLATE_MAX_FILE_SIZE] = "";
       char html_file_line[TEMPLATE_MAX_LINE_SIZE];
+
+
 
       while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
         strcat(contents, html_file_line);
       }
       
+
       fclose(html_file_buf);
 
       strcpy(kev_config->configHtmlContents, contents);
 
-      
       kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
+
 
       i++;
     }
@@ -154,6 +164,7 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   kevlar_check_if_kevlar_proj(file_path, &skel);
 
   utl_mkdir_crossplatform("./dist");
+
 
   char config_path[CONFIG_MAX_PATH_SIZE];
   snprintf(config_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/config.ini");
