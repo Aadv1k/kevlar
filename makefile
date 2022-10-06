@@ -33,14 +33,18 @@ kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h kevlar/rst_to_html
 kevlar/rst_to_html: ./src/kevlar_rst_to_html.c ./src/kevlar_rst_to_html.h utils
 	$(CMD) ./src/kevlar_rst_to_html.c
 
-recipes/rst2html: ./recipes/rst2html.c utils
-	$(CC) ./recipes/rst2html.c
+kevlar/md_to_html: ./src/kevlar_md_to_html.c ./src/kevlar_md_to_html.h kevlar/rst_to_html utils
+	$(CMD) ./src/kevlar_md_to_html.c
 
 rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o
 	mkdir -p bin 
 	$(CC) ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o -o ./bin/rst2html
 
-all: kevlar rst2html
+md2html: ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o
+	mkdir -p bin 
+	$(CC) ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o -o ./bin/md2html
+
+all: kevlar rst2html md2html
 
 clean: 
 	rm -rf ./src/*.o
