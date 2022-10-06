@@ -22,6 +22,7 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
 - [Get started ASAP](#quickstart)
 - [Configuration](#configuration)
 - [recipes](#recipes)
+  - [md-to-html](#md-to-html)
   - [rst-to-html](#rst-to-html)
 - [Templating](#templating)
   - [Header tag](#header-tag)
@@ -104,6 +105,34 @@ Every other text is a paragraph; which supports *italic*, **bold** and ***bold i
 Inline-code blocks are supported: `printf("%s\n", "hello world")`
 
 Links are also supported; here is a `Link to this repository https://github.com/aadv1k/kevlar`_
+```
+
+### md to html
+
+Convert a custom spec of markdown to html; can be built as a separate program by `make md2html`
+
+```md
+
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+
+This is a paragraph 
+Which also includes this sentence, so multiline 
+paragraphs are supported
+
+Unless you leave a line, in which case this is a separate para
+
+
+1. This is an ordered list
+3. Your lists don't need to be in order for them to be parsed properly
+
+- Unordered list item 1
+- Unordered list item 2
+* Another way 
+* Anohter item 
 ```
 
 ### Templating
