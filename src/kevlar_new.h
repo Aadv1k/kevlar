@@ -13,11 +13,7 @@ typedef struct KevlarSkeleton {
   char skel_dist_file_path[CONFIG_MAX_PATH_SIZE];
 } KevlarSkeleton;
 
-enum FolderStatus {
-  folderNull,
-  folderEmpty,
-  folderNonEmpty
-};
+enum FolderStatus { folderNull, folderEmpty, folderNonEmpty };
 
 int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]);
 

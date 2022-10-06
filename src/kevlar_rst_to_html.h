@@ -6,6 +6,6 @@
 
 void rst_parse(char *rst_file_path, char *html_file_path);
 
-long rst_getFileLength(char * filename);
+long rst_getFileLength(char *filename);
 
 #endif
