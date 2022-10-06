@@ -11,7 +11,7 @@
 FILE *rst_infile;
 FILE *rst_outfile;
 
-long rst_getFileLength(char filename[]) {
+long rst_getFileLength(char * filename) {
     FILE *infile = fopen(filename, "r");
 
     long file_len;
@@ -346,7 +346,6 @@ void usage() {
 }
 
 void rst_parse(char *rst_file_path, char *html_file_path) {
-
     if (strcmp(utl_strchrev(rst_file_path, '.'), ".rst") != 0) {
         fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n",
                 rst_file_path);
@@ -373,7 +372,6 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     }
 
     for (long currentLine = 0; currentLine < fileLength; currentLine++) {
-
         switch (file[currentLine][0]) {
         case '=':
             rst_handleEqual(file, currentLine);

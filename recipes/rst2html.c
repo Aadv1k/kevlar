@@ -3,13 +3,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #define RST_MAX_PATH_SIZE 128
 
 void usage_exit() {
-    puts("kev_rst2html -[OPT] INPUT.rst OUTPUT.html\n\t-h -- On invalid rst "
-         "exit "
-         "with error message\n");
+    fprintf(stderr, "USAGE: rst2html INPUT.rst OUTPUT.html\n");
     exit(1);
 }
 
