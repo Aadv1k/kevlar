@@ -21,14 +21,56 @@ bool md_is_hr(char file[][RST_LINE_LENGTH], int line) {
     return false;
   }
 
-  for (int i = 0; i < 3; i ++) {
-    if (file[line][i] != file[line][0]) return false;
+  for (int i = 0; i < 3; i++) {
+    if (file[line][i] != file[line][0])
+      return false;
   }
 
   return true;
 }
 
-void md_handleHash(char file[][RST_LINE_LENGTH], int line) {
+bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
+  // This is the simplest method to ensure/control what constitues a new line
+  // para or a grouped para
+
+  if ((file[line + 1][0] == '-' || file[line + 1][0] == '*') &&
+      (file[line - 1][0] == '-' || file[line - 1][0] == '*') &&
+      (isdigit(file[line - 1][0]) || isdigit(file[line + 1][0]))) {
+    return false;
+  }
+
+  if ((isspace(*file[line + 1]) != 0 || strlen(file[line + 1]) == 0) &&
+      (isspace(*file[line - 1]) != 0 || strlen(file[line - 1]) == 0))
+    return true;
+
+  return false;
+}
+
+void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
+  bool boldOpen = true;
+  bool emOpen = true;
+
+  for (int i = 0; input[i] != '\0'; i++) {
+    if (input[i] == '*' && input[i + 1] != '*' && input[i + 2] != '*') {
+      emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+      emOpen = !emOpen;
+    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] != '*') {
+      boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
+      boldOpen = !boldOpen;
+      i += 1;
+    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] == '*') {
+      (boldOpen && emOpen) ? strcat(output, "<em><b>") : strcat(output, "</b></em>");
+      boldOpen = !boldOpen;
+      emOpen = !emOpen;
+      i += 2;
+    } else {
+      strncat(output, &input[i], 1);
+    }
+  }
+}
+
+
+void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
   int hashCount = 0;
 
   while (true) {
@@ -47,81 +89,68 @@ void md_handleHash(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void md_handleList(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   static bool ulOpen = false;
+  char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
+  char target[RST_LINE_LENGTH] = "";
+  md_handleText(target_line, target);
+
   if (file[line - 1][0] != file[line][0] && ulOpen == false) {
-    fprintf(md_outfile, "<ul>\n\t<li>%s</li>\n",
-            isspace(file[line][1]) ? &file[line][2] : &file[line][1]);
+    fprintf(md_outfile, "<ul>\n\t<li>%s</li>\n", target);
     ulOpen = true;
   } else if (ulOpen && file[line + 1][0] == file[line][0]) {
-    fprintf(md_outfile, "\t<li>%s</li>\n",
-            isspace(file[line][1]) ? &file[line][2] : &file[line][1]);
+    fprintf(md_outfile, "\t<li>%s</li>\n", target);
   } else if (ulOpen && file[line + 1][0] != file[line][0]) {
-    fprintf(md_outfile, "\t<li>%s</li>\n</ul>\n",
-            isspace(file[line][1]) ? &file[line][2] : &file[line][1]);
+    fprintf(md_outfile, "\t<li>%s</li>\n</ul>\n", target);
     ulOpen = false;
   }
 }
 
-void md_handleNumberedList(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
   static bool olOpen = false;
+  char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
+  char target[RST_LINE_LENGTH] = "";
+  md_handleText(target_line, target);
+
   if (file[line - 1][0] != file[line][0] && !olOpen) {
-    fprintf(md_outfile, "<ol>\n\t<li>%s</li>\n",
-            isspace(file[line][2]) ? &file[line][3] : &file[line][2]);
+    fprintf(md_outfile, "<ol>\n\t<li>%s</li>\n", target);
     olOpen = true;
   } else if (olOpen && file[line + 1][0] == file[line][0]) {
-    fprintf(md_outfile, "\t<li>%s</li>\n",
-            isspace(file[line][2]) ? &file[line][3] : &file[line][2]);
+    fprintf(md_outfile, "\t<li>%s</li>\n", target);
   } else if (olOpen && file[line + 1][0] != file[line][0]) {
-    fprintf(md_outfile, "\t<li>%s</li>\n</ol>\n",
-            isspace(file[line][2]) ? &file[line][3] : &file[line][2]);
+    fprintf(md_outfile, "\t<li>%s</li>\n</ol>\n", target);
     olOpen = false;
   }
 }
 
-void md_handleSingleParagraph(char file[][RST_LINE_LENGTH], int line) {
-  fprintf(md_outfile, "<p>%s</p>\n", file[line]);
+void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
+  char parsed_output[RST_LINE_LENGTH];
+  md_handleText(file[line], parsed_output);
+
+  fprintf(md_outfile, "<p>%s</p>\n", parsed_output);
 }
 
 static bool paraOpen = false;
 
-void md_handleParagraph(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
+  char parsed_output[RST_LINE_LENGTH];
+  md_handleText(file[line], parsed_output);
+
   if (paraOpen == false) {
-    fprintf(md_outfile, "<p>%s", file[line]);
+    fprintf(md_outfile, "<p>%s", parsed_output);
     paraOpen = true;
   } else if (paraOpen && strlen(file[line + 1]) > 1) {
-    fprintf(md_outfile, " %s", file[line]);
+    fprintf(md_outfile, " %s", parsed_output);
   } else if (paraOpen && strlen(file[line + 1]) <= 2) {
-    fprintf(md_outfile, " %s</p>\n", file[line]);
+    fprintf(md_outfile, " %s</p>\n", parsed_output);
     paraOpen = false;
   }
 }
 
-void md_paraForceClose() {
+void md_para_force_close() {
   fprintf(md_outfile, "</p>\n");
   paraOpen = false;
 }
-
-bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
-  // This is the simplest method to ensure/control what constitues a new line
-  // para or a grouped para
-
-  if (
-    (file[line + 1][0] == '-' || file[line + 1][0] == '*') &&
-    (file[line - 1][0] == '-' || file[line - 1][0] == '*')
-  ) {
-    return false;
-  }
-
-  if (
-    (isspace(*file[line + 1]) != 0 || strlen(file[line + 1]) == 0) &&
-    (isspace(*file[line - 1]) != 0 || strlen(file[line - 1]) == 0)
-  )
-    return true;
-
-  return false;
-}
-
 
 void md_parse(char *in_file_path, char *out_file_path) {
   if (strcmp(strrchr(in_file_path, '.'), ".md") != 0) {
@@ -134,7 +163,7 @@ void md_parse(char *in_file_path, char *out_file_path) {
   md_outfile = fopen(out_file_path, "w");
 
   if (md_infile == NULL) {
-    fprintf(stderr, "the file \"%s\" doesn't exist.\n", in_file_path);
+    fprintf(stderr, "[src/kevlar_md_to_html.c/md_parse()] the file \"%s\" doesn't exist.\n", in_file_path);
     exit(1);
   }
 
@@ -151,35 +180,33 @@ void md_parse(char *in_file_path, char *out_file_path) {
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
     case '#':
-      md_handleHash(file, currentLine);
+      md_handle_heading(file, currentLine);
       break;
     case '*':
     case '-':
       if (md_is_hr(file, currentLine)) {
-        md_paraForceClose();
+        md_para_force_close();
         fprintf(md_outfile, "<hr />\n");
         break;
       }
 
-
-      md_handleList(file, currentLine);
+      md_handle_list(file, currentLine);
       break;
     default:
       if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
         break;
 
-
       if (isdigit(file[currentLine][0])) {
-        md_handleNumberedList(file, currentLine);
+        md_handle_numbered_list(file, currentLine);
       } else {
-        if (currentLine+1 == fileLength) {
-            md_handleParagraph(file, currentLine);
-            md_paraForceClose();
-            break;
-          }
+        if (currentLine + 1 == fileLength) {
+          md_handle_para(file, currentLine);
+          md_para_force_close();
+          break;
+        }
 
-        md_is_single_para(file, currentLine) ? md_handleSingleParagraph(file, currentLine)
-                                       : md_handleParagraph(file, currentLine);
+        md_is_single_para(file, currentLine) ? md_handle_single_para(file, currentLine)
+                                             : md_handle_para(file, currentLine);
       }
     }
   }
