@@ -11,9 +11,22 @@
 #include "kevlar_rst_to_html.h"
 
 #define MD_HEADING_LEVEL 6
+#define MD_HR_LENGTH 3
 
 FILE *md_infile;
 FILE *md_outfile;
+
+bool md_is_hr(char file[][RST_LINE_LENGTH], int line) {
+  if (strlen(file[line]) != MD_HR_LENGTH) {
+    return false;
+  }
+
+  for (int i = 0; i < 3; i ++) {
+    if (file[line][i] != file[line][0]) return false;
+  }
+
+  return true;
+}
 
 void md_handleHash(char file[][RST_LINE_LENGTH], int line) {
   int hashCount = 0;
@@ -70,9 +83,9 @@ void md_handleSingleParagraph(char file[][RST_LINE_LENGTH], int line) {
   fprintf(md_outfile, "<p>%s</p>\n", file[line]);
 }
 
-void md_handleParagraph(char file[][RST_LINE_LENGTH], int line) {
-  static bool paraOpen = false;
+static bool paraOpen = false;
 
+void md_handleParagraph(char file[][RST_LINE_LENGTH], int line) {
   if (paraOpen == false) {
     fprintf(md_outfile, "<p>%s", file[line]);
     paraOpen = true;
@@ -84,17 +97,31 @@ void md_handleParagraph(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-bool md_isSingle(char file[][RST_LINE_LENGTH], int line) {
+void md_paraForceClose() {
+  fprintf(md_outfile, "</p>\n");
+  paraOpen = false;
+}
+
+bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
   // This is the simplest method to ensure/control what constitues a new line
   // para or a grouped para
-  if (file[line + 1][0] == '-' || file[line + 1][0] == '*')
-    return true;
-  if ((isspace(*file[line + 1]) != 0 || strlen(file[line + 1]) == 0) &&
-      (isspace(*file[line - 1]) != 0 || strlen(file[line - 1]) == 0))
+
+  if (
+    (file[line + 1][0] == '-' || file[line + 1][0] == '*') &&
+    (file[line - 1][0] == '-' || file[line - 1][0] == '*')
+  ) {
+    return false;
+  }
+
+  if (
+    (isspace(*file[line + 1]) != 0 || strlen(file[line + 1]) == 0) &&
+    (isspace(*file[line - 1]) != 0 || strlen(file[line - 1]) == 0)
+  )
     return true;
 
   return false;
 }
+
 
 void md_parse(char *in_file_path, char *out_file_path) {
   if (strcmp(strrchr(in_file_path, '.'), ".md") != 0) {
@@ -128,16 +155,30 @@ void md_parse(char *in_file_path, char *out_file_path) {
       break;
     case '*':
     case '-':
+      if (md_is_hr(file, currentLine)) {
+        md_paraForceClose();
+        fprintf(md_outfile, "<hr />\n");
+        break;
+      }
+
+
       md_handleList(file, currentLine);
       break;
     default:
       if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
         break;
 
+
       if (isdigit(file[currentLine][0])) {
         md_handleNumberedList(file, currentLine);
       } else {
-        md_isSingle(file, currentLine) ? md_handleSingleParagraph(file, currentLine)
+        if (currentLine+1 == fileLength) {
+            md_handleParagraph(file, currentLine);
+            md_paraForceClose();
+            break;
+          }
+
+        md_is_single_para(file, currentLine) ? md_handleSingleParagraph(file, currentLine)
                                        : md_handleParagraph(file, currentLine);
       }
     }
