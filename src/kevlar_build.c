@@ -14,6 +14,7 @@
 
 #include "../utils/utils.h"
 #include "kevlar_rst_to_html.h"
+#include "kevlar_md_to_html.h"
 #include "kevlar_templating.h"
 
 void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
@@ -58,6 +59,85 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
     }
   }
   closedir(dir_buf);
+}
+
+void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
+                                  char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader,
+                                  KevlarConfig *kev_config) {
+
+  enum FolderStatus;
+
+  DIR *dir_buffer;
+  struct dirent *dir_item;
+
+  if (kevlar_get_folder_status(folder_path) == folderNull) {
+    fprintf(stderr, "[kevlar] couldn't open %s, it might not be a folder\n", folder_path);
+    exit(1);
+  }
+
+  dir_buffer = opendir(folder_path);
+
+  utl_mkdir_crossplatform(out_folder_path);
+
+  int i = 0;
+  while ((dir_item = readdir(dir_buffer)) != NULL) {
+
+    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".md") == 0) {
+
+      char md_file_path[CONFIG_MAX_PATH_SIZE];
+      char html_file_path[CONFIG_MAX_PATH_SIZE];
+      char system_command[BUILD_MAX_CMD_SIZE];
+
+      strcpy(md_file_path, dir_item->d_name);
+
+      strcpy(html_file_path, md_file_path);
+      utl_prepend(md_file_path, folder_path);
+
+      html_file_path[strlen(html_file_path) - 3] = '\0';
+      strcat(html_file_path, ".html");
+
+      utl_prepend(html_file_path, "/");
+      utl_prepend(html_file_path, out_folder_path);
+
+      if (strlen(kev_config->configMarkdownLoader) != 0) {
+        snprintf(system_command, BUILD_MAX_CMD_SIZE * 3, "%s %s %s", rst_loader, md_file_path,
+                 html_file_path);
+        system(system_command);
+      } else {
+        md_parse(md_file_path, html_file_path);
+      }
+
+      FILE *html_file_buf = fopen(html_file_path, "r");
+
+      if (html_file_buf == NULL) {
+        fprintf(stderr, "[kevlar] was unable to open html files for further "
+                        "processing, maybe the system command went wrong?\n");
+        exit(1);
+      }
+
+      char contents[TEMPLATE_MAX_FILE_SIZE] = "";
+      char html_file_line[TEMPLATE_MAX_LINE_SIZE];
+
+      while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
+        strcat(contents, html_file_line);
+      }
+
+      fclose(html_file_buf);
+
+      strcpy(kev_config->configHtmlContents, contents);
+
+      kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
+
+      i++;
+    }
+  }
+
+  if (i == 0) {
+    fprintf(stderr, "[kevlar] found no .md files in %s\n", folder_path);
+    return;
+  }
+
+  kevlar_generate_listings("./dist", kev_config);
 }
 
 void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
@@ -177,7 +257,8 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   char *const p_configTheme = kev_config.configTheme;
   kevlar_check_if_theme_valid(p_configTheme);
 
-  kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
+  //kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
+  kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
 
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
 }

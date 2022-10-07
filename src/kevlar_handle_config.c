@@ -52,7 +52,7 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
       strcpy(kev_config->configTheme, command[1]);
     } else if (strcmp(command[0], "rst_loader") == 0) {
       strcpy(kev_config->configRstLoader, command[1]);
-    } else if (strcmp(command[0], "markdown_loader") == 0) {
+    } else if (strcmp(command[0], "md_loader") == 0) {
       strcpy(kev_config->configMarkdownLoader, command[1]);
     }
     line_count++;

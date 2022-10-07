@@ -63,13 +63,17 @@ cd ../my-cool-project && ./kevlar/bin/kevlar build
 
 ## Configuration
 
-Each kelvar project must have a `config.ini` file; kevlar uses a custom `.ini` parser which was hacked together under 30 minutes, so some advance `.ini` functionality might be missing. Here is a configuration with all the options
+Each kelvar project must have a `config.ini` file; kevlar uses a custom `.ini` parser which was hacked together under 30 minutes, so some advance `.ini` functionality might be missing. Here is a configuration with all the options.
+
+if `rst_loader` or `md_loader` fields are not specified, default loaders for each will be used, unless a CLI is provided
 
 ```ini
 author=John Doe
 title=The title of my site
+
 rst_loader=rst2html5
-# ^- You can specify your own program for parsing rst, when left empty, default will be used
+md_loader=cmark
+
 theme=kyudo
 # ^- looks for themes inside ./templates dir
 ```
@@ -80,7 +84,8 @@ These are the loader kevlar comes with out-of-the-box.
 
 ### rst to html
 
-Kevlar can parse `.rst`, however it is not to the exact specification; Here are all of the features of reStructuredText which are supported as of now Can be built as its own individual program using `make rst2html`
+- A higly customized spec of [reStructuredText](https://docutils.sourceforge.io/rst.html) is supported.
+- can be built as a separate program using `make rst2html`
 
 ```rst
 =================
@@ -109,30 +114,40 @@ Links are also supported; here is a `Link to this repository https://github.com/
 
 ### md to html
 
-Convert a custom spec of markdown to html; can be built as a separate program by `make md2html`
+- An customized implementation of [GFM](https://github.github.com/gfm/)
+- Can be built as a separate program using `make md2html`
 
 ```md
-
 # Heading 1
+
 ## Heading 2
+
 ### Heading 3
+
 #### Heading 4
+
 ##### Heading 5
 
-This is a paragraph 
-Which also includes this sentence, so multiline 
+This is a paragraph
+Which also includes this sentence, so multiline
 paragraphs are supported
 
 Unless you leave a line, in which case this is a separate para
 
+This is *italic*, this is **bold** and this is ***bold italic***
 
 1. This is an ordered list
-3. Your lists don't need to be in order for them to be parsed properly
+2. Your lists don't need to be in order for them to be parsed properly
+
+hr separates
+
+---
 
 - Unordered list item 1
 - Unordered list item 2
-* Another way 
-* Anohter item 
+
+* Another way
+* Anohter item
 ```
 
 ### Templating
