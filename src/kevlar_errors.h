@@ -20,7 +20,6 @@
 #endif
 
 void kevlar_ok(const char *msg, ...);
-void kevlar_info(const char *msg, ...);
 void kevlar_err(const char *msg, ...);
 void kevlar_warn(const char *msg, ...);
 
