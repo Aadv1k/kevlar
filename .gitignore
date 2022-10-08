@@ -12,3 +12,5 @@ recipes/*.out
 index.html
 
 dist/
+
+.idea/

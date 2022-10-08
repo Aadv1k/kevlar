@@ -244,8 +244,9 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
   kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
 
-
   kevlar_generate_listings("./dist", &kev_config);
 
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
+
+  kevlar_ok("Built the site using theme %s at ./dist/index.html", kev_config.configTheme);
 }

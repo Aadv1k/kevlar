@@ -25,12 +25,12 @@ void kevlar_err(const char *msg, ...) {
   exit(1);
 }
 
-void kevlar_ok(const char *msg, ...) { 
+void kevlar_ok(const char *msg, ...) {
   char buffer[ERR_SIZE];
   va_list args;
   va_start(args, msg);
   vsnprintf(buffer, ERR_SIZE - 1, msg, args);
   va_end(args);
 
-  fprintf(stdout, GREEN "SUCCESS: " RESET "%s\n", buffer); 
+  fprintf(stdout, GREEN "SUCCESS: " RESET "%s\n", buffer);
 }

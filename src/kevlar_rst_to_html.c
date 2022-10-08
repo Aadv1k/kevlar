@@ -7,11 +7,12 @@
 
 #include "../utils/utils.h"
 #include "./kevlar_rst_to_html.h"
+#include "kevlar_errors.h"
 
 FILE *rst_infile;
 FILE *rst_outfile;
 
-long rst_getFileLength(char *filename) {
+long rst_get_file_length(char *filename) {
   FILE *infile = fopen(filename, "r");
 
   long file_len;
@@ -30,7 +31,7 @@ void rst_throw_error(const char *message, int line, char context[][RST_LINE_LENG
   exit(1);
 }
 
-int rst_isTextOnly(char file[][RST_LINE_LENGTH], int line) {
+int rst_is_para_only(char file[][RST_LINE_LENGTH], int line) {
   if (strlen(file[line]) == 0)
     return 0;
   // TODO: This is pretty messy and might cause troubles later on
@@ -44,7 +45,7 @@ int rst_isTextOnly(char file[][RST_LINE_LENGTH], int line) {
   return 0;
 }
 
-void rst_handleEqual(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_equal(char file[][RST_LINE_LENGTH], int line) {
 
   static bool equalOpen = false;
 
@@ -180,12 +181,12 @@ char *rst_handleText(char file[][RST_LINE_LENGTH], int line) {
   return chopped;
 }
 
-void rst_handlePara(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_para(char file[][RST_LINE_LENGTH], int line) {
   char *chopped = rst_handleText(file, line);
   fprintf(rst_outfile, "\n<p>%s</p>\n", chopped);
 }
 
-void rst_handleNumber(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpenNum = false;
 
   if (file[line][1] == '.' && olListOpenNum == 0 && strlen(file[line - 1]) == 0) {
@@ -221,7 +222,7 @@ void rst_handleNumber(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void rst_handleHash(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_hash(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpen = false;
 
   if (file[line][1] == '.' && olListOpen == 0 && strlen(file[line - 1]) == 0) {
@@ -256,7 +257,7 @@ void rst_handleHash(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_dash_and_ul(char file[][RST_LINE_LENGTH], int line) {
   static bool listOpen = false;
 
   if (strlen(file[line]) == strlen(file[line - 1])) {
@@ -297,7 +298,7 @@ void rst_handleDashAndUl(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void rst_handleConfig(char file[][RST_LINE_LENGTH], int line) {
+void rst_handle_fieldlist(char file[][RST_LINE_LENGTH], int line) {
   char param[RST_FIELD_LIST_SIZE] = "";
   char opt[RST_FIELD_LIST_SIZE] = "";
   bool open = false;
@@ -331,22 +332,18 @@ void usage() {
 
 void rst_parse(char *rst_file_path, char *html_file_path) {
   if (strcmp(strrchr(rst_file_path, '.'), ".rst") != 0) {
-    fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", rst_file_path);
-    exit(1);
+    kevlar_err("[%s] %s doesn't seem to be a rst file", __FILE__, rst_file_path);
   }
 
   rst_infile = fopen(rst_file_path, "r");
   rst_outfile = fopen(html_file_path, "w");
 
   if (rst_infile == NULL) {
-    fprintf(stderr, "the file \"%s\" doesn't exist.\n", rst_file_path);
-    exit(1);
+    kevlar_err("[%s] the file \"%s\" doesn't exist.", __FILE__, rst_file_path);
   }
 
-  long fileLength = rst_getFileLength(rst_file_path);
+  long fileLength = rst_get_file_length(rst_file_path);
   char file[fileLength][RST_LINE_LENGTH];
-
-  puts(rst_file_path);
 
   // Read contents of the input file into the file[]
   for (int i = 0; i < fileLength; i++) {
@@ -357,16 +354,16 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
     case '=':
-      rst_handleEqual(file, currentLine);
+      rst_handle_equal(file, currentLine);
       break;
     case '-':
-      rst_handleDashAndUl(file, currentLine);
+      rst_handle_dash_and_ul(file, currentLine);
       break;
     case ':':
-      rst_handleConfig(file, currentLine);
+      rst_handle_fieldlist(file, currentLine);
       break;
     case '#':
-      rst_handleHash(file, currentLine);
+      rst_handle_hash(file, currentLine);
       break;
     case '\n':
     case '\r':
@@ -375,12 +372,12 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     default:
 
       if (isdigit(file[currentLine][1])) {
-        rst_handleNumber(file, currentLine);
+        rst_handle_number(file, currentLine);
         break;
       }
 
-      if (rst_isTextOnly(file, currentLine) == 1) {
-        rst_handlePara(file, currentLine);
+      if (rst_is_para_only(file, currentLine) == 1) {
+        rst_handle_para(file, currentLine);
       }
     }
   }
