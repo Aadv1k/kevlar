@@ -7,6 +7,7 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 #include "kevlar_templating.h"
+#include "kevlar_handle_stdout.h"
 
 #define MAX_CMD_SIZE 16
 
@@ -43,8 +44,7 @@ int main(int argc, char **argv) {
     break;
   case cmdNew:
     if (argc == 2) {
-      fprintf(stderr, "[kevlar] you need to provide a name for your project!\n");
-      exit(1);
+      kevlar_err("you need to provide a name for your project!", "");
     }
     kevlar_handle_new_command(argv[2]);
     break;
@@ -52,8 +52,7 @@ int main(int argc, char **argv) {
     kevlar_handle_build_command(".");
     break;
   default:
-    fprintf(stderr, "[kevlar] couldn't find command \"%s\"\n", argv[1]);
-    exit(1);
+    kevlar_err("couldn't find command \"%s\"", argv[1]);
   }
 
   return 0;
