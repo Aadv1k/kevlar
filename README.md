@@ -20,8 +20,8 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
 ## Documentation
 
 - [Get started](#get-started)
-  - [windows](#windows)
-  - [Linux and MacOS](#unix-linke)
+  - [Linux and MacOS](#unix-like)
+  - [Windows](#windows)
 - [Configuration](#configuration)
 - [Recipes](#recipes)
   - [Markdown](#convert-markdown)
