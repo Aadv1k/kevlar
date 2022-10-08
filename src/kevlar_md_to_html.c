@@ -7,11 +7,9 @@
 #include <string.h>
 
 #include "../utils/utils.h"
+#include "kevlar_errors.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_rst_to_html.h"
-
-#define MD_HEADING_LEVEL 6
-#define MD_HR_LENGTH 3
 
 FILE *md_infile;
 FILE *md_outfile;
@@ -69,7 +67,6 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
   }
 }
 
-
 void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
   int hashCount = 0;
 
@@ -124,7 +121,7 @@ void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
 }
 
 void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
-  char parsed_output[RST_LINE_LENGTH];
+  char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
 
   fprintf(md_outfile, "<p>%s</p>\n", parsed_output);
@@ -133,7 +130,7 @@ void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
 static bool paraOpen = false;
 
 void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
-  char parsed_output[RST_LINE_LENGTH];
+  char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
 
   if (paraOpen == false) {
@@ -147,30 +144,22 @@ void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void md_para_force_close() {
+void md_force_close_para() {
   fprintf(md_outfile, "</p>\n");
   paraOpen = false;
 }
 
 void md_parse(char *in_file_path, char *out_file_path) {
   if (strcmp(strrchr(in_file_path, '.'), ".md") != 0) {
-    fprintf(stderr, "[src/kevlar_md_to_html.c/md_parse()] %s doesn't seem to be a markdown file\n",
-            in_file_path);
-    exit(1);
+    kevlar_err("[%s] %s doesn't seem to be a markdown file\n", __FILE__, in_file_path);
   }
 
-  
-
   if ((md_infile = fopen(in_file_path, "r")) == NULL) {
-    fprintf(stderr, "[%s] the file \"%s\" doesn't exist.\n", __FILE__, in_file_path);
-    exit(1);
+    kevlar_err("[%s] the file \"%s\" doesn't exist.", __FILE__, in_file_path);
   }
 
   md_outfile = fopen(out_file_path, "w");
-
-  puts(in_file_path);
-
-  long fileLength = rst_getFileLength(in_file_path);
+  long fileLength = rst_get_file_length(in_file_path);
   char file[fileLength][RST_LINE_LENGTH];
 
   for (int i = 0; i < fileLength; i++) {
@@ -186,11 +175,10 @@ void md_parse(char *in_file_path, char *out_file_path) {
     case '*':
     case '-':
       if (md_is_hr(file, currentLine)) {
-        md_para_force_close();
+        md_force_close_para();
         fprintf(md_outfile, "<hr />\n");
         break;
       }
-
       md_handle_list(file, currentLine);
       break;
     default:
@@ -202,7 +190,7 @@ void md_parse(char *in_file_path, char *out_file_path) {
       } else {
         if (currentLine + 1 == fileLength) {
           md_handle_para(file, currentLine);
-          md_para_force_close();
+          md_force_close_para();
           break;
         }
 

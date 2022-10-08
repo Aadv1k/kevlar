@@ -11,8 +11,8 @@
 #endif
 
 #include "../utils/utils.h"
-#include "kevlar_handle_config.h"
 #include "kevlar_errors.h"
+#include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 
 int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
@@ -71,8 +71,8 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 
   *(strchr(default_rst_file_path, '/')) = '\0';
   kevlar_ok("Skeleton was setup; you can now "
-         "run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!",
-         default_rst_file_path);
+            "run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!",
+            default_rst_file_path);
 }
 
 void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
