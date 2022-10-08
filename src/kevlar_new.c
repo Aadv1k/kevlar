@@ -12,6 +12,7 @@
 
 #include "../utils/utils.h"
 #include "kevlar_handle_config.h"
+#include "kevlar_handle_stdout.h"
 #include "kevlar_new.h"
 
 int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
@@ -47,11 +48,11 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 #if defined(_WIN32)
   system(clone_git_command);
 #else
+
   if (system("git --version >/dev/null 2>&1") != 0) {
-    printf("[kevlar] couldn't find git on your system; not cloning any "
-           "theme\n");
+    kevlar_warn("couldn't find git on your system; not cloning any theme");
   } else {
-    printf("[kevlar] cloning theme into %s\n", skeleton->skel_template_folder_path);
+    kevlar_ok("cloning theme into %s", skeleton->skel_template_folder_path);
     system(clone_git_command);
   }
 #endif
@@ -69,19 +70,18 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   fclose(default_rst_file_buf);
 
   *(strchr(default_rst_file_path, '/')) = '\0';
-  printf("[kevlar] Successfully created the skeleton; you can now "
-         "run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!\n",
+  kevlar_ok("Skeleton was setup; you can now "
+         "run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!",
          default_rst_file_path);
 }
 
 void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
   switch (kevlar_get_folder_status(folder_path)) {
   case folderNonEmpty:
-    fprintf(stderr, "[kevlar] folder \"%s\" already exists and is not empty!\n", folder_path);
-    exit(1);
+    kevlar_err("folder \"%s\" already exists and is not empty!", folder_path);
     break;
   case folderNull:
-    printf("[kevlar] \"%s\" not found, creating new folder\n", folder_path);
+    kevlar_warn("\"%s\" not found, creating new folder", folder_path);
     utl_mkdir_crossplatform(folder_path);
   // fall through
   case folderEmpty:;

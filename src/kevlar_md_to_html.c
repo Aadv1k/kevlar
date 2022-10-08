@@ -159,13 +159,14 @@ void md_parse(char *in_file_path, char *out_file_path) {
     exit(1);
   }
 
-  md_infile = fopen(in_file_path, "r");
-  md_outfile = fopen(out_file_path, "w");
+  
 
-  if (md_infile == NULL) {
-    fprintf(stderr, "[src/kevlar_md_to_html.c/md_parse()] the file \"%s\" doesn't exist.\n", in_file_path);
+  if ((md_infile = fopen(in_file_path, "r")) == NULL) {
+    fprintf(stderr, "[%s] the file \"%s\" doesn't exist.\n", __FILE__, in_file_path);
     exit(1);
   }
+
+  md_outfile = fopen(out_file_path, "w");
 
   puts(in_file_path);
 

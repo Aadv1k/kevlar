@@ -13,8 +13,9 @@
 #include "kevlar_new.h"
 
 #include "../utils/utils.h"
-#include "kevlar_rst_to_html.h"
+#include "kevlar_handle_stdout.h"
 #include "kevlar_md_to_html.h"
+#include "kevlar_rst_to_html.h"
 #include "kevlar_templating.h"
 
 void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
@@ -25,10 +26,9 @@ void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
   strcat(full_theme_path, theme_path);
 
   if (kevlar_get_folder_status(full_theme_path) == folderNull) {
-    fprintf(stderr, "[kevlar] couldn't find theme %s\n", theme_path);
-    exit(1);
+    kevlar_err("couldn't find theme %s", theme_path);
   } else if (kevlar_get_folder_status(full_theme_path) == folderEmpty) {
-    fprintf(stderr, "[kevlar] the theme %s seems to be invalid\n", theme_path);
+    kevlar_err("the theme %s seems to be invalid", theme_path);
     exit(1);
   }
 }
@@ -39,9 +39,7 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
   struct dirent *dir_item;
 
   if ((dir_buf = opendir(dist_path)) == NULL) {
-    fprintf(stderr, "[kevlar] something went wrong while opening ./dist/ "
-                    "to generate listings");
-    exit(1);
+    kevlar_err("something went wrong while opening ./dist/ to generate listings");
   }
 
   while ((dir_item = readdir(dir_buf)) != NULL) {
@@ -62,8 +60,8 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
 }
 
 void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
-                                  char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader,
-                                  KevlarConfig *kev_config) {
+                                 char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader,
+                                 KevlarConfig *kev_config) {
 
   enum FolderStatus;
 
@@ -71,8 +69,7 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   struct dirent *dir_item;
 
   if (kevlar_get_folder_status(folder_path) == folderNull) {
-    fprintf(stderr, "[kevlar] couldn't open %s, it might not be a folder\n", folder_path);
-    exit(1);
+    kevlar_err("couldn't open %s, it might not be a folder", folder_path);
   }
 
   dir_buffer = opendir(folder_path);
@@ -110,9 +107,8 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
       FILE *html_file_buf = fopen(html_file_path, "r");
 
       if (html_file_buf == NULL) {
-        fprintf(stderr, "[kevlar] was unable to open html files for further "
-                        "processing, maybe the system command went wrong?\n");
-        exit(1);
+        kevlar_err("was unable to open html files for further processing, maybe the system command "
+                   "went wrong?");
       }
 
       char contents[TEMPLATE_MAX_FILE_SIZE] = "";
@@ -133,11 +129,8 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   }
 
   if (i == 0) {
-    fprintf(stderr, "[kevlar] found no .md files in %s\n", folder_path);
-    return;
+    kevlar_warn("found no .md files in %s", folder_path);
   }
-
-  kevlar_generate_listings("./dist", kev_config);
 }
 
 void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
@@ -149,8 +142,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   struct dirent *dir_item;
 
   if (kevlar_get_folder_status(folder_path) == folderNull) {
-    fprintf(stderr, "[kevlar] couldn't open %s, it might not be a folder\n", folder_path);
-    exit(1);
+    kevlar_err("couldn't open %s, it might not be a folder", folder_path);
   }
 
   dir_buffer = opendir(folder_path);
@@ -188,9 +180,8 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
       FILE *html_file_buf = fopen(html_file_path, "r");
 
       if (html_file_buf == NULL) {
-        fprintf(stderr, "[kevlar] was unable to open html files for further "
-                        "processing, maybe the system command went wrong?\n");
-        exit(1);
+        kevlar_err("was unable to open html files for further processing, maybe the system command "
+                   "went wrong?");
       }
 
       char contents[TEMPLATE_MAX_FILE_SIZE] = "";
@@ -211,11 +202,8 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   }
 
   if (i == 0) {
-    fprintf(stderr, "[kevlar] found no .rst files in %s\n", folder_path);
-    return;
+    kevlar_warn("found no .md files in %s", folder_path);
   }
-
-  kevlar_generate_listings("./dist", kev_config);
 }
 
 void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE],
@@ -223,19 +211,15 @@ void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE],
   enum FolderStatus;
 
   if (kevlar_get_folder_status(folder_path) == folderNull) {
-    fprintf(stderr, "[kevlar] ran into a problem while opening %s; it may not exist\n",
-            folder_path);
-    exit(1);
+    kevlar_err("ran into a problem while opening %s; it may not exist", folder_path);
   }
 
   if ((kevlar_get_folder_status(skeleton->skel_posts_folder_path) == folderNull) ||
       (kevlar_get_folder_status(skeleton->skel_template_folder_path) == folderNull) ||
       (kevlar_get_folder_status(skeleton->skel_config_file_path) != folderNull)) {
-    fprintf(stderr,
-            "[kevlar] %s doesn't seem to be a kevlar project, try running "
-            "kevlar help for info\n",
-            folder_path);
-    exit(1);
+    kevlar_err("this doesn't seem to be a kevlar project, try running "
+               "kevlar help for info",
+               folder_path);
   }
 }
 
@@ -257,8 +241,11 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   char *const p_configTheme = kev_config.configTheme;
   kevlar_check_if_theme_valid(p_configTheme);
 
-  //kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
+  kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
   kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
+
+
+  kevlar_generate_listings("./dist", &kev_config);
 
   kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
 }
