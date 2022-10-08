@@ -14,29 +14,33 @@ _NOTE_: This project is being continuously worked on, and is being built in frag
   - windows 11 v21H2
   - Debian GNU/Linux 11 (bullseye) on Windows 10 x86_64 ([WSL](https://learn.microsoft.com/en-us/windows/wsl/))
 - **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
+  - [Markdown](#convert-markdown)
+  - [reStructuredText](#convert-restructured-text)
 - **Highly extensible:** Support for basic yet scalable templating
 - **Simple:** Kevlar does not try to do too little or too much, just enough to get the job done.
 
 ## Documentation
 
-- [Get started ASAP](#quickstart)
+- [Get started](#get-started)
+  - [windows](#windows)
+  - [Linux and MacOS](#unix-linke)
 - [Configuration](#configuration)
-- [recipes](#recipes)
-  - [md-to-html](#md-to-html)
-  - [rst-to-html](#rst-to-html)
+- [Recipes](#recipes)
+  - [Markdown](#convert-markdown)
+  - [reStructuredText](#convert-restructuredtext)
 - [Templating](#templating)
-  - [Header tag](#header-tag)
-  - [Footer tag](#footer-tag)
-  - [Content tag](#content-tag)
-  - [Listing tag](#listing-tag)
-  - [Additional tags](#additional-tags)
+  - [Loader tags](#loader-tags)
+  - [File specific tags](#file-specific-tags)
+  - [Attribute tags](#attribute-tags)
 - [Creating themes](#theming)
 
-## Quickstart
+## Get started
 
 To get start with kevlar, you need `GCC` and `make` which are the primary build tools used by kevlar
 
-### Unix-like
+### unix-like
+
+**_build_**
 
 ```shell
 git clone https://github.com/aadv1k/kevlar
@@ -44,21 +48,30 @@ cd kevlar && make all
 ./bin/kevlar help
 ```
 
-### win32
+**_Create a new project_**
+
+```shell
+./bin/kevlar new myproject
+cd myproject
+../kevlar build
+```
+
+### windows
 
 You may need something like [mingw32-make](https://sourceforge.net/projects/mingw/files/MinGW/Extension/make/mingw32-make-3.80-3/), and gcc for windows for this to work
 
-```shell
+```cmd
 git clone https://github.com/aadv1k/kevlar
 cd kevlar && make kevlar_win32
 "bin/kevlar.exe" help
 ```
 
-You can, then using the kevlar CLI create a new project (for unix-like)
+**_Create a new project_**
 
-```shell
-./bin/kevlar new ../my-cool-project
-cd ../my-cool-project && ./kevlar/bin/kevlar build
+```cmd
+"bin/kevlar" new myproject
+cd myproject
+../kevlar build
 ```
 
 ## Configuration
@@ -82,7 +95,7 @@ theme=kyudo
 
 These are the loader kevlar comes with out-of-the-box.
 
-### rst to html
+### Convert reStructuredText
 
 - A higly customized spec of [reStructuredText](https://docutils.sourceforge.io/rst.html) is supported.
 - can be built as a separate program using `make rst2html`
@@ -112,7 +125,7 @@ Inline-code blocks are supported: `printf("%s\n", "hello world")`
 Links are also supported; here is a `Link to this repository https://github.com/aadv1k/kevlar`_
 ```
 
-### md to html
+### Convert markdown
 
 - An customized implementation of [GFM](https://github.github.com/gfm/)
 - Can be built as a separate program using `make md2html`
@@ -134,7 +147,7 @@ paragraphs are supported
 
 Unless you leave a line, in which case this is a separate para
 
-This is *italic*, this is **bold** and this is ***bold italic***
+This is _italic_, this is **bold** and this is **_bold italic_**
 
 1. This is an ordered list
 2. Your lists don't need to be in order for them to be parsed properly
@@ -154,7 +167,7 @@ hr separates
 
 kevlar has it's own custom templating language which is supported out of the box
 
-#### Header tag
+#### Loader tags
 
 This tag looks for a `header.html` in your specified theme, it then parses the header with this templating and replaces the `--HEADER--` with it.
 
@@ -162,15 +175,11 @@ This tag looks for a `header.html` in your specified theme, it then parses the h
 --HEADER--
 ```
 
-#### Footer tag
-
 This tag looks for a `footer.html` in your specified theme, it then parses the header with this templating and replaces the `--FOOTER--` with it.
 
 ```html
 --FOOTER--
 ```
-
-#### Style tag
 
 The `--STYLE--` will look for the specified css file and insert it's content as style tags within the html
 
@@ -178,7 +187,7 @@ The `--STYLE--` will look for the specified css file and insert it's content as 
 --STYLE ./style.css--
 ```
 
-#### Listing tag
+#### File specific tags
 
 You can add `--LISTING--` anywhere to get a list of all the files that were passed from `posts` to html.
 
@@ -188,8 +197,6 @@ You can add `--LISTING--` anywhere to get a list of all the files that were pass
 </ul>
 ```
 
-#### Content tag
-
 As each file is parsed into html, on success it is read internally stored inside a struct, putting `--CONTENT--` will simply load the contents of the string.
 This only works when called from `post.html` within your theme, since `post.html` is parsed everytime a new file is parsed from the posts folder.
 
@@ -197,17 +204,18 @@ This only works when called from `post.html` within your theme, since `post.html
 --CONTENT--
 ```
 
-#### Additional tags
+#### Attribute tags
 
-Given you have a valid `config.ini` file inside your project, kevlar also proivdes you with the `--AUTHOR--` and `--TITLE--` tag which correspond to whatver option you provided to the `author` and `title` field.
+- `--AUTHOR--`: The `author` field in your `config.ini` file
+- `--TITLE--`: The `title` field in your `config.ini` file
 
 ### Theming
 
 Kevlar supports theming with very specific archetypes, each theme must contain a
 
-- `index.html`: the end `index.html` in the `./dist` will be generated using this template.
-- `post.html`: content from each individual post (as html after conversion) will be parsed through the template
-- `header.html` (if called): The header file called by `--HEADER--`
-- `footer.html`(if called: The footer file called by `--FOOTER--`
+- `index.html`: is called once all files are parsed, `--LISTING--` will give you `<li><a></a></li>`
+- `post.html`: is called for each individual post; `--CONTENT--` tag within this to get the html post.
+- `header.html`: The header file called by `--HEADER--`
+- `footer.html`: The footer file called by `--FOOTER--`
 
 psst - you can check out the theme [kyudo](https://github.com/aadv1k/kyudo) to see the flexibility you get with this templating system
