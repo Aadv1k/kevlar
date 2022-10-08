@@ -7,7 +7,7 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 #include "kevlar_templating.h"
-#include "kevlar_handle_stdout.h"
+#include "kevlar_errors.h"
 
 #define MAX_CMD_SIZE 16
 

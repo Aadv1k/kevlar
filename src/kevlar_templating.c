@@ -11,7 +11,7 @@
 void kevlar_parse_template_token(char line[], char substr[], char content[],
                                  FILE *out_file_buffer) {
   char tail[TEMPLATE_MAX_TAG_SIZE];
-  strcpy(tail, utl_strchrev(strstr(line, substr), '-') + 1);
+  strcpy(tail, strrchr(strstr(line, substr), '-') + 1);
   *(strchr(line, '-')) = '\0';
 
   line[strlen(line) - 1] == ' ' ? line[strlen(line) - 1] = '\0' : line[strlen(line - 1)];

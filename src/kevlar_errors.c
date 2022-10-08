@@ -1,4 +1,4 @@
-#include "kevlar_handle_stdout.h"
+#include "kevlar_errors.h"
 
 #include <stdarg.h>
 #include <stdio.h>

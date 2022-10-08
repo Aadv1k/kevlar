@@ -1,5 +1,5 @@
-#ifndef KEVLAR_HANDLE_STDOUT_H
-#define KEVLAR_HANDLE_STDOUT_H
+#ifndef KEVLAR_ERRORS_H
+#define KEVLAR_ERRORS_H
 
 #define ERR_SIZE 256
 

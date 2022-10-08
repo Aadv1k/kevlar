@@ -13,7 +13,7 @@
 #include "kevlar_new.h"
 
 #include "../utils/utils.h"
-#include "kevlar_handle_stdout.h"
+#include "kevlar_errors.h"
 #include "kevlar_md_to_html.h"
 #include "kevlar_rst_to_html.h"
 #include "kevlar_templating.h"
@@ -43,7 +43,7 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
   }
 
   while ((dir_item = readdir(dir_buf)) != NULL) {
-    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".html") == 0 &&
+    if (strcmp(strrchr(dir_item->d_name, '.'), ".html") == 0 &&
         strcmp(dir_item->d_name, "index.html") != 0) {
 
       char *tmp = strdup(dir_item->d_name);
@@ -79,7 +79,7 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
 
-    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".md") == 0) {
+    if (strcmp(strrchr(dir_item->d_name, '.'), ".md") == 0) {
 
       char md_file_path[CONFIG_MAX_PATH_SIZE];
       char html_file_path[CONFIG_MAX_PATH_SIZE];
@@ -152,7 +152,7 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   int i = 0;
   while ((dir_item = readdir(dir_buffer)) != NULL) {
 
-    if (strcmp(utl_strchrev(dir_item->d_name, '.'), ".rst") == 0) {
+    if (strcmp(strrchr(dir_item->d_name, '.'), ".rst") == 0) {
 
       char rst_file_path[CONFIG_MAX_PATH_SIZE];
       char html_file_path[CONFIG_MAX_PATH_SIZE];

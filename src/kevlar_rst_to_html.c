@@ -330,7 +330,7 @@ void usage() {
 }
 
 void rst_parse(char *rst_file_path, char *html_file_path) {
-  if (strcmp(utl_strchrev(rst_file_path, '.'), ".rst") != 0) {
+  if (strcmp(strrchr(rst_file_path, '.'), ".rst") != 0) {
     fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", rst_file_path);
     exit(1);
   }
