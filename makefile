@@ -2,7 +2,7 @@ CFLAGS=-Wall -Wextra
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
-kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_templating.o ./utils/utils.o ./src/kevlar_rst_to_html.o ./src/kevlar_md_to_html.o ./src/kevlar_handle_stdout.o
+kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_templating.o ./utils/utils.o ./src/kevlar_rst_to_html.o ./src/kevlar_md_to_html.o ./src/kevlar_errors.o
 
 kevlar: $(kevlar_files)
 	mkdir -p bin
@@ -24,7 +24,7 @@ kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h utils
 kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h utils
 	$(CMD) ./src/kevlar_handle_config.c
 
-kevlar/handle_stdout: ./src/kevlar_handle_stdout.c ./src/kevlar_handle_stdout.h
+kevlar/errors: ./src/kevlar_errors.c ./src/kevlar_errors.h
 	$(CMD) ./src/kevlar_handle_stdout.c
 
 kevlar/templating: ./src/kevlar_templating.c ./src/kevlar_templating.h kevlar/handle_config utils

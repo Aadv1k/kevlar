@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
   strcpy(in_file_path, argv[1]);
   strcpy(out_file_path, argv[2]);
 
-  if (strcmp(utl_strchrev(in_file_path, '.'), ".rst") != 0) {
+  if (strcmp(strrchr(in_file_path, '.'), ".rst") != 0) {
     fprintf(stderr, "[rst2html] %s doesn't seem to be a rst file\n", in_file_path);
     exit(1);
   }
