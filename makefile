@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra 
+CFLAGS=-Wall -Wextra -Wno-stringop-overread -Wno-stringop-overflow
 CC=gcc
 CMD := $(CC) $(CFLAGS)
 
