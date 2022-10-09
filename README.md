@@ -120,25 +120,24 @@ Every other text is a paragraph; which supports *italic*, **bold** and ***bold i
 - **Unordered** list item 1
 - Unordered *list item* 2
 
+This is _italic_, this is **bold** and this is **_bold italic_**
+
 Inline-code blocks are supported: `printf("%s\n", "hello world")`
 
-Links are also supported; here is a `Link to this repository https://github.com/aadv1k/kevlar`_
+# Links are also supported; here is a `Link to this repository https://github.com/aadv1k/kevlar`_
+# Comments are, but links, remain a TBD
 ```
 
 ### Convert markdown
 
-- An customized implementation of [GFM](https://github.github.com/gfm/)
+- An implementation of [GFM](https://github.github.com/gfm/)
 - Can be built as a separate program using `make md2html`
 
 ```md
 # Heading 1
-
 ## Heading 2
-
 ### Heading 3
-
 #### Heading 4
-
 ##### Heading 5
 
 This is a paragraph
@@ -147,7 +146,7 @@ paragraphs are supported
 
 Unless you leave a line, in which case this is a separate para
 
-This is _italic_, this is **bold** and this is **_bold italic_**
+This is _italic_, this is **bold** and this is **_bold italic_**, this is ~~striked~~
 
 1. This is an ordered list
 2. Your lists don't need to be in order for them to be parsed properly
