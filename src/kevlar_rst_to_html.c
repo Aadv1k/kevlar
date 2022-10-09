@@ -67,145 +67,45 @@ void rst_handle_equal(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
-  bool open = true;
-  int style = 0;
-  char res[RST_LINE_LENGTH] = ""; 
+void rst_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
+  bool boldOpen = true;
+  bool emOpen = true;
 
-
-
-  char content[strlen(file[line])];
-  strcpy(content, file[line]);
-  
-  // Brace yourselves for whats about to come, it is NOT pretty
-
-  bool tickOpen = false;
-  char backTickContent[RST_LINE_LENGTH];
-
-  for (int i = 0; content[i] != '\0'; i++) {
-    // If we find an asterisk, we add to the style, style can keep track of
-    // how many astersiks we have
-
-    if (tickOpen == true) {
-      strncat(backTickContent, &content[i], 1);
-    }
-
-    if (content[i] == '`' && tickOpen == false) {
-
-      tickOpen = true;
-
-    } else if (content[i] == '_' && content[i - 1] == '`' && tickOpen == true) {
-
-      utl_truncateLast(backTickContent);
-      char html_link_tag[RST_LINE_LENGTH];
-      char html_link_name[RST_LINE_LENGTH];
-
-      char *html_link = strrchr(backTickContent, ' ');
-      utl_truncateLast(html_link);
-
-      strcpy(html_link_name, backTickContent);
-
-      *(strrchr(html_link_name, ' ')) = '\0';
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-      snprintf(html_link_tag, RST_LINE_LENGTH * 2, "<a href=\"%s\">%s</a>", html_link + 1,
-               html_link_name);
-#pragma GCC diagnostic pop
-      strcat(res, html_link_tag);
-
-      backTickContent[0] = '\0';
-      tickOpen = false;
-      continue;
-
-    } else if (content[i] != '_' && content[i - 1] == '`' && tickOpen == true) {
-      char code_line[RST_LINE_LENGTH];
-
-      utl_truncateLast(backTickContent);
-      utl_truncateLast(backTickContent);
-
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-truncation"
-      snprintf(code_line, RST_LINE_LENGTH + 20, "<code>%s</code> ", backTickContent);
-#pragma GCC diagnostic pop
-      strcat(res, code_line);
-
-      backTickContent[0] = '\0';
-      tickOpen = false;
-
-      continue;
-    }
-
-    if (content[i] == '*') {
-      style++;
-
-      // If there is some content after the asterisk and we put an opening
-      // tag
-      if (content[i + 1] != '*' && open == true) {
-        switch (style) {
-        case 1:
-          strcat(res, "<em>");
-          break;
-        case 2:
-          strcat(res, "<b>");
-          break;
-        case 3:
-          strcat(res, "<em><b>");
-          break;
-        }
-        // We have put a need to add a closing tag
-        open = false;
-      } else if (content[i + 1] != '*' && open == false) {
-        switch (style) {
-        case 1:
-          strcat(res, "</em>");
-          break;
-        case 2:
-          strcat(res, "</b>");
-          break;
-        case 3:
-          strcat(res, "</b></em>");
-          break;
-        }
-        // we default the open = true for the next asterisk.
-        open = true;
-      }
-    } else if (content[i] != '*' && tickOpen == false) {
-      // We reset the style to 0 otherwise it will keep on adding,
-      // ideally, we can extend this setup infinitely given how we can
-      // keep track of how many asterisks we have
-      strncat(res, &content[i], 1);
-      style = 0;
+  for (int i = 0; input[i] != '\0'; i++) {
+    if (input[i] == '*' && input[i + 1] != '*' && input[i + 2] != '*') {
+      emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+      emOpen = !emOpen;
+    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] != '*') {
+      boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
+      boldOpen = !boldOpen;
+      i += 1;
+    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] == '*') {
+      (boldOpen && emOpen) ? strcat(output, "<em><b>") : strcat(output, "</b></em>");
+      boldOpen = !boldOpen;
+      emOpen = !emOpen;
+      i += 2;
+    } else {
+      strncat(output, &input[i], 1);
     }
   }
-
-  char * choppedLine;
-
-  if ((res[0] == '-' && res[1] == ' ') || (res[0] == '#' && res[1] == '.') ||
-      (isdigit(res[0]) && res[1] == '.')) {
-    choppedLine = res + 2;
-  } else {
-    choppedLine = res;
-  }
-
-  return choppedLine;
 }
 
 void rst_handle_para(char file[][RST_LINE_LENGTH], int line) {
-  char * foo; 
-  foo = rst_handleText(file, line);
-  fprintf(rst_outfile, "\n<p>%s</p>\n", foo);
+  char out[RST_LINE_LENGTH];
+  rst_handleText(file[line], out);
+  fprintf(rst_outfile, "\n<p>%s</p>\n", out);
 }
 
 void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpenNum = false;
+  char out[RST_LINE_LENGTH];
+  rst_handleText(file[line], out);
 
   if (file[line][1] == '.' && olListOpenNum == 0 && strlen(file[line - 1]) == 0) {
     olListOpenNum = true;
 
     fprintf(rst_outfile, "<ol>\n\t<li>\n\t\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == '.' && olListOpenNum == 1 && strlen(file[line + 1]) != 0) {
@@ -214,7 +114,7 @@ void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
     // or </ul>
 
     fprintf(rst_outfile, "\t<li>\n\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == '.' && olListOpenNum == 1 && !isdigit(file[line + 1][0])) {
@@ -226,7 +126,7 @@ void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
     olListOpenNum = false;
 
     fprintf(rst_outfile, "\t<li>\n\t\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
 
   } else {
@@ -236,12 +136,14 @@ void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
 
 void rst_handle_hash(char file[][RST_LINE_LENGTH], int line) {
   static bool olListOpen = false;
+  char out[RST_LINE_LENGTH];
+  rst_handleText(file[line], out);
 
   if (file[line][1] == '.' && olListOpen == 0 && strlen(file[line - 1]) == 0) {
     olListOpen = true;
 
     fprintf(rst_outfile, "<ol>\n\t<li>\n\t\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 && strlen(file[line + 1]) != 0) {
@@ -250,7 +152,7 @@ void rst_handle_hash(char file[][RST_LINE_LENGTH], int line) {
     // or </ul>
 
     fprintf(rst_outfile, "\t<li>\n\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == '.' && olListOpen == 1 && file[line + 1][0] != '#') {
@@ -262,7 +164,7 @@ void rst_handle_hash(char file[][RST_LINE_LENGTH], int line) {
     olListOpen = false;
 
     fprintf(rst_outfile, "\t<li>\n\t\t");
-    fprintf(rst_outfile, "%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "%s", out);
     fprintf(rst_outfile, "\n\t</li>\n</ol>\n\n");
   } else {
     // Ignore this string, we asume it is a comment
@@ -270,10 +172,12 @@ void rst_handle_hash(char file[][RST_LINE_LENGTH], int line) {
 }
 
 void rst_handle_dash_and_ul(char file[][RST_LINE_LENGTH], int line) {
-  static bool listOpen = false;
+  static bool listOpen = true;
+
+  char out[RST_LINE_LENGTH] = "";
+  rst_handleText(file[line], out);
 
   if (strlen(file[line]) == strlen(file[line - 1])) {
-
     // It a header with dashed underline or H3
     fprintf(rst_outfile, "\n<h3>%s</h3>\n", file[line - 1]);
 
@@ -283,7 +187,7 @@ void rst_handle_dash_and_ul(char file[][RST_LINE_LENGTH], int line) {
 
     listOpen = true;
 
-    fprintf(rst_outfile, "<ul>\n\t<li>\n\t\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "<ul>\n\t<li>\n\t\t%s", &out[1]);
     fprintf(rst_outfile, "\n\t</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 && strlen(file[line + 1]) != 0) {
@@ -291,7 +195,7 @@ void rst_handle_dash_and_ul(char file[][RST_LINE_LENGTH], int line) {
     // This is the middle of the list, we don't need to surround by a <ul>
     // or </ul>
 
-    fprintf(rst_outfile, "\t<li>\n\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\t<li>\n\t%s", &out[1]);
     fprintf(rst_outfile, "</li>\n");
 
   } else if (file[line][1] == ' ' && listOpen == 1 && file[line + 1][0] != '-') {
@@ -302,11 +206,11 @@ void rst_handle_dash_and_ul(char file[][RST_LINE_LENGTH], int line) {
 
     listOpen = false;
 
-    fprintf(rst_outfile, "\t<li>\n\t\t%s", rst_handleText(file, line));
+    fprintf(rst_outfile, "\t<li>\n\t\t%s", out);
     fprintf(rst_outfile, "\n\t</li>\n</ul>\n\n");
+
   } else {
-    // rst_throw_error("Error while parsing unordered list item or h3",
-    // line, file);
+    // rst_throw_error("Error while parsing unordered list item or h3", line, file);
   }
 }
 
@@ -383,8 +287,6 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     case ' ':
       break;
     default:
-
-
       if (isdigit(file[currentLine][1])) {
         rst_handle_number(file, currentLine);
         break;
