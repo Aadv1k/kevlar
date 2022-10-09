@@ -163,7 +163,7 @@ void md_parse(char *in_file_path, char *out_file_path) {
   char file[fileLength][RST_LINE_LENGTH];
 
   for (int i = 0; i < fileLength; i++) {
-    fgets(file[i], RST_LINE_LENGTH, md_infile);
+    if (!fgets(file[i], RST_LINE_LENGTH, md_infile)) kevlar_warn("something went wrong");
     utl_truncateLast(file[i]);
   }
 

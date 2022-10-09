@@ -15,7 +15,7 @@ FILE *rst_outfile;
 long rst_get_file_length(char *filename) {
   FILE *infile = fopen(filename, "r");
 
-  long file_len;
+  long file_len = 0;
 
   for (char c = getc(infile); c != EOF; c = getc(infile)) {
     if (c == '\n')
@@ -67,12 +67,16 @@ void rst_handle_equal(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-char *rst_handleText(char file[][RST_LINE_LENGTH], int line) {
+char * rst_handleText(char file[][RST_LINE_LENGTH], int line) {
   bool open = true;
   int style = 0;
-  char res[RST_LINE_LENGTH * 10] = "";
+  char res[RST_LINE_LENGTH] = ""; 
+
+
+
   char content[strlen(file[line])];
   strcpy(content, file[line]);
+  
   // Brace yourselves for whats about to come, it is NOT pretty
 
   bool tickOpen = false;
@@ -103,8 +107,11 @@ char *rst_handleText(char file[][RST_LINE_LENGTH], int line) {
 
       *(strrchr(html_link_name, ' ')) = '\0';
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
       snprintf(html_link_tag, RST_LINE_LENGTH * 2, "<a href=\"%s\">%s</a>", html_link + 1,
                html_link_name);
+#pragma GCC diagnostic pop
       strcat(res, html_link_tag);
 
       backTickContent[0] = '\0';
@@ -117,7 +124,11 @@ char *rst_handleText(char file[][RST_LINE_LENGTH], int line) {
       utl_truncateLast(backTickContent);
       utl_truncateLast(backTickContent);
 
-      snprintf(code_line, RST_LINE_LENGTH * 2, "<code>%s</code> ", backTickContent);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+      snprintf(code_line, RST_LINE_LENGTH + 20, "<code>%s</code> ", backTickContent);
+#pragma GCC diagnostic pop
       strcat(res, code_line);
 
       backTickContent[0] = '\0';
@@ -169,21 +180,22 @@ char *rst_handleText(char file[][RST_LINE_LENGTH], int line) {
     }
   }
 
-  char *chopped;
+  char * choppedLine;
 
   if ((res[0] == '-' && res[1] == ' ') || (res[0] == '#' && res[1] == '.') ||
       (isdigit(res[0]) && res[1] == '.')) {
-    chopped = res + 2;
+    choppedLine = res + 2;
   } else {
-    chopped = res;
+    choppedLine = res;
   }
 
-  return chopped;
+  return choppedLine;
 }
 
 void rst_handle_para(char file[][RST_LINE_LENGTH], int line) {
-  char *chopped = rst_handleText(file, line);
-  fprintf(rst_outfile, "\n<p>%s</p>\n", chopped);
+  char * foo; 
+  foo = rst_handleText(file, line);
+  fprintf(rst_outfile, "\n<p>%s</p>\n", foo);
 }
 
 void rst_handle_number(char file[][RST_LINE_LENGTH], int line) {
@@ -346,10 +358,11 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
   char file[fileLength][RST_LINE_LENGTH];
 
   // Read contents of the input file into the file[]
-  for (int i = 0; i < fileLength; i++) {
-    fgets(file[i], RST_LINE_LENGTH, rst_infile);
+  for (int i = 0; !feof(rst_infile); i++) {
+    if (fgets(file[i], RST_LINE_LENGTH, rst_infile) == NULL) // pass;
     utl_truncateLast(file[i]);
   }
+
 
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
@@ -370,6 +383,7 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     case ' ':
       break;
     default:
+
 
       if (isdigit(file[currentLine][1])) {
         rst_handle_number(file, currentLine);
