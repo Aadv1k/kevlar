@@ -6,20 +6,22 @@
 #include "../utils/utils.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+#include "kevlar_errors.h"
 
 void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_config) {
   FILE *file_buf;
 
-  if (!(file_buf = fopen(file_path, "r"))) {
+  if ((file_buf = fopen(file_path, "r")) == NULL) {
     fprintf(stderr, "[kevlar] something went wrong while opening %s\n", file_path);
     exit(1);
   }
 
   int line_count = 0;
-  while (!feof(file_buf)) {
-    char cur_line[CONFIG_MAX_FILE_SIZE];
-    char *target;
-    fgets(cur_line, CONFIG_MAX_FILE_SIZE, file_buf);
+  char cur_line[CONFIG_MAX_FILE_SIZE];
+
+  while (fgets(cur_line, CONFIG_MAX_FILE_SIZE, file_buf) != NULL) {
+    char * target;
+
     target = strtok(cur_line, "=");
     char command[2][CONFIG_MAX_OPT_SIZE] = {};
 
@@ -33,6 +35,8 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
         fprintf(stderr, "[kevlar] invalid config at %s at line %d\n", file_path, line_count + 1);
         exit(1);
       }
+
+
       strcpy(command[i], target);
       target = strtok(NULL, "=");
       i++;
@@ -56,16 +60,13 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
       strcpy(kev_config->configMarkdownLoader, command[1]);
     }
     line_count++;
+
   }
 
-  snprintf(kev_config->configFooterPath, CONFIG_MAX_PATH_SIZE, "./%s/%s/%s", "templates",
-           kev_config->configTheme, "footer.html");
-  snprintf(kev_config->configHeaderPath, CONFIG_MAX_PATH_SIZE, "./%s/%s/%s", "templates",
-           kev_config->configTheme, "header.html");
-  snprintf(kev_config->configIndexPath, CONFIG_MAX_PATH_SIZE, "./%s/%s/%s", "templates",
-           kev_config->configTheme, "index.html");
-  snprintf(kev_config->configPostPath, CONFIG_MAX_PATH_SIZE, "./%s/%s/%s", "templates",
-           kev_config->configTheme, "post.html");
+  snprintf(kev_config->configFooterPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/footer.html", kev_config->configTheme);
+  snprintf(kev_config->configHeaderPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/header.html", kev_config->configTheme);
+  snprintf(kev_config->configIndexPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/index.html", kev_config->configTheme);
+  snprintf(kev_config->configPostPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/post.html", kev_config->configTheme);
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {

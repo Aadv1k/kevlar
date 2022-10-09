@@ -50,8 +50,10 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
       dir_item->d_name[strlen(dir_item->d_name) - 5] = '\0';
 
       char html_li_link[CONFIG_MAX_FILE_LINE_SIZE];
-      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE + sizeof(dir_item->d_name),
+
+      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE,
                "<li><a href=\"./%s\">%s</a></li>\n", tmp, dir_item->d_name);
+
       strcat(kev_config->configListing, html_li_link);
       free(tmp);
     }
@@ -97,9 +99,12 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
       utl_prepend(html_file_path, out_folder_path);
 
       if (strlen(kev_config->configMarkdownLoader) != 0) {
-        snprintf(system_command, BUILD_MAX_CMD_SIZE * 3, "%s %s %s", rst_loader, md_file_path,
+        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", rst_loader, md_file_path,
                  html_file_path);
-        system(system_command);
+        if (system(system_command) == -1) {
+          kevlar_warn("command `%s` did not work; continuing without parsing markdown file", system_command);
+        }
+
       } else {
         md_parse(md_file_path, html_file_path);
       }
@@ -170,9 +175,11 @@ void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
       utl_prepend(html_file_path, out_folder_path);
 
       if (strlen(kev_config->configRstLoader) != 0) {
-        snprintf(system_command, BUILD_MAX_CMD_SIZE * 3, "%s %s %s", rst_loader, rst_file_path,
+        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", rst_loader, rst_file_path,
                  html_file_path);
-        system(system_command);
+        if (system(system_command) == -1) {
+          kevlar_warn("command `%s` did not work; continuing without parsing rst file", system_command);
+        }
       } else {
         rst_parse(rst_file_path, html_file_path);
       }
@@ -238,8 +245,7 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
   char posts_path[CONFIG_MAX_PATH_SIZE];
   snprintf(posts_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/posts/");
 
-  char *const p_configTheme = kev_config.configTheme;
-  kevlar_check_if_theme_valid(p_configTheme);
+  kevlar_check_if_theme_valid(kev_config.configTheme);
 
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
   kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);

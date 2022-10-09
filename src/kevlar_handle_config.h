@@ -5,7 +5,7 @@
 #define CONFIG_MAX_PATH_SIZE 256
 
 // REVIEW: May overflow
-#define CONFIG_MAX_FILE_SIZE 100000
+#define CONFIG_MAX_FILE_SIZE 10000
 #define CONFIG_MAX_FILE_LINE_SIZE 10000
 
 typedef struct {
@@ -16,13 +16,12 @@ typedef struct {
   char configTheme[CONFIG_MAX_OPT_SIZE];
   char configListing[CONFIG_MAX_FILE_SIZE];
 
-  char configHeaderPath[CONFIG_MAX_OPT_SIZE];
-  char configFooterPath[CONFIG_MAX_OPT_SIZE];
+  char configHeaderPath[CONFIG_MAX_PATH_SIZE];
+  char configFooterPath[CONFIG_MAX_PATH_SIZE];
+  char configIndexPath[CONFIG_MAX_PATH_SIZE];
+  char configPostPath[CONFIG_MAX_PATH_SIZE];
 
   char configHtmlContents[CONFIG_MAX_FILE_SIZE];
-
-  char configIndexPath[CONFIG_MAX_OPT_SIZE];
-  char configPostPath[CONFIG_MAX_OPT_SIZE];
 
 } KevlarConfig;
 
