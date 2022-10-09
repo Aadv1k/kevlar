@@ -45,39 +45,53 @@ bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
 }
 
 void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
-  bool boldOpen = true;
-  bool emOpen = true;
+  bool boldOpen = false;
+  bool emOpen = false;
+  bool tickOpen = false;
+  bool tildeOpen = false;
+  bool underScoreOpen = false;
 
   for (int i = 0; input[i] != '\0'; i++) {
-    if (input[i] == '*' && input[i + 1] != '*' && input[i + 2] != '*') {
-      emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
-      emOpen = !emOpen;
-    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] != '*') {
-      boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
-      boldOpen = !boldOpen;
-      i += 1;
-    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] == '*') {
-      (boldOpen && emOpen) ? strcat(output, "<em><b>") : strcat(output, "</b></em>");
-      boldOpen = !boldOpen;
-      emOpen = !emOpen;
-      i += 2;
+    if (input[i] == '*') {
+      switch (utl_count_repeating_char('*', &input[i])) {
+      case 1:
+        !emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+        emOpen = !emOpen;
+        break;
+      case 2:
+        !boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
+        boldOpen = !boldOpen;
+        break;
+      }
+      i += utl_count_repeating_char('*', &input[i]) - 1;
+    } else if (input[i] == '`') {
+      !tickOpen ? strcat(output, "<code>") : strcat(output, "</code>");
+      i += utl_count_repeating_char('`', &input[i]) - 1;
+      tickOpen = !tickOpen;
+    } else if (input[i] == '~')  {
+      !tildeOpen ? strcat(output, "<del>") : strcat(output, "</del>");
+      i += utl_count_repeating_char('~', &input[i]) - 1;
+      tildeOpen = !tildeOpen;
+    }  else if (input[i] == '_') {
+      !underScoreOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+      i += utl_count_repeating_char('_', &input[i]) - 1;
+      underScoreOpen = !underScoreOpen;
+
     } else {
       strncat(output, &input[i], 1);
     }
   }
+
+  if (boldOpen || emOpen) {
+    kevlar_warn("[md2html] some asterisks were never closed!");
+  }
 }
 
 void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
-  int hashCount = 0;
-
-  while (true) {
-    if (file[line][hashCount] != '#')
-      break;
-    hashCount++;
-  }
+  size_t hashCount = utl_count_repeating_char('#', file[line]);
 
   if (hashCount < MD_HEADING_LEVEL) {
-    fprintf(md_outfile, "<h%d>%s</h%d>\n", hashCount,
+    fprintf(md_outfile, "<h%zu>%s</h%zu>\n", hashCount,
             isspace(*(strrchr(file[line], '#') + 1)) ? strrchr(file[line], '#') + 2
                                                      : strrchr(file[line], '#') + 1,
             hashCount);
@@ -86,15 +100,22 @@ void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
+static bool ulOpen = false;
+
 void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
-  static bool ulOpen = false;
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
   char target[RST_LINE_LENGTH] = "";
   md_handleText(target_line, target);
 
-  if (file[line - 1][0] != file[line][0] && ulOpen == false) {
-    fprintf(md_outfile, "<ul>\n\t<li>%s</li>\n", target);
+  if (!ulOpen && file[line - 1][0] != file[line][0]) {
+    fprintf(md_outfile, "\n<ul>\n\t<li>%s</li>\n", target);
     ulOpen = true;
+
+    if (file[line + 1][0] != file[line][0]) {
+      fprintf(md_outfile, "</ul>\n");
+      ulOpen = false;
+    }
+
   } else if (ulOpen && file[line + 1][0] == file[line][0]) {
     fprintf(md_outfile, "\t<li>%s</li>\n", target);
   } else if (ulOpen && file[line + 1][0] != file[line][0]) {
@@ -103,15 +124,22 @@ void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
+static bool olOpen = false;
+
 void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
-  static bool olOpen = false;
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
   char target[RST_LINE_LENGTH] = "";
   md_handleText(target_line, target);
 
-  if (file[line - 1][0] != file[line][0] && !olOpen) {
-    fprintf(md_outfile, "<ol>\n\t<li>%s</li>\n", target);
+  if (!olOpen && file[line - 1][0] != file[line][0]) {
+    fprintf(md_outfile, "\n<ol>\n\t<li>%s</li>\n", target);
     olOpen = true;
+
+    if (!isdigit(file[line + 1][0]) && file[line+1][1] != '.') {
+      fprintf(md_outfile, "</ol>\n");
+      olOpen = false;
+    }
+
   } else if (olOpen && file[line + 1][0] == file[line][0]) {
     fprintf(md_outfile, "\t<li>%s</li>\n", target);
   } else if (olOpen && file[line + 1][0] != file[line][0]) {
@@ -163,7 +191,8 @@ void md_parse(char *in_file_path, char *out_file_path) {
   char file[fileLength][RST_LINE_LENGTH];
 
   for (int i = 0; i < fileLength; i++) {
-    if (!fgets(file[i], RST_LINE_LENGTH, md_infile)) kevlar_warn("something went wrong");
+    if (!fgets(file[i], RST_LINE_LENGTH, md_infile))
+      kevlar_warn("something went wrong");
     utl_truncateLast(file[i]);
   }
 
@@ -179,8 +208,12 @@ void md_parse(char *in_file_path, char *out_file_path) {
         fprintf(md_outfile, "<hr />\n");
         break;
       }
-      md_handle_list(file, currentLine);
-      break;
+
+      if (file[currentLine][1] == ' ') {
+        md_handle_list(file, currentLine);
+        break;
+      }
+      // fall-through
     default:
       if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
         break;
@@ -193,7 +226,6 @@ void md_parse(char *in_file_path, char *out_file_path) {
           md_force_close_para();
           break;
         }
-
         md_is_single_para(file, currentLine) ? md_handle_single_para(file, currentLine)
                                              : md_handle_para(file, currentLine);
       }
