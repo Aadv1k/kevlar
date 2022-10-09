@@ -14,6 +14,14 @@ void utl_prepend_str(char prefix[], char str[]) {
   strcat(str, temp_str);
 }
 
+size_t utl_count_repeating_char(char chr, const char * str) {
+  for (size_t i = 0; str[i] != '\0'; i++) {
+    if (str[i] != chr)
+      return i;
+  }
+  return strlen(str);
+}
+
 // https://stackoverflow.com/questions/2328182/prepending-to-a-string
 void utl_prepend(char *string, const char *prefix) {
   size_t len = strlen(prefix);

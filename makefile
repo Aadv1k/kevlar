@@ -33,19 +33,19 @@ kevlar/templating: ./src/kevlar_templating.c ./src/kevlar_templating.h kevlar/ha
 kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h kevlar/rst_to_html
 	$(CMD) ./src/kevlar_build.c
 
-kevlar/rst_to_html: ./src/kevlar_rst_to_html.c ./src/kevlar_rst_to_html.h utils
+kevlar/rst_to_html: ./src/kevlar_rst_to_html.c ./src/kevlar_rst_to_html.h utils kevlar/errors
 	$(CMD) ./src/kevlar_rst_to_html.c
 
-kevlar/md_to_html: ./src/kevlar_md_to_html.c ./src/kevlar_md_to_html.h kevlar/rst_to_html utils
+kevlar/md_to_html: ./src/kevlar_md_to_html.c ./src/kevlar_md_to_html.h kevlar/rst_to_html utils kevlar/errors
 	$(CMD) ./src/kevlar_md_to_html.c
 
-rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o
+rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o ./src/kevlar_errors.o
 	mkdir -p bin 
-	$(CC) ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o -o ./bin/rst2html
+	$(CC) ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -o ./bin/rst2html
 
-md2html: ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o
+md2html: ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o
 	mkdir -p bin 
-	$(CC) ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o -o ./bin/md2html
+	$(CC) ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -o ./bin/md2html
 
 all: kevlar rst2html md2html
 

@@ -68,25 +68,45 @@ void rst_handle_equal(char file[][RST_LINE_LENGTH], int line) {
 }
 
 void rst_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
-  bool boldOpen = true;
-  bool emOpen = true;
+  bool boldOpen = false;
+  bool emOpen = false;
+  bool tickOpen = false;
+  bool tildeOpen = false;
+  bool underScoreOpen = false;
 
   for (int i = 0; input[i] != '\0'; i++) {
-    if (input[i] == '*' && input[i + 1] != '*' && input[i + 2] != '*') {
-      emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
-      emOpen = !emOpen;
-    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] != '*') {
-      boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
-      boldOpen = !boldOpen;
-      i += 1;
-    } else if (input[i] == '*' && input[i + 1] == '*' && input[i + 2] == '*') {
-      (boldOpen && emOpen) ? strcat(output, "<em><b>") : strcat(output, "</b></em>");
-      boldOpen = !boldOpen;
-      emOpen = !emOpen;
-      i += 2;
+    if (input[i] == '*') {
+      switch (utl_count_repeating_char('*', &input[i])) {
+      case 1:
+        !emOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+        emOpen = !emOpen;
+        break;
+      case 2:
+        !boldOpen ? strcat(output, "<b>") : strcat(output, "</b>");
+        boldOpen = !boldOpen;
+        break;
+      }
+      i += utl_count_repeating_char('*', &input[i]) - 1;
+    } else if (input[i] == '`') {
+      !tickOpen ? strcat(output, "<code>") : strcat(output, "</code>");
+      i += utl_count_repeating_char('`', &input[i]) - 1;
+      tickOpen = !tickOpen;
+    } else if (input[i] == '~')  {
+      !tildeOpen ? strcat(output, "<del>") : strcat(output, "</del>");
+      i += utl_count_repeating_char('~', &input[i]) - 1;
+      tildeOpen = !tildeOpen;
+    }  else if (input[i] == '_') {
+      !underScoreOpen ? strcat(output, "<em>") : strcat(output, "</em>");
+      i += utl_count_repeating_char('_', &input[i]) - 1;
+      underScoreOpen = !underScoreOpen;
+
     } else {
       strncat(output, &input[i], 1);
     }
+  }
+
+  if (boldOpen || emOpen) {
+    kevlar_warn("[rst2html] some asterisks were never closed!");
   }
 }
 
