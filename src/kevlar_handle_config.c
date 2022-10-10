@@ -60,7 +60,6 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
       strcpy(kev_config->configMarkdownLoader, command[1]);
     }
     line_count++;
-
   }
 
   snprintf(kev_config->configFooterPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/footer.html", kev_config->configTheme);

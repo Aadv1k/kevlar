@@ -287,7 +287,6 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
     utl_truncateLast(file[i]);
   }
 
-
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
     case '=':
