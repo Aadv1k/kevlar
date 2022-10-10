@@ -45,6 +45,32 @@ void kevlar_parse_stylesheet(char *line, FILE *out_file_buffer, char *theme_name
   kevlar_parse_template_token(line, "--STYLE", stylesheet, out_file_buffer);
 };
 
+void kevlar_parse_script(char *line, FILE *out_file_buffer, char *theme_name) {
+  char script_path[CONFIG_MAX_PATH_SIZE];
+  char script[TEMPLATE_MAX_FILE_SIZE] = "";
+
+  snprintf(script_path, CONFIG_MAX_PATH_SIZE, "%s/%s/%s", "templates", theme_name,
+           strchr(line, '/') + 1);
+  *(strchr(script_path, '-')) = '\0';
+
+  FILE *js_file_buffer;
+  char file_line[TEMPLATE_MAX_LINE_SIZE];
+
+  if ((js_file_buffer = fopen(script_path, "r")) == NULL) {
+    fprintf(stderr, "[kevlar] couldn't open the script! Perhaps your theme "
+                    "is invalid?\n");
+    exit(1);
+  }
+
+  while ((fgets(file_line, TEMPLATE_MAX_LINE_SIZE, js_file_buffer)) != NULL)
+    strcat(script, file_line);
+
+  utl_prepend(script, "<script>\n");
+  strcat(script, "</script>\n");
+  fclose(js_file_buffer);
+  kevlar_parse_template_token(line, "--SCRIPT", script, out_file_buffer);
+};
+
 void kelvar_parse_header_and_footer(FILE *out_file_buffer, KevlarConfig *kev_config) {
 
   // "undry" code but at least it doesn't cause the entire app to fall apart
@@ -70,6 +96,9 @@ void kelvar_parse_header_and_footer(FILE *out_file_buffer, KevlarConfig *kev_con
     } else if (strstr(line, "--STYLE")) {
       kevlar_parse_stylesheet(line, out_file_buffer, kev_config->configTheme);
       continue;
+    } else if (strstr(line, "--SCRIPT")) {
+      kevlar_parse_stylesheet(line, out_file_buffer, kev_config->configTheme);
+      continue; 
     } else {
       fprintf(out_file_buffer, "%s", line);
     }
@@ -94,6 +123,9 @@ void kevlar_parse_template(FILE *in_file_buffer, FILE *out_file_buffer, KevlarCo
     } else if (strstr(line, "--STYLE")) {
       kevlar_parse_stylesheet(line, out_file_buffer, kev_config->configTheme);
       continue;
+    }  else if (strstr(line, "--SCRIPT")) {
+      kevlar_parse_script(line, out_file_buffer, kev_config->configTheme);
+      continue; 
     } else if (strstr(line, "--HEADER--")) {
       kelvar_parse_header_and_footer(out_file_buffer, kev_config);
       continue;
