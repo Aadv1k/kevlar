@@ -11,20 +11,28 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_rst_to_html.h"
 
+#define MD_LINK_SIZE 1000
+
 FILE *md_infile;
 FILE *md_outfile;
 
-bool md_is_hr(char file[][RST_LINE_LENGTH], int line) {
-  if (strlen(file[line]) != MD_HR_LENGTH) {
-    return false;
-  }
+static bool paraOpen = false;
+static bool codeBlockOpen = false;
+static bool ulOpen = false;
+static bool olOpen = false;
 
-  for (int i = 0; i < 3; i++) {
-    if (file[line][i] != file[line][0])
-      return false;
-  }
+bool md_is_code_block(const char * line) {
+  if (utl_count_repeating_char(line[0], line) == 3) {
+    return true;
+  } 
+  return false;
+}
 
-  return true;
+bool md_is_hr(const char * line) {
+  if (utl_count_repeating_char(line[0], line) == 3) {
+    return true;
+  } 
+  return false;
 }
 
 bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
@@ -42,6 +50,22 @@ bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
     return true;
 
   return false;
+}
+
+void md_force_close_para() {
+  char tag[10] = "p";
+  fprintf(md_outfile, "</%s>\n", tag);
+  paraOpen = false;
+}
+
+void md_handle_code_block() {
+  if (codeBlockOpen == false) {
+    fprintf(md_outfile, "<pre>\n<code>\n");
+    codeBlockOpen = true;
+  } else if (codeBlockOpen) {
+    fprintf(md_outfile, "</code>\n</pre>\n");
+    codeBlockOpen = false;
+  }
 }
 
 void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
@@ -76,7 +100,50 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
       !underScoreOpen ? strcat(output, "<em>") : strcat(output, "</em>");
       i += utl_count_repeating_char('_', &input[i]) - 1;
       underScoreOpen = !underScoreOpen;
+    } else if (input[i] == '[') {
 
+      char linkText[MD_LINK_SIZE] = ""; 
+      char linkLink[MD_LINK_SIZE] = "";
+
+      if (strchr(&input[i], ']') == NULL) {
+        kevlar_warn("[%s] malformed link!", __FILE__);
+        strncat(output, &input[i], 1);
+        continue;
+      }
+      
+      // skip first since it would be '['
+      int textChrCount = 1;
+      while (&input[i+textChrCount] != strchr(&input[i], ']')) {
+        strncat(linkText, &input[i+textChrCount], 1);
+        textChrCount++;
+      }
+
+      if (strchr(&input[i], ')') == NULL || strchr(&input[i], '(') == NULL) {
+        kevlar_warn("[%s] malformed link!", __FILE__);
+        strncat(output, &input[i], 1);
+        continue;
+      }
+
+      
+      // skip this since it will be '(' 
+      int linkChrCount = 1 + textChrCount;
+      while (&input[i+linkChrCount] != strchr(&input[i], ')')) {
+        strncat(linkLink, &input[i+linkChrCount], 1);
+        linkChrCount++;
+      }
+
+      char linkStr[RST_LINE_LENGTH];
+      
+      if (input[i-1] == '!') {
+        snprintf(linkStr, RST_LINE_LENGTH, "<img src=\"%s\">%s</img>", linkLink+1, linkText);
+        utl_truncateLast(output);
+      } else {
+        snprintf(linkStr, RST_LINE_LENGTH, "<a href=\"%s\">%s</a>", linkLink+1, linkText);
+      }
+      strcat(output, linkStr);
+
+      i+=textChrCount;
+      i+=linkChrCount;
     } else {
       strncat(output, &input[i], 1);
     }
@@ -100,7 +167,6 @@ void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-static bool ulOpen = false;
 
 void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
@@ -124,7 +190,6 @@ void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-static bool olOpen = false;
 
 void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
@@ -151,30 +216,25 @@ void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
 void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
   char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
-
   fprintf(md_outfile, "<p>%s</p>\n", parsed_output);
 }
 
-static bool paraOpen = false;
 
 void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
   char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
 
-  if (paraOpen == false) {
-    fprintf(md_outfile, "<p>%s", parsed_output);
+  char tag[10] = "p";
+
+  if (!paraOpen) {
+    fprintf(md_outfile, "<%s>%s", tag, parsed_output);
     paraOpen = true;
   } else if (paraOpen && strlen(file[line + 1]) > 1) {
     fprintf(md_outfile, " %s", parsed_output);
   } else if (paraOpen && strlen(file[line + 1]) <= 2) {
-    fprintf(md_outfile, " %s</p>\n", parsed_output);
+    fprintf(md_outfile, " %s</%s>\n", parsed_output, tag);
     paraOpen = false;
   }
-}
-
-void md_force_close_para() {
-  fprintf(md_outfile, "</p>\n");
-  paraOpen = false;
 }
 
 void md_parse(char *in_file_path, char *out_file_path) {
@@ -201,14 +261,18 @@ void md_parse(char *in_file_path, char *out_file_path) {
     case '#':
       md_handle_heading(file, currentLine);
       break;
+    case '`': 
+      if (md_is_code_block(file[currentLine])) {
+        md_handle_code_block();
+      }
+      break;
     case '*':
     case '-':
-      if (md_is_hr(file, currentLine)) {
+      if (md_is_hr(file[currentLine])) {
         md_force_close_para();
         fprintf(md_outfile, "<hr />\n");
         break;
       }
-
       if (file[currentLine][1] == ' ') {
         md_handle_list(file, currentLine);
         break;
@@ -217,6 +281,11 @@ void md_parse(char *in_file_path, char *out_file_path) {
     default:
       if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
         break;
+
+      if (codeBlockOpen) {
+        fprintf(md_outfile, "%s\n", file[currentLine]);
+        break;
+      }
 
       if (isdigit(file[currentLine][0])) {
         md_handle_numbered_list(file, currentLine);
