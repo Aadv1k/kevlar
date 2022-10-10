@@ -46,13 +46,22 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
   while ((dir_item = readdir(dir_buf)) != NULL) {
     if (dir_item->d_name[0] != '.') {
 
+      char file_name[999];
+      char out_file_name[999];
+
+      strcpy(file_name, dir_item->d_name);
+
+      file_name[
+        strlen(file_name) - strlen(strrchr(file_name, '.'))
+      ] = '\0';
+
       dir_item->d_name[
         strlen(dir_item->d_name) - strlen(strrchr(dir_item->d_name, '.'))
       ] = '\0';
 
       char html_li_link[CONFIG_MAX_FILE_LINE_SIZE];
 
-      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE, "<li><a href=\"./%s.html\">%s</a></li>\n", dir_item->d_name, dir_item->d_name);
+      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE, "<li><a href=\"./%s.html\">%s</a></li>\n", dir_item->d_name, utl_camel_case_to_spaces(file_name, out_file_name));
 
       strcat(kev_config->configListing, html_li_link);
     }
