@@ -31,6 +31,22 @@ void utl_prepend(char *string, const char *prefix) {
 
 void utl_truncateLast(char *str) { str[strlen(str) - 1] = '\0'; }
 
+char * utl_camel_case_to_spaces(char * input, char * output) {
+  output[0] = '\0';
+  char * word; 
+  word = strtok(input, "-");
+
+  while (word != NULL) {
+    strcat(output, word);
+    strcat(output, " ");
+    word = strtok(NULL, "-");
+  }
+
+  utl_truncateLast(output);
+
+  return output;
+}
+
 void utl_mkdir_crossplatform(char *folder_path) {
 #if defined(_WIN32)
   CreateDirectory(folder_path, NULL);

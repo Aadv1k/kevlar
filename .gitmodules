@@ -1,0 +1,3 @@
+[submodule "site/templates/hexadoc"]
+	path = site/templates/hexadoc
+	url = https://github.com/aadv1k/hexadoc
