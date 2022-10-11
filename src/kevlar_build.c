@@ -18,6 +18,45 @@
 #include "kevlar_rst_to_html.h"
 #include "kevlar_templating.h"
 
+void kevlar_copy_assets(const char * src, const char * dest) {
+
+  if (kevlar_get_folder_status(src) == folderNull || kevlar_get_folder_status(src) == folderEmpty) {
+    kevlar_warn("asset path \"%s\" is either empty or doesn't exist", src);
+    return;
+  } 
+  
+  DIR * in_dir_stream;
+
+  in_dir_stream = opendir(src);
+
+  struct dirent * in_dir_obj;
+
+  while ((in_dir_obj = readdir(in_dir_stream))) {
+    if (in_dir_obj->d_name[0] == '.') {
+      continue;
+    }
+
+    char out_file_path[CONFIG_MAX_PATH_SIZE];
+    snprintf(out_file_path, CONFIG_MAX_PATH_SIZE, "%s/%s", dest, in_dir_obj->d_name);
+
+    char in_file_path[CONFIG_MAX_PATH_SIZE];
+    snprintf(in_file_path, CONFIG_MAX_PATH_SIZE, "%s/%s", src, in_dir_obj->d_name);
+
+    FILE * in_file_buf = fopen(in_file_path, "rb");
+    FILE * out_file_buf = fopen(out_file_path, "wb");
+
+    if (out_file_buf == NULL) kevlar_err("[%s] couldn't open %s", __FILE__, out_file_path);
+    if (in_file_buf == NULL) kevlar_err("[%s] couldn't open %s", __FILE__, in_file_path);
+
+    int in_char;
+    while (( in_char = fgetc(in_file_buf)) != EOF) {
+      fputc(in_char, out_file_buf);
+    }
+  }
+
+  closedir(in_dir_stream);
+}
+
 void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
   enum FolderStatus;
 
@@ -263,6 +302,8 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
 
   kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
   kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
+
+  kevlar_copy_assets("./assets", "./dist");
 
   kev_config.configListing[0] = '\0';
   kevlar_generate_listings("./posts", &kev_config);
