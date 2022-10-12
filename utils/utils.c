@@ -31,19 +31,29 @@ void utl_prepend(char *string, const char *prefix) {
 
 void utl_truncateLast(char *str) { str[strlen(str) - 1] = '\0'; }
 
-char * utl_camel_case_to_spaces(char * input, char * output) {
+void x_case_to_y_case(char * input, char * output, const char * x, const char * y) {
   output[0] = '\0';
+
   char * word; 
-  word = strtok(input, "-");
+  word = strtok(input, x);
 
   while (word != NULL) {
     strcat(output, word);
-    strcat(output, " ");
-    word = strtok(NULL, "-");
+    strcat(output, y);
+    word = strtok(NULL, x);
   }
 
   utl_truncateLast(output);
+}
 
+// TODO: its not "camel case" its dashcase 
+char * utl_camel_case_to_spaces(char * input, char * output) {
+  x_case_to_y_case(input, output, "-", " ");
+  return output;
+}
+
+char * utl_spaces_to_dash_case(char * input, char * output) {
+  x_case_to_y_case(input, output, " ", "-");
   return output;
 }
 

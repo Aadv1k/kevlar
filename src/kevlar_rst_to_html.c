@@ -12,6 +12,8 @@
 FILE *rst_infile;
 FILE *rst_outfile;
 
+// TODO: Make the same changes made for src/kevlar_md_to_html.c for this as well
+
 long rst_get_file_length(char *filename) {
   FILE *infile = fopen(filename, "r");
 
