@@ -45,8 +45,8 @@ void kevlar_copy_assets(const char * src, const char * dest) {
     FILE * in_file_buf = fopen(in_file_path, "rb");
     FILE * out_file_buf = fopen(out_file_path, "wb");
 
-    if (out_file_buf == NULL) kevlar_err("[%s] couldn't open %s", __FILE__, out_file_path);
-    if (in_file_buf == NULL) kevlar_err("[%s] couldn't open %s", __FILE__, in_file_path);
+    if (!out_file_buf) kevlar_err("[%s] couldn't open %s", __FILE__, out_file_path);
+    if (!in_file_buf) kevlar_err("[%s] couldn't open %s", __FILE__, in_file_path);
 
     int in_char;
     while (( in_char = fgetc(in_file_buf)) != EOF) {
@@ -81,7 +81,6 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
     kevlar_err("something went wrong while opening %s to generate listings", dist_path);
   }
 
-  // TODO: ignore filenames starting with dot
   while ((dir_item = readdir(dir_buf)) != NULL) {
     if (dir_item->d_name[0] != '.') {
 

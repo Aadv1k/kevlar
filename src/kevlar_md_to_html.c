@@ -35,7 +35,7 @@ bool md_is_hr(const char * line) {
   return false;
 }
 
-bool md_is_single_para(char file[][RST_LINE_LENGTH], int line) {
+bool md_is_single_para(char ** file, int line) {
   // This is the simplest method to ensure/control what constitues a new line
   // para or a grouped para
 
@@ -154,21 +154,23 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
 
 }
 
-void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_heading(char ** file, int line) {
   size_t hashCount = utl_count_repeating_char('#', file[line]);
+  int off_set = isspace(*(strrchr(file[line], '#') + 1)) ? 2 : 1;
+  char tmp_input[RST_LINE_LENGTH], heading_id[RST_LINE_LENGTH];
+  strcpy(tmp_input, strrchr(file[line], '#')+off_set);
+
+  utl_spaces_to_dash_case(tmp_input, heading_id);
 
   if (hashCount < MD_HEADING_LEVEL) {
-    fprintf(md_outfile, "<h%zu>%s</h%zu>\n", hashCount,
-            isspace(*(strrchr(file[line], '#') + 1)) ? strrchr(file[line], '#') + 2
-                                                     : strrchr(file[line], '#') + 1,
-            hashCount);
+    fprintf(md_outfile, "<h%zu id=\"%s\">%s</h%zu>\n", hashCount, heading_id, strrchr(file[line], '#')+off_set, hashCount);
   } else {
-    fprintf(md_outfile, "<h6>%s</h6>\n", strrchr(file[line], '#') + 1);
+    fprintf(md_outfile, "<h6 id=\"%s\">%s</h6>\n", heading_id, strrchr(file[line], '#')+off_set);
   }
 }
 
 
-void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_list(char ** file, int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
   char target[RST_LINE_LENGTH] = "";
   md_handleText(target_line, target);
@@ -191,7 +193,7 @@ void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
 }
 
 
-void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_numbered_list(char ** file, int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
   char target[RST_LINE_LENGTH] = "";
   md_handleText(target_line, target);
@@ -213,14 +215,14 @@ void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_single_para(char ** file, int line) {
   char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
   fprintf(md_outfile, "<p>%s</p>\n", parsed_output);
 }
 
 
-void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
+void md_handle_para(char ** file, int line) {
   char parsed_output[RST_LINE_LENGTH] = "";
   md_handleText(file[line], parsed_output);
 
@@ -248,7 +250,12 @@ void md_parse(char *in_file_path, char *out_file_path) {
 
   md_outfile = fopen(out_file_path, "w");
   long fileLength = rst_get_file_length(in_file_path);
-  char file[fileLength][RST_LINE_LENGTH];
+
+  char ** file;
+  file = (char **)malloc(sizeof(char *) * fileLength);
+  for (int i = 0; i < fileLength; i++) {
+    file[i] = (char *)malloc(sizeof(char) * RST_LINE_LENGTH);
+  }
   
   for (int i = 0; i < fileLength; i++) {
     if (!fgets(file[i], RST_LINE_LENGTH, md_infile))
@@ -311,6 +318,11 @@ void md_parse(char *in_file_path, char *out_file_path) {
     }
   }
   
+
+  for (int i = 0; i < fileLength; i++) {
+    free(file[i]);
+  }
+  free(file);
 
   fclose(md_infile);
   fclose(md_outfile);

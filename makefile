@@ -45,7 +45,7 @@ rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/
 
 md2html: ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o
 	mkdir -p bin 
-	$(CC) ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -o ./bin/md2html
+	gcc ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -lm -o ./bin/md2html
 
 all: kevlar rst2html md2html
 
