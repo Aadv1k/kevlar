@@ -4,7 +4,7 @@
 #define MD_HEADING_LEVEL 6
 #define MD_HR_LENGTH 3
 
-#define MD_LINK_SIZE 100
+#define MD_LINK_SIZE 1024
 
 // TODO: Artifact of previous implementation 
 #define RST_LINE_LENGTH 10000

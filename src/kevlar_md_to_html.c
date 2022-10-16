@@ -11,8 +11,6 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_rst_to_html.h"
 
-#define MD_LINK_SIZE 100
-
 FILE *md_infile;
 FILE *md_outfile;
 
@@ -249,6 +247,8 @@ void md_parse(char *in_file_path, char *out_file_path) {
   md_outfile = fopen(out_file_path, "w");
   long fileLength = rst_get_file_length(in_file_path);
   char file[fileLength][RST_LINE_LENGTH];
+
+  printf("Parsing %s\n", in_file_path);
   
   for (int i = 0; i < fileLength; i++) {
     if (!fgets(file[i], RST_LINE_LENGTH, md_infile))
@@ -263,7 +263,6 @@ void md_parse(char *in_file_path, char *out_file_path) {
       fprintf(md_outfile, "%s\n", file[currentLine]);
       break;
     }
-
       md_handle_heading(file, currentLine);
       break;
     case '`': 
