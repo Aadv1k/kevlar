@@ -15,8 +15,10 @@
 #include "../utils/utils.h"
 #include "kevlar_errors.h"
 #include "kevlar_md_to_html.h"
-#include "kevlar_rst_to_html.h"
 #include "kevlar_templating.h"
+
+// WARN: Deprecated
+#include "kevlar_rst_to_html.h"
 
 void kevlar_copy_assets(const char * src, const char * dest) {
 
@@ -190,6 +192,7 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
   }
 }
 
+// WARN: Deprecated
 void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
                                   char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader,
                                   KevlarConfig *kev_config) {
@@ -299,7 +302,6 @@ void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
 
   kevlar_check_if_theme_valid(kev_config.configTheme);
 
-  kevlar_parse_rst_from_folder(posts_path, "./dist", kev_config.configRstLoader, &kev_config);
   kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
 
   kevlar_copy_assets("./assets", "./dist");

@@ -49,30 +49,31 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 #else
 
   if (system("git --version >/dev/null 2>&1") != 0) {
-    kevlar_warn("couldn't find git on your system; not cloning any theme");
+    kevlar_warn("couldn't find git on your system; continuing without a theme");
   } else {
     kevlar_ok("cloning theme into %s", skeleton->skel_template_folder_path);
     if (system(clone_git_command) == -1) {
-      kevlar_warn("the command `%s` failed; continuing without cloning", clone_git_command);
+      kevlar_warn("the command `%s` failed; continuing without a theme", clone_git_command);
     };
   }
 #endif
 
-  char default_rst_file_path[CONFIG_MAX_PATH_SIZE];
-  strcpy(default_rst_file_path, skeleton->skel_posts_folder_path);
-  strcat(default_rst_file_path, "/hello-world.rst");
+  char default_md_file_path[CONFIG_MAX_PATH_SIZE];
+  strcpy(default_md_file_path, skeleton->skel_posts_folder_path);
+  strcat(default_md_file_path, "/hello-world.md");
 
-  FILE *default_rst_file_buf;
-  default_rst_file_buf = fopen(default_rst_file_path, "w");
+  FILE *default_md_file_buf;
+  default_md_file_buf = fopen(default_md_file_path, "w");
 
-  fprintf(default_rst_file_buf, "Welcome to kevlar!\n==================\n\nif you are seeing this,everything has worked as intended.");
+  fputs("# Welcome to kevlar!\n", default_md_file_buf);
+  fputs("if you are seeing this, everything has worked as intended.\n", default_md_file_buf);
 
-  fclose(default_rst_file_buf);
+  fclose(default_md_file_buf);
 
-  *(strchr(default_rst_file_path, '/')) = '\0';
+  *(strchr(default_md_file_path, '/')) = '\0';
   kevlar_ok("Skeleton was setup; you can now "
             "run\n\n\tcd %s && kevlar build\n\nto see your site in action ✨!",
-            default_rst_file_path);
+            default_md_file_path);
 }
 
 void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
@@ -91,7 +92,6 @@ void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]) {
         "/config.ini",
         "/dist",
     };
-
     utl_prepend_str(folder_path, skel.skel_template_folder_path);
     utl_prepend_str(folder_path, skel.skel_posts_folder_path);
     utl_prepend_str(folder_path, skel.skel_config_file_path);

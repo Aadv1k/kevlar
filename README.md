@@ -13,7 +13,7 @@ An _utterly_ simple and fast Static Site Generator built using C
   - Debian GNU/Linux 11 (bullseye) on Windows 10 x86_64 ([WSL](https://learn.microsoft.com/en-us/windows/wsl/))
 - **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
   - [Markdown](#convert-markdown)
-  - [reStructuredText](#convert-restructured-text)
+  - [DEPRECATED] [reStructuredText](#convert-restructured-text)
 - **Highly extensible:** Support for basic yet scalable templating
 - **Simple:** Kevlar does not try to do too little or too much, just enough to get the job done.
 
@@ -45,9 +45,9 @@ cd kevlar && make kevlar_win32
 
 ## Recipes
 
-You can build the loader kevlar uses to parse `.rst` and `.md` files as their own executables by running
+You can build the loader kevlar uses to parse ~~`.rst` and~~ `.md` files as their own executables by running
 
-- `make rst2html`
 - `make md2html`
+- `make rst2html` NOTE: while you can still build the executable, the rst parser is not being actively maintained or fixed.
 
 You will get the respective CLI
