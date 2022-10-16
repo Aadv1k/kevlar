@@ -4,6 +4,11 @@
 #define MD_HEADING_LEVEL 6
 #define MD_HR_LENGTH 3
 
+#define MD_LINK_SIZE 100
+
+// TODO: Artifact of previous implementation 
+#define RST_LINE_LENGTH 10000
+
 void md_parse(char *in_file_path, char *out_file_path);
 
 #endif
