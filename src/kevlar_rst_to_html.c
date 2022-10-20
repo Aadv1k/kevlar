@@ -93,11 +93,11 @@ void rst_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
       !tickOpen ? strcat(output, "<code>") : strcat(output, "</code>");
       i += utl_count_repeating_char('`', &input[i]) - 1;
       tickOpen = !tickOpen;
-    } else if (input[i] == '~')  {
+    } else if (input[i] == '~') {
       !tildeOpen ? strcat(output, "<del>") : strcat(output, "</del>");
       i += utl_count_repeating_char('~', &input[i]) - 1;
       tildeOpen = !tildeOpen;
-    }  else if (input[i] == '_') {
+    } else if (input[i] == '_') {
       !underScoreOpen ? strcat(output, "<em>") : strcat(output, "</em>");
       i += utl_count_repeating_char('_', &input[i]) - 1;
       underScoreOpen = !underScoreOpen;
@@ -286,7 +286,7 @@ void rst_parse(char *rst_file_path, char *html_file_path) {
   // Read contents of the input file into the file[]
   for (int i = 0; !feof(rst_infile); i++) {
     if (fgets(file[i], RST_LINE_LENGTH, rst_infile) == NULL) // pass;
-    utl_truncateLast(file[i]);
+      utl_truncateLast(file[i]);
   }
 
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {

@@ -20,18 +20,18 @@
 // WARN: Deprecated
 #include "kevlar_rst_to_html.h"
 
-void kevlar_copy_assets(const char * src, const char * dest) {
+void kevlar_copy_assets(const char *src, const char *dest) {
 
   if (kevlar_get_folder_status(src) == folderNull || kevlar_get_folder_status(src) == folderEmpty) {
     kevlar_warn("asset path \"%s\" is either empty or doesn't exist", src);
     return;
-  } 
-  
-  DIR * in_dir_stream;
+  }
+
+  DIR *in_dir_stream;
 
   in_dir_stream = opendir(src);
 
-  struct dirent * in_dir_obj;
+  struct dirent *in_dir_obj;
 
   while ((in_dir_obj = readdir(in_dir_stream))) {
     if (in_dir_obj->d_name[0] == '.') {
@@ -44,14 +44,16 @@ void kevlar_copy_assets(const char * src, const char * dest) {
     char in_file_path[CONFIG_MAX_PATH_SIZE];
     snprintf(in_file_path, CONFIG_MAX_PATH_SIZE, "%s/%s", src, in_dir_obj->d_name);
 
-    FILE * in_file_buf = fopen(in_file_path, "rb");
-    FILE * out_file_buf = fopen(out_file_path, "wb");
+    FILE *in_file_buf = fopen(in_file_path, "rb");
+    FILE *out_file_buf = fopen(out_file_path, "wb");
 
-    if (!out_file_buf) kevlar_err("[%s] couldn't open %s", __FILE__, out_file_path);
-    if (!in_file_buf) kevlar_err("[%s] couldn't open %s", __FILE__, in_file_path);
+    if (!out_file_buf)
+      kevlar_err("[%s] couldn't open %s", __FILE__, out_file_path);
+    if (!in_file_buf)
+      kevlar_err("[%s] couldn't open %s", __FILE__, in_file_path);
 
     int in_char;
-    while (( in_char = fgetc(in_file_buf)) != EOF) {
+    while ((in_char = fgetc(in_file_buf)) != EOF) {
       fputc(in_char, out_file_buf);
     }
   }
@@ -91,17 +93,14 @@ void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig
 
       strcpy(file_name, dir_item->d_name);
 
-      file_name[
-        strlen(file_name) - strlen(strrchr(file_name, '.'))
-      ] = '\0';
+      file_name[strlen(file_name) - strlen(strrchr(file_name, '.'))] = '\0';
 
-      dir_item->d_name[
-        strlen(dir_item->d_name) - strlen(strrchr(dir_item->d_name, '.'))
-      ] = '\0';
+      dir_item->d_name[strlen(dir_item->d_name) - strlen(strrchr(dir_item->d_name, '.'))] = '\0';
 
       char html_li_link[CONFIG_MAX_FILE_LINE_SIZE];
 
-      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE, "<li><a href=\"./%s.html\">%s</a></li>\n", dir_item->d_name, utl_camel_case_to_spaces(file_name, out_file_name));
+      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE, "<li><a href=\"./%s.html\">%s</a></li>\n",
+               dir_item->d_name, utl_camel_case_to_spaces(file_name, out_file_name));
 
       strcat(kev_config->configListing, html_li_link);
     }
@@ -169,7 +168,6 @@ void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
 
       char contents[TEMPLATE_MAX_FILE_SIZE] = "";
       char html_file_line[TEMPLATE_MAX_LINE_SIZE];
-
 
       while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
         strcat(contents, html_file_line);
