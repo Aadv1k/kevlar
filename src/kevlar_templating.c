@@ -98,7 +98,7 @@ void kelvar_parse_header_and_footer(FILE *out_file_buffer, KevlarConfig *kev_con
       continue;
     } else if (strstr(line, "--SCRIPT")) {
       kevlar_parse_stylesheet(line, out_file_buffer, kev_config->configTheme);
-      continue; 
+      continue;
     } else {
       fprintf(out_file_buffer, "%s", line);
     }
@@ -123,9 +123,9 @@ void kevlar_parse_template(FILE *in_file_buffer, FILE *out_file_buffer, KevlarCo
     } else if (strstr(line, "--STYLE")) {
       kevlar_parse_stylesheet(line, out_file_buffer, kev_config->configTheme);
       continue;
-    }  else if (strstr(line, "--SCRIPT")) {
+    } else if (strstr(line, "--SCRIPT")) {
       kevlar_parse_script(line, out_file_buffer, kev_config->configTheme);
-      continue; 
+      continue;
     } else if (strstr(line, "--HEADER--")) {
       kelvar_parse_header_and_footer(out_file_buffer, kev_config);
       continue;

@@ -4,9 +4,9 @@
 #include <string.h>
 
 #include "../utils/utils.h"
+#include "kevlar_errors.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
-#include "kevlar_errors.h"
 
 void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_config) {
   FILE *file_buf;
@@ -20,7 +20,7 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
   char cur_line[CONFIG_MAX_FILE_SIZE];
 
   while (fgets(cur_line, CONFIG_MAX_FILE_SIZE, file_buf) != NULL) {
-    char * target;
+    char *target;
 
     target = strtok(cur_line, "=");
     char command[2][CONFIG_MAX_OPT_SIZE] = {};
@@ -35,7 +35,6 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
         fprintf(stderr, "[kevlar] invalid config at %s at line %d\n", file_path, line_count + 1);
         exit(1);
       }
-
 
       strcpy(command[i], target);
       target = strtok(NULL, "=");
@@ -62,10 +61,14 @@ void kevlar_load_config(char file_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_
     line_count++;
   }
 
-  snprintf(kev_config->configFooterPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/footer.html", kev_config->configTheme);
-  snprintf(kev_config->configHeaderPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/header.html", kev_config->configTheme);
-  snprintf(kev_config->configIndexPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/index.html", kev_config->configTheme);
-  snprintf(kev_config->configPostPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/post.html", kev_config->configTheme);
+  snprintf(kev_config->configFooterPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/footer.html",
+           kev_config->configTheme);
+  snprintf(kev_config->configHeaderPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/header.html",
+           kev_config->configTheme);
+  snprintf(kev_config->configIndexPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/index.html",
+           kev_config->configTheme);
+  snprintf(kev_config->configPostPath, CONFIG_MAX_PATH_SIZE, "./templates/%s/post.html",
+           kev_config->configTheme);
 };
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {

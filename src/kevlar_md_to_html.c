@@ -19,17 +19,17 @@ static bool codeBlockOpen = false;
 static bool ulOpen = false;
 static bool olOpen = false;
 
-bool md_is_code_block(const char * line) {
+bool md_is_code_block(const char *line) {
   if (utl_count_repeating_char(line[0], line) == 3) {
     return true;
-  } 
+  }
   return false;
 }
 
-bool md_is_hr(const char * line) {
+bool md_is_hr(const char *line) {
   if (utl_count_repeating_char(line[0], line) == 3) {
     return true;
-  } 
+  }
   return false;
 }
 
@@ -90,17 +90,17 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
       !tickOpen ? strcat(output, "<code>") : strcat(output, "</code>");
       i += utl_count_repeating_char('`', &input[i]) - 1;
       tickOpen = !tickOpen;
-    } else if (input[i] == '~'  && !tickOpen)  {
+    } else if (input[i] == '~' && !tickOpen) {
       !tildeOpen ? strcat(output, "<del>") : strcat(output, "</del>");
       i += utl_count_repeating_char('~', &input[i]) - 1;
       tildeOpen = !tildeOpen;
-    }  else if (input[i] == '_'  && !tickOpen) {
+    } else if (input[i] == '_' && !tickOpen) {
       !underScoreOpen ? strcat(output, "<em>") : strcat(output, "</em>");
       i += utl_count_repeating_char('_', &input[i]) - 1;
       underScoreOpen = !underScoreOpen;
-    } else if (input[i] == '['  && !tickOpen) {
+    } else if (input[i] == '[' && !tickOpen) {
 
-      char linkText[MD_LINK_SIZE] = ""; 
+      char linkText[MD_LINK_SIZE] = "";
       char linkLink[MD_LINK_SIZE] = "";
 
       if (strchr(&input[i], ']') == NULL) {
@@ -108,11 +108,11 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
         strncat(output, &input[i], 1);
         continue;
       }
-      
+
       // skip first since it would be '['
       int textChrCount = 1;
-      while (&input[i+textChrCount] != strchr(&input[i], ']')) {
-        strncat(linkText, &input[i+textChrCount], 1);
+      while (&input[i + textChrCount] != strchr(&input[i], ']')) {
+        strncat(linkText, &input[i + textChrCount], 1);
         textChrCount++;
       }
 
@@ -122,21 +122,20 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
         continue;
       }
 
-      
-      // skip this since it will be '(' 
+      // skip this since it will be '('
       int linkChrCount = 1 + textChrCount;
-      while (&input[i+linkChrCount] != strchr(&input[i], ')')) {
-        strncat(linkLink, &input[i+linkChrCount], 1);
+      while (&input[i + linkChrCount] != strchr(&input[i], ')')) {
+        strncat(linkLink, &input[i + linkChrCount], 1);
         linkChrCount++;
       }
 
       char linkStr[RST_LINE_LENGTH];
-      
-      if (input[i-1] == '!') {
-        snprintf(linkStr, RST_LINE_LENGTH, "<img src=\"%s\">%s</img>", linkLink+1, linkText);
+
+      if (input[i - 1] == '!') {
+        snprintf(linkStr, RST_LINE_LENGTH, "<img src=\"%s\">%s</img>", linkLink + 1, linkText);
         utl_truncateLast(output);
       } else {
-        snprintf(linkStr, RST_LINE_LENGTH, "<a href=\"%s\">%s</a>", linkLink+1, linkText);
+        snprintf(linkStr, RST_LINE_LENGTH, "<a href=\"%s\">%s</a>", linkLink + 1, linkText);
       }
 
       strcat(output, linkStr);
@@ -149,7 +148,6 @@ void md_handleText(char input[RST_LINE_LENGTH], char output[RST_LINE_LENGTH]) {
   if (boldOpen || emOpen) {
     kevlar_warn("[md2html] some asterisks were never closed!");
   }
-
 }
 
 void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
@@ -164,7 +162,6 @@ void md_handle_heading(char file[][RST_LINE_LENGTH], int line) {
     fprintf(md_outfile, "<h6>%s</h6>\n", strrchr(file[line], '#') + 1);
   }
 }
-
 
 void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
@@ -188,7 +185,6 @@ void md_handle_list(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-
 void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
   char *target_line = isspace(file[line][2]) ? &file[line][3] : &file[line][2];
   char target[RST_LINE_LENGTH] = "";
@@ -198,7 +194,7 @@ void md_handle_numbered_list(char file[][RST_LINE_LENGTH], int line) {
     fprintf(md_outfile, "\n<ol>\n\t<li>%s</li>\n", target);
     olOpen = true;
 
-    if (!isdigit(file[line + 1][0]) && file[line+1][1] != '.') {
+    if (!isdigit(file[line + 1][0]) && file[line + 1][1] != '.') {
       fprintf(md_outfile, "</ol>\n");
       olOpen = false;
     }
@@ -216,7 +212,6 @@ void md_handle_single_para(char file[][RST_LINE_LENGTH], int line) {
   md_handleText(file[line], parsed_output);
   fprintf(md_outfile, "<p>%s</p>\n", parsed_output);
 }
-
 
 void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
   char parsed_output[RST_LINE_LENGTH] = "";
@@ -249,7 +244,7 @@ void md_parse(char *in_file_path, char *out_file_path) {
   char file[fileLength][RST_LINE_LENGTH];
 
   printf("Parsing %s\n", in_file_path);
-  
+
   for (int i = 0; i < fileLength; i++) {
     if (!fgets(file[i], RST_LINE_LENGTH, md_infile))
       kevlar_warn("something went wrong");
@@ -259,13 +254,13 @@ void md_parse(char *in_file_path, char *out_file_path) {
   for (long currentLine = 0; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
     case '#':
-    if (codeBlockOpen) {
-      fprintf(md_outfile, "%s\n", file[currentLine]);
-      break;
-    }
+      if (codeBlockOpen) {
+        fprintf(md_outfile, "%s\n", file[currentLine]);
+        break;
+      }
       md_handle_heading(file, currentLine);
       break;
-    case '`': 
+    case '`':
       if (md_is_code_block(file[currentLine])) {
         md_handle_code_block();
       }
@@ -273,10 +268,10 @@ void md_parse(char *in_file_path, char *out_file_path) {
     case '*':
     case '-':
 
-    if (codeBlockOpen) {
-      fprintf(md_outfile, "%s\n", file[currentLine]);
-      break;
-    }
+      if (codeBlockOpen) {
+        fprintf(md_outfile, "%s\n", file[currentLine]);
+        break;
+      }
       if (md_is_hr(file[currentLine])) {
         md_force_close_para();
         fprintf(md_outfile, "<hr />\n");
@@ -289,13 +284,14 @@ void md_parse(char *in_file_path, char *out_file_path) {
       // fall-through
     default:
 
-      if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
-        break;
-
       if (codeBlockOpen) {
         fprintf(md_outfile, "%s\n", file[currentLine]);
         break;
       }
+
+      if (isspace(*file[currentLine]) != 0 || strlen(file[currentLine]) == 0)
+        break;
+
       if (isdigit(file[currentLine][0])) {
         md_handle_numbered_list(file, currentLine);
       } else {
@@ -309,7 +305,6 @@ void md_parse(char *in_file_path, char *out_file_path) {
       }
     }
   }
-  
 
   fclose(md_infile);
   fclose(md_outfile);
