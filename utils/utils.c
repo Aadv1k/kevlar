@@ -14,7 +14,7 @@ void utl_prepend_str(char prefix[], char str[]) {
   strcat(str, temp_str);
 }
 
-size_t utl_count_repeating_char(char chr, const char * str) {
+size_t utl_count_repeating_char(char chr, const char *str) {
   for (size_t i = 0; str[i] != '\0'; i++) {
     if (str[i] != chr)
       return i;
@@ -31,10 +31,10 @@ void utl_prepend(char *string, const char *prefix) {
 
 void utl_truncateLast(char *str) { str[strlen(str) - 1] = '\0'; }
 
-void x_case_to_y_case(char * input, char * output, const char * x, const char * y) {
+void x_case_to_y_case(char *input, char *output, const char *x, const char *y) {
   output[0] = '\0';
 
-  char * word; 
+  char *word;
   word = strtok(input, x);
 
   while (word != NULL) {
@@ -46,13 +46,13 @@ void x_case_to_y_case(char * input, char * output, const char * x, const char * 
   utl_truncateLast(output);
 }
 
-// TODO: its not "camel case" its dashcase 
-char * utl_camel_case_to_spaces(char * input, char * output) {
+// TODO: its not "camel case" its dashcase
+char *utl_camel_case_to_spaces(char *input, char *output) {
   x_case_to_y_case(input, output, "-", " ");
   return output;
 }
 
-char * utl_spaces_to_dash_case(char * input, char * output) {
+char *utl_spaces_to_dash_case(char *input, char *output) {
   x_case_to_y_case(input, output, " ", "-");
   return output;
 }

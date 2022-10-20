@@ -17,38 +17,40 @@ int argtype(char arg[]) {
   char param[][MAX_CMD_SIZE] = {
       "help", "new", "build", "serve", "server",
   };
+
+  assert(cmdTail == sizeof(param) / MAX_CMD_SIZE);
+
   for (int i = 0; i < cmdTail; i++) {
-    assert(cmdTail == sizeof(param) / MAX_CMD_SIZE);
     if (!strcmp(param[i], arg))
       return i;
   }
   return -1;
 }
 
-void kevlar_usage_exit() {
-  printf("kevlar <cmd> <opt>\n");
-  printf("  help -- print this help message\n");
-  printf("  new -- create a new site skeleton\n");
+void kevlar_usage_exit(const char *origin) {
+  printf("%s <cmd> <opt>\n", origin);
+  printf("  help  -- print this help message\n");
+  printf("  new   -- create a new site skeleton\n");
   printf("  build -- build if in a kevlar project\n");
   exit(0);
 }
 
 int main(int argc, char **argv) {
   if (argc == 1) {
-    kevlar_usage_exit();
+    kevlar_usage_exit(argv[0]);
   }
 
   switch (argtype(argv[1])) {
   case cmdHelp:
-    kevlar_usage_exit();
+    kevlar_usage_exit(argv[0]);
     break;
   case cmdNew:
     if (argc == 2) {
-      kevlar_err("you need to provide a name for your project!", "");
+      kevlar_err("you need to provide a name for your project!");
     }
     kevlar_handle_new_command(argv[2]);
     break;
-  case cmdBuild:;
+  case cmdBuild:
     kevlar_handle_build_command(".");
     break;
   default:
