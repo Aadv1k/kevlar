@@ -20,8 +20,9 @@
 // WARN: Deprecated
 #include "kevlar_rst_to_html.h"
 
-void kevlar_copy_assets(const char *src, const char *dest) {
+#define FILE_OPTS 3
 
+void kevlar_copy_assets(const char *src, const char *dest) {
   if (kevlar_get_folder_status(src) == folderNull || kevlar_get_folder_status(src) == folderEmpty) {
     kevlar_warn("asset path \"%s\" is either empty or doesn't exist", src);
     return;
@@ -57,10 +58,10 @@ void kevlar_copy_assets(const char *src, const char *dest) {
       fputc(in_char, out_file_buf);
     }
   }
-
   closedir(in_dir_stream);
 }
 
+// CHECKS, ensure nothing goes wrong
 void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
   enum FolderStatus;
 
@@ -76,204 +77,12 @@ void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]) {
   }
 }
 
-void kevlar_generate_listings(char dist_path[CONFIG_MAX_PATH_SIZE], KevlarConfig *kev_config) {
-
-  DIR *dir_buf;
-  struct dirent *dir_item;
-
-  if ((dir_buf = opendir(dist_path)) == NULL) {
-    kevlar_err("something went wrong while opening %s to generate listings", dist_path);
-  }
-
-  while ((dir_item = readdir(dir_buf)) != NULL) {
-    if (dir_item->d_name[0] != '.') {
-
-      char file_name[999];
-      char out_file_name[999];
-
-      strcpy(file_name, dir_item->d_name);
-
-      file_name[strlen(file_name) - strlen(strrchr(file_name, '.'))] = '\0';
-
-      dir_item->d_name[strlen(dir_item->d_name) - strlen(strrchr(dir_item->d_name, '.'))] = '\0';
-
-      char html_li_link[CONFIG_MAX_FILE_LINE_SIZE];
-
-      snprintf(html_li_link, CONFIG_MAX_FILE_LINE_SIZE, "<li><a href=\"./%s.html\">%s</a></li>\n",
-               dir_item->d_name, utl_camel_case_to_spaces(file_name, out_file_name));
-
-      strcat(kev_config->configListing, html_li_link);
-    }
-  }
-  closedir(dir_buf);
-}
-
-void kevlar_parse_md_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
-                                 char out_folder_path[CONFIG_MAX_PATH_SIZE], char *md_loader,
-                                 KevlarConfig *kev_config) {
-
-  enum FolderStatus;
-
-  DIR *dir_buffer;
-  struct dirent *dir_item;
-
-  if (kevlar_get_folder_status(folder_path) == folderNull) {
-    kevlar_err("couldn't open %s, it might not be a folder", folder_path);
-  }
-
-  dir_buffer = opendir(folder_path);
-
-  utl_mkdir_crossplatform(out_folder_path);
-
-  int i = 0;
-  while ((dir_item = readdir(dir_buffer)) != NULL) {
-
-    if (strcmp(strrchr(dir_item->d_name, '.'), ".md") == 0) {
-
-      char md_file_path[CONFIG_MAX_PATH_SIZE] = "";
-      char html_file_path[CONFIG_MAX_PATH_SIZE] = "";
-      char system_command[BUILD_MAX_CMD_SIZE] = "";
-
-      strcpy(md_file_path, dir_item->d_name);
-
-      strcpy(html_file_path, md_file_path);
-
-      strcpy(md_file_path, "./posts");
-
-      strcat(md_file_path, "/");
-      strcat(md_file_path, dir_item->d_name);
-
-      html_file_path[strlen(html_file_path) - 3] = '\0';
-      strcat(html_file_path, ".html");
-      utl_prepend(html_file_path, "/");
-      utl_prepend(html_file_path, out_folder_path);
-
-      if (strlen(kev_config->configMarkdownLoader) != 0) {
-        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", md_loader, md_file_path,
-                 html_file_path);
-        if (system(system_command) == -1) {
-          kevlar_warn("command `%s` did not work; continuing without parsing markdown file",
-                      system_command);
-        }
-      } else {
-        md_parse(md_file_path, html_file_path);
-      }
-
-      FILE *html_file_buf = fopen(html_file_path, "r");
-
-      if (html_file_buf == NULL) {
-        kevlar_err("was unable to open html files for further processing, maybe the system command "
-                   "went wrong?");
-      }
-
-      char contents[TEMPLATE_MAX_FILE_SIZE] = "";
-      char html_file_line[TEMPLATE_MAX_LINE_SIZE];
-
-      while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
-        strcat(contents, html_file_line);
-      }
-
-      fclose(html_file_buf);
-
-      strcpy(kev_config->configHtmlContents, contents);
-
-      kev_config->configListing[0] = '\0';
-      kevlar_generate_listings("./posts", kev_config);
-
-      kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
-      i++;
-    }
-  }
-
-  if (i == 0) {
-    kevlar_warn("found no .md files in %s", folder_path);
-  }
-}
-
-// WARN: Deprecated
-void kevlar_parse_rst_from_folder(char folder_path[CONFIG_MAX_PATH_SIZE],
-                                  char out_folder_path[CONFIG_MAX_PATH_SIZE], char *rst_loader,
-                                  KevlarConfig *kev_config) {
-  enum FolderStatus;
-
-  DIR *dir_buffer;
-  struct dirent *dir_item;
-
-  if (kevlar_get_folder_status(folder_path) == folderNull) {
-    kevlar_err("couldn't open %s, it might not be a folder", folder_path);
-  }
-
-  dir_buffer = opendir(folder_path);
-
-  utl_mkdir_crossplatform(out_folder_path);
-
-  int i = 0;
-  while ((dir_item = readdir(dir_buffer)) != NULL) {
-
-    if (strcmp(strrchr(dir_item->d_name, '.'), ".rst") == 0) {
-
-      char rst_file_path[CONFIG_MAX_PATH_SIZE];
-      char html_file_path[CONFIG_MAX_PATH_SIZE];
-      char system_command[BUILD_MAX_CMD_SIZE];
-
-      strcpy(rst_file_path, dir_item->d_name);
-
-      strcpy(html_file_path, rst_file_path);
-      utl_prepend(rst_file_path, folder_path);
-
-      html_file_path[strlen(html_file_path) - 4] = '\0';
-      strcat(html_file_path, ".html");
-
-      utl_prepend(html_file_path, "/");
-      utl_prepend(html_file_path, out_folder_path);
-
-      if (strlen(kev_config->configRstLoader) != 0) {
-        snprintf(system_command, BUILD_MAX_CMD_SIZE, "%s %s %s", rst_loader, rst_file_path,
-                 html_file_path);
-        if (system(system_command) == -1) {
-          kevlar_warn("command `%s` did not work; continuing without parsing rst file",
-                      system_command);
-        }
-      } else {
-        rst_parse(rst_file_path, html_file_path);
-      }
-
-      FILE *html_file_buf = fopen(html_file_path, "r");
-
-      if (html_file_buf == NULL) {
-        kevlar_err("was unable to open html files for further processing, maybe the system command "
-                   "went wrong?");
-      }
-
-      char contents[TEMPLATE_MAX_FILE_SIZE] = "";
-      char html_file_line[TEMPLATE_MAX_LINE_SIZE];
-
-      while ((fgets(html_file_line, TEMPLATE_MAX_LINE_SIZE, html_file_buf)) != NULL) {
-        strcat(contents, html_file_line);
-      }
-
-      fclose(html_file_buf);
-
-      strcpy(kev_config->configHtmlContents, contents);
-
-      kevlar_build_template(kev_config->configPostPath, html_file_path, kev_config);
-      i++;
-    }
-  }
-
-  if (i == 0) {
-    kevlar_warn("found no .rst files in %s", folder_path);
-  }
-}
-
-void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE],
-                                 KevlarSkeleton *skeleton) {
+void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE], KevlarSkeleton *skeleton) {
   enum FolderStatus;
 
   if (kevlar_get_folder_status(folder_path) == folderNull) {
     kevlar_err("ran into a problem while opening %s; it may not exist", folder_path);
   }
-
   if ((kevlar_get_folder_status(skeleton->skel_posts_folder_path) == folderNull) ||
       (kevlar_get_folder_status(skeleton->skel_template_folder_path) == folderNull) ||
       (kevlar_get_folder_status(skeleton->skel_config_file_path) != folderNull)) {
@@ -283,30 +92,74 @@ void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE],
   }
 }
 
-void kevlar_handle_build_command(const char file_path[CONFIG_MAX_PATH_SIZE]) {
+void kevlar_parse_md_from_folder(
+    char * folder_path, char * dist_path, char * template_path, ListingItem * itemsList) {
+  DIR * folder_buf = opendir(folder_path);
+  struct dirent * dir_item;
+
+  int post_count = 0;
+  while ((dir_item = readdir(folder_buf)) != NULL) {
+    if (dir_item->d_name[0] == '.') continue;
+    char in_fp[CONFIG_MAX_PATH_SIZE], out_fp[CONFIG_MAX_PATH_SIZE];
+
+
+    sprintf(in_fp, "%s/%s", folder_path, dir_item->d_name);
+    dir_item->d_name[strlen(dir_item->d_name)-3] = '\0';
+    sprintf(out_fp, "%s/%s.html", dist_path, dir_item->d_name);
+
+    kevlar_get_opt_from_config(in_fp, "date", itemsList[post_count].lDate);
+    kevlar_get_opt_from_config(in_fp, "title", itemsList[post_count].lTitle);
+
+
+    strcpy(itemsList[post_count].lPath, out_fp);
+
+
+    md_parse(in_fp, out_fp, 3);
+
+    char out_file_line[CONFIG_MAX_PATH_SIZE];
+
+    FILE * out_file = fopen(out_fp, "r");
+
+    fseek(out_file, 0, SEEK_END);
+    int out_file_length = ftell(out_file);
+    rewind(out_file);
+
+    char * buf = malloc(out_file_length + 1);
+    fread(buf, out_file_length, 1, out_file);
+    strcpy(itemsList[post_count].lContent, buf);
+    buf[out_file_length] = '\0';
+    free(buf);
+
+    char postTemplatePath[CONFIG_MAX_PATH_SIZE];
+    strcpy(postTemplatePath, template_path);
+    strcat(postTemplatePath, "/post.html");
+
+    kevlar_parse_post_from_template(out_fp, postTemplatePath, "./config.ini", &itemsList[post_count]);
+
+    fclose(out_file);
+
+    post_count++;
+  }
+}
+
+void kevlar_handle_build_command(const char * file_path) {
   KevlarSkeleton skel = {"templates/", "posts/", "config.ini", "dist/"};
   kevlar_check_if_kevlar_proj(file_path, &skel);
+  char cTheme[CONFIG_MAX_PATH_SIZE];
+  kevlar_get_opt_from_config("./config.ini", "theme", cTheme);
+  char themePath[CONFIG_MAX_PATH_SIZE] = "./templates/";
+  strcat(themePath, cTheme);
+  kevlar_check_if_theme_valid(cTheme);
 
-  utl_mkdir_crossplatform("./dist");
+  utl_mkdir_crossplatform("dist");
 
-  char config_path[CONFIG_MAX_PATH_SIZE];
-  snprintf(config_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/config.ini");
 
-  KevlarConfig kev_config;
-  kevlar_load_config(config_path, &kev_config);
 
-  char posts_path[CONFIG_MAX_PATH_SIZE];
-  snprintf(posts_path, CONFIG_MAX_PATH_SIZE, "%s%s", file_path, "/posts/");
+  ListingItem * itemsList = malloc(1000*sizeof(ListingItem));
+  kevlar_parse_md_from_folder("./posts", "./dist", themePath, itemsList);
 
-  kevlar_check_if_theme_valid(kev_config.configTheme);
+  free(itemsList);
 
-  kevlar_parse_md_from_folder(posts_path, "./dist", kev_config.configMarkdownLoader, &kev_config);
-
-  kevlar_copy_assets("./assets", "./dist");
-
-  kev_config.configListing[0] = '\0';
-  kevlar_generate_listings("./posts", &kev_config);
-
-  kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
-  kevlar_ok("Built the site using theme %s at ./dist/index.html", kev_config.configTheme);
+  //kevlar_build_template(kev_config.configIndexPath, "./dist/index.html", &kev_config);
+  //kevlar_ok("Built the site using theme %s at ./dist/index.html", kev_config.configTheme);
 }

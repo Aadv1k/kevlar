@@ -230,7 +230,7 @@ void md_handle_para(char file[][RST_LINE_LENGTH], int line) {
   }
 }
 
-void md_parse(char *in_file_path, char *out_file_path) {
+void md_parse(char *in_file_path, char *out_file_path, int offset) {
   if (strcmp(strrchr(in_file_path, '.'), ".md") != 0) {
     kevlar_err("[%s] %s doesn't seem to be a markdown file\n", __FILE__, in_file_path);
   }
@@ -240,6 +240,8 @@ void md_parse(char *in_file_path, char *out_file_path) {
   }
 
   md_outfile = fopen(out_file_path, "w");
+
+
   long fileLength = rst_get_file_length(in_file_path);
   char file[fileLength][RST_LINE_LENGTH];
 
@@ -251,7 +253,7 @@ void md_parse(char *in_file_path, char *out_file_path) {
     utl_truncateLast(file[i]);
   }
 
-  for (long currentLine = 0; currentLine < fileLength; currentLine++) {
+  for (long currentLine = offset; currentLine < fileLength; currentLine++) {
     switch (file[currentLine][0]) {
     case '#':
       if (codeBlockOpen) {
@@ -267,7 +269,6 @@ void md_parse(char *in_file_path, char *out_file_path) {
       break;
     case '*':
     case '-':
-
       if (codeBlockOpen) {
         fprintf(md_outfile, "%s\n", file[currentLine]);
         break;
