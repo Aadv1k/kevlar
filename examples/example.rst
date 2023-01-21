@@ -32,5 +32,4 @@ Types of ontologies
 - Thing ontologies vs fact ontologies 
 - Constituent ontologies vs blob theories
 
-
 ***Article taken from `Wikipedia https://en.wikipedia.org/wiki/Ontology`_***
