@@ -92,6 +92,22 @@ void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE], K
   }
 }
 
+// https://stackoverflow.com/questions/13372688/sorting-members-of-structure-array
+void bsortDesc(ListingItem *itemsList, int s) {
+  int i, j;
+  ListingItem temp;
+
+  for (i = 0; i < s - 1; i++) {
+    for (j = 0; j < (s - 1 - i); j++) {
+      if (itemsList[j].lOrder < itemsList[j + 1].lOrder) {
+        temp = itemsList[j];
+        itemsList[j] = itemsList[j + 1];
+        itemsList[j + 1] = temp;
+      }
+    }
+  }
+}
+
 void kevlar_parse_md_from_folder(
     char * folder_path, char * dist_path, char * template_path, ListingItem * itemsList) {
   DIR * folder_buf = opendir(folder_path);
@@ -110,14 +126,13 @@ void kevlar_parse_md_from_folder(
     kevlar_get_opt_from_config(in_fp, "date", itemsList[post_count].lDate);
     kevlar_get_opt_from_config(in_fp, "title", itemsList[post_count].lTitle);
 
+    char order[TEMPLATE_MAX_TAG_SIZE];
+    kevlar_get_opt_from_config(in_fp, "order", order);
+    itemsList[post_count].lOrder = atoi(order);
 
     strcpy(itemsList[post_count].lPath, out_fp);
 
-
     md_parse(in_fp, out_fp, 3);
-
-    char out_file_line[CONFIG_MAX_PATH_SIZE];
-
     FILE * out_file = fopen(out_fp, "r");
 
     fseek(out_file, 0, SEEK_END);
@@ -135,11 +150,21 @@ void kevlar_parse_md_from_folder(
     strcat(postTemplatePath, "/post.html");
 
     kevlar_parse_post_from_template(out_fp, postTemplatePath, "./config.ini", &itemsList[post_count]);
-
     fclose(out_file);
-
     post_count++;
   }
+}
+
+size_t kevlar_count_files_in_folder(const char * folder_path, const char * filetype) {
+  DIR * dir = opendir(folder_path);
+  struct dirent * dir_itm;
+  size_t itm_count = 0;
+
+  while ((dir_itm = readdir(dir)) != NULL) {
+    if (dir_itm->d_name[0] == '.') continue;
+    if (strcmp(strchr(dir_itm->d_name, '.')+1, filetype) == 0) itm_count++;
+  }
+  return itm_count;
 }
 
 void kevlar_handle_build_command(const char * file_path) {
@@ -153,10 +178,19 @@ void kevlar_handle_build_command(const char * file_path) {
 
   utl_mkdir_crossplatform("dist");
 
-
-
-  ListingItem * itemsList = malloc(1000*sizeof(ListingItem));
+  size_t md_count = kevlar_count_files_in_folder("./posts", "md");
+  ListingItem * itemsList = malloc(md_count*sizeof(ListingItem));
   kevlar_parse_md_from_folder("./posts", "./dist", themePath, itemsList);
+
+  bsortDesc(itemsList, md_count);
+
+  kevlar_generate_index_from_template(
+      "./dist/index.html", 
+      themePath,
+      "./config.ini",
+      itemsList,
+      md_count
+    );
 
   free(itemsList);
 

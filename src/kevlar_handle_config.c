@@ -29,22 +29,31 @@ void kevlar_get_opt_from_config(char *file_path, char *opt, char *arg) {
     char command[2][CONFIG_MAX_OPT_SIZE] = {};
 
     // NOTE: Only line comments for now
-    if (cur_line[0] == '#')
-      continue;
+    if (cur_line[0] == '#') continue;
 
     utl_truncateLast(cur_line);
-    strcpy(command[1], strrchr(cur_line, '=') + 1);
-    *strchr(cur_line, '=') = '\0';
-    strcpy(command[0], cur_line);
+
+    char * token = strtok(cur_line, "=");
+    int i = 0;
+    while (token != NULL && i <= 2) {
+      strcpy(command[i], token);
+      token = strtok(NULL, "=");
+      i++;
+    }
+
+    if (strlen(command[0]) == 0 || strlen(command[1]) == 0) {
+      continue;
+    }
 
     for (int i = 0; command[0][i] != '\0'; i++)
       command[0][i] = tolower(command[0][i]);
 
     if (strcmp(command[0], curOpt) == 0) {
       strcpy(arg, command[1]);
-      break;
+      return;
     }
   }
+  kevlar_err("invalid config at %s; opt \"%s\" not found!", file_path, opt);
   fclose(file_buf);
 }
 

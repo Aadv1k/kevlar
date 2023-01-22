@@ -9,6 +9,7 @@ typedef struct ListingItem {
   char lDate[CONFIG_MAX_PATH_SIZE];
   char lContent[CONFIG_MAX_FILE_SIZE];
   char lPath[CONFIG_MAX_PATH_SIZE];
+  int lOrder;
 } ListingItem;
 
 #define BUILD_MAX_CMD_SIZE 256
