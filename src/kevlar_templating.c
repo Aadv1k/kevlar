@@ -39,7 +39,9 @@ void kevlar_parse_inline_tag(char *line, char *template_file_path, char *tag, FI
 
   snprintf(stylesheet_path, CONFIG_MAX_PATH_SIZE, "%s/%s", template_file_path,
            strchr(line, '/') + 1);
-  *(strchr(stylesheet_path, '-')) = '\0';
+  utl_truncateLast(stylesheet_path);
+  utl_truncateLast(stylesheet_path);
+  utl_truncateLast(stylesheet_path);
 
   FILE *css_file_buffer;
   char file_line[TEMPLATE_MAX_LINE_SIZE];
@@ -76,7 +78,9 @@ void kevlar_parse_str_inline_tag(char *line, char *template_file_path, char *tag
 
   snprintf(stylesheet_path, CONFIG_MAX_PATH_SIZE, "%s/%s", template_file_path,
            strchr(line, '/') + 1);
-  *(strchr(stylesheet_path, '-')) = '\0';
+  utl_truncateLast(stylesheet_path);
+  utl_truncateLast(stylesheet_path);
+  utl_truncateLast(stylesheet_path);
 
   FILE *css_file_buffer;
   char file_line[TEMPLATE_MAX_LINE_SIZE];
@@ -164,12 +168,15 @@ void kevlar_generate_listing(char *entry_template_file_path, char *config_file_p
 
   char line[TEMPLATE_MAX_LINE_SIZE];
 
+  printf("%d\n", size);
   for (int i = 0; i < size; i++) {
     while (fgets(line, TEMPLATE_MAX_LINE_SIZE, template)) {
       if (strstr(line, "--DATE--")) {
         kevlar_parse_template_str_token(line, "--DATE--", itemsList[i].lDate, target);
       } else if (strstr(line, "--TITLE--")) {
         kevlar_parse_template_str_token(line, "--TITLE--", itemsList[i].lTitle, target);
+      } else if (strstr(line, "--PATH--")) {
+        kevlar_parse_template_str_token(line, "--PATH--", strrchr(itemsList[i].lPath, '/')+1, target);
       } else if (strstr(line, "--CONTENT--")) {
         kevlar_parse_template_str_token(line, "--CONTENT--", itemsList[i].lContent, target);
       } else if (strstr(line, "--")) {
@@ -192,6 +199,11 @@ void kevlar_generate_listing(char *entry_template_file_path, char *config_file_p
 void kevlar_parse_post_from_template(char *html_file_path, char *template_file_path,
                                      char *config_file_path, ListingItem * item) {
   FILE *post_file = fopen(template_file_path, "r");
+
+  if (post_file == NULL) {
+    kevlar_err("couldn't open %s perhaps your theme is invalid", template_file_path);
+  }
+
   FILE *html_file = fopen(html_file_path, "w");
 
   char *listing = malloc(CONFIG_MAX_FILE_SIZE * sizeof(char));
@@ -203,17 +215,12 @@ void kevlar_parse_post_from_template(char *html_file_path, char *template_file_p
   strcpy(entry_template_path, template_folder);
   strcat(entry_template_path, "/entry.html");
   
-  // DOES NOT WORK AS INTENDED
-  size_t listSize = kevlar_count_files_in_folder("./posts", "md");
-  kevlar_generate_listing(entry_template_path, config_file_path, item, listing, listSize);
 
   char line[TEMPLATE_MAX_LINE_SIZE];
 
   while (fgets(line, TEMPLATE_MAX_LINE_SIZE, post_file) != NULL) {
     if (strstr(line, "--DATE--")) {
       kevlar_parse_template_token(line, "--DATE--", item->lDate, html_file);
-    } else if (strstr(line, "--LISTING--")) {
-      kevlar_parse_template_token(line, "--LISTING--", listing, html_file);
     } else if (strstr(line, "--TITLE--")) {
       kevlar_parse_template_token(line, "--TITLE--", item->lTitle, html_file);
     } else if (strstr(line, "--HEADER--") || strstr(line, "--FOOTER--")) {
