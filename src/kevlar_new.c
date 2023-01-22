@@ -12,6 +12,7 @@
 
 #include "../utils/utils.h"
 #include "kevlar_errors.h"
+#include "kevlar_build.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 
@@ -31,8 +32,33 @@ int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
   return folderEmpty;
 }
 
-void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
+void kevlar_generate_new_post(const char * folder_path, char * post_title) {
+  char file_name[CONFIG_MAX_PATH_SIZE] = "";
+  char * input_tmp = strdup(post_title);
+  char output[CONFIG_MAX_PATH_SIZE];
 
+  utl_spaces_to_dash_case(input_tmp, output);
+  strcpy(file_name, folder_path);
+  strcat(file_name, "/");
+  strcat(file_name, output);
+  strcat(file_name, ".md");
+
+  kevlar_ok("generating \"%s\"...", file_name);
+
+  size_t fileNum = kevlar_count_files_in_folder(folder_path, "md");
+  FILE * md_file_buf = fopen(file_name, "w");
+  if (!md_file_buf) kevlar_err("something went wrong while generating %s", file_name);
+
+  char * time_str = utl_get_date_time_unsafe();
+
+  fprintf(md_file_buf, "Title=%s\n", post_title);
+  fprintf(md_file_buf, "Date=%s\n", time_str);
+  fprintf(md_file_buf, "Order=%lu\n", fileNum+1);
+  fputs("\n", md_file_buf);
+  fputs("Goodness awaits...", md_file_buf);
+}
+
+void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
   utl_mkdir_crossplatform(skeleton->skel_posts_folder_path);
   utl_mkdir_crossplatform(skeleton->skel_template_folder_path);
   kevlar_generate_skeleton_config(skeleton->skel_config_file_path);
@@ -64,9 +90,16 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton) {
 
   FILE *default_md_file_buf;
   default_md_file_buf = fopen(default_md_file_path, "w");
+  char * time_str = utl_get_date_time_unsafe();
 
+  fputs("Title=My first post\n", default_md_file_buf);
+  fprintf(default_md_file_buf, "Date=%s\n", time_str);
+  fputs("Order=0\n", default_md_file_buf);
+  fputs("\n", default_md_file_buf);
   fputs("# Welcome to kevlar!\n", default_md_file_buf);
   fputs("if you are seeing this, everything has worked as intended.\n", default_md_file_buf);
+
+  free(time_str);
 
   fclose(default_md_file_buf);
 

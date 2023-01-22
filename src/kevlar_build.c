@@ -22,6 +22,22 @@
 
 #define FILE_OPTS 3
 
+size_t kevlar_count_files_in_folder(const char * folder_path, const char * filetype) {
+  DIR * dir = opendir(folder_path);
+  struct dirent * dir_itm;
+  size_t itm_count = 0;
+
+  while ((dir_itm = readdir(dir)) != NULL) {
+    if (dir_itm->d_name[0] == '.') continue;
+
+    char * rev = strchr(dir_itm->d_name, '.');
+    if (kevlar_get_folder_status(dir_itm->d_name) != folderNull || rev == NULL) continue;
+
+    if (strcmp(rev, filetype) == 0) itm_count++;
+  }
+  return itm_count;
+}
+
 void kevlar_copy_assets(const char *src, const char *dest) {
   if (kevlar_get_folder_status(src) == folderNull || kevlar_get_folder_status(src) == folderEmpty) {
     kevlar_warn("asset path \"%s\" is either empty or doesn't exist", src);
@@ -155,17 +171,6 @@ void kevlar_parse_md_from_folder(
   }
 }
 
-size_t kevlar_count_files_in_folder(const char * folder_path, const char * filetype) {
-  DIR * dir = opendir(folder_path);
-  struct dirent * dir_itm;
-  size_t itm_count = 0;
-
-  while ((dir_itm = readdir(dir)) != NULL) {
-    if (dir_itm->d_name[0] == '.') continue;
-    if (strcmp(strchr(dir_itm->d_name, '.')+1, filetype) == 0) itm_count++;
-  }
-  return itm_count;
-}
 
 void kevlar_handle_build_command(const char * file_path) {
   KevlarSkeleton skel = {"templates/", "posts/", "config.ini", "dist/"};

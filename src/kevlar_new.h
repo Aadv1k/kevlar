@@ -21,4 +21,6 @@ void kevlar_generate_new_skeleton(KevlarSkeleton *skeleton);
 
 void kevlar_handle_new_command(char folder_path[CONFIG_MAX_PATH_SIZE]);
 
+void kevlar_generate_new_post(const char * folder_path, char * post_name);
+
 #endif
