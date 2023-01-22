@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #if __has_include("windows.h")
 #include <windows.h>
@@ -29,10 +30,19 @@ void utl_prepend(char *string, const char *prefix) {
   memcpy(string, prefix, len);
 }
 
+char * utl_get_date_time_unsafe() {
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  char * time_str = malloc(100 * sizeof(char));
+  sprintf(time_str, "%d-%02d-%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  return time_str;
+}
+
 void utl_truncateLast(char *str) { str[strlen(str) - 1] = '\0'; }
 
 void x_case_to_y_case(char *input, char *output, const char *x, const char *y) {
   output[0] = '\0';
+
 
   char *word;
   word = strtok(input, x);
@@ -52,9 +62,8 @@ char *utl_camel_case_to_spaces(char *input, char *output) {
   return output;
 }
 
-char *utl_spaces_to_dash_case(char *input, char *output) {
+void utl_spaces_to_dash_case(char *input, char *output) {
   x_case_to_y_case(input, output, " ", "-");
-  return output;
 }
 
 void utl_mkdir_crossplatform(char *folder_path) {

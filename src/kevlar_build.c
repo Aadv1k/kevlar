@@ -134,7 +134,6 @@ void kevlar_parse_md_from_folder(
     if (dir_item->d_name[0] == '.') continue;
     char in_fp[CONFIG_MAX_PATH_SIZE], out_fp[CONFIG_MAX_PATH_SIZE];
 
-
     sprintf(in_fp, "%s/%s", folder_path, dir_item->d_name);
     dir_item->d_name[strlen(dir_item->d_name)-3] = '\0';
     sprintf(out_fp, "%s/%s.html", dist_path, dir_item->d_name);
