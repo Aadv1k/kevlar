@@ -29,10 +29,8 @@ size_t kevlar_count_files_in_folder(const char * folder_path, const char * filet
 
   while ((dir_itm = readdir(dir)) != NULL) {
     if (dir_itm->d_name[0] == '.') continue;
-
-    char * rev = strchr(dir_itm->d_name, '.');
-    if (kevlar_get_folder_status(dir_itm->d_name) != folderNull || rev == NULL) continue;
-
+    char * rev = strchr(dir_itm->d_name, '.')+1;
+    if (kevlar_get_folder_status(dir_itm->d_name) != folderNull) continue;
     if (strcmp(rev, filetype) == 0) itm_count++;
   }
   return itm_count;
@@ -132,6 +130,7 @@ void kevlar_parse_md_from_folder(
   int post_count = 0;
   while ((dir_item = readdir(folder_buf)) != NULL) {
     if (dir_item->d_name[0] == '.') continue;
+
     char in_fp[CONFIG_MAX_PATH_SIZE], out_fp[CONFIG_MAX_PATH_SIZE];
 
     sprintf(in_fp, "%s/%s", folder_path, dir_item->d_name);
@@ -141,10 +140,11 @@ void kevlar_parse_md_from_folder(
     kevlar_get_opt_from_config(in_fp, "date", itemsList[post_count].lDate);
     kevlar_get_opt_from_config(in_fp, "title", itemsList[post_count].lTitle);
 
+
     char order[TEMPLATE_MAX_TAG_SIZE];
     kevlar_get_opt_from_config(in_fp, "order", order);
-    itemsList[post_count].lOrder = atoi(order);
 
+    itemsList[post_count].lOrder = atoi(order);
     strcpy(itemsList[post_count].lPath, out_fp);
 
     md_parse(in_fp, out_fp, 3);
@@ -159,6 +159,7 @@ void kevlar_parse_md_from_folder(
     strcpy(itemsList[post_count].lContent, buf);
     buf[out_file_length] = '\0';
     free(buf);
+
 
     char postTemplatePath[CONFIG_MAX_PATH_SIZE];
     strcpy(postTemplatePath, template_path);
@@ -183,6 +184,7 @@ void kevlar_handle_build_command(const char * file_path) {
   utl_mkdir_crossplatform("dist");
 
   size_t md_count = kevlar_count_files_in_folder("./posts", "md");
+  printf("%zu\n", md_count);
   ListingItem * itemsList = malloc(md_count*sizeof(ListingItem));
   kevlar_parse_md_from_folder("./posts", "./dist", themePath, itemsList);
 
@@ -195,6 +197,7 @@ void kevlar_handle_build_command(const char * file_path) {
       itemsList,
       md_count
     );
+
 
   free(itemsList);
 
