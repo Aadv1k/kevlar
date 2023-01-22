@@ -3,6 +3,7 @@
 
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+#include <stddef.h>
 
 typedef struct ListingItem {
   char lTitle[CONFIG_MAX_PATH_SIZE];
@@ -19,5 +20,7 @@ void kevlar_check_if_theme_valid(const char theme_path[CONFIG_MAX_PATH_SIZE]);
 void kevlar_check_if_kevlar_proj(const char folder_path[CONFIG_MAX_PATH_SIZE],
                                  KevlarSkeleton *skeleton);
 void kevlar_handle_build_command(const char * folder_path);
+
+size_t kevlar_count_files_in_folder(const char * folder_path, const char * filetype);
 
 #endif

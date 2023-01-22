@@ -11,11 +11,11 @@
 
 #define MAX_CMD_SIZE 16
 
-enum COMMANDS { cmdHelp, cmdNew, cmdBuild, cmdServe, cmdServer, cmdTail };
+enum COMMANDS { cmdHelp, cmdNew, cmdBuild, cmdNewPost, cmdTail };
 
 int argtype(char arg[]) {
   char param[][MAX_CMD_SIZE] = {
-      "help", "new", "build", "serve", "server",
+      "help", "new", "build", "new-post"
   };
 
   assert(cmdTail == sizeof(param) / MAX_CMD_SIZE);
@@ -29,9 +29,10 @@ int argtype(char arg[]) {
 
 void kevlar_usage_exit(const char *origin) {
   printf("%s <cmd> <opt>\n", origin);
-  printf("  help  -- print this help message\n");
-  printf("  new   -- create a new site skeleton\n");
-  printf("  build -- build if in a kevlar project\n");
+  printf("  help       -- print this help message\n");
+  printf("  new        -- create a new site skeleton\n");
+  printf("  new-post   -- create a new post with defaults\n");
+  printf("  build      -- build if in a kevlar project\n");
   exit(0);
 }
 
@@ -52,6 +53,12 @@ int main(int argc, char **argv) {
     break;
   case cmdBuild:
     kevlar_handle_build_command(".");
+    break;
+  case cmdNewPost:
+    if (argc == 2) {
+      kevlar_err("you need to provide a title for your post!");
+    }
+    kevlar_generate_new_post(".", argv[2]);
     break;
   default:
     kevlar_err("couldn't find command \"%s\"", argv[1]);
