@@ -16,7 +16,7 @@
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
 
-int kevlar_get_folder_status(const char folder_path[CONFIG_MAX_PATH_SIZE]) {
+int kevlar_get_folder_status(const char * folder_path) {
   DIR *dir_stream;
   struct dirent *dir_obj;
 

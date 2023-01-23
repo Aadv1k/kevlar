@@ -155,7 +155,8 @@ void kevlar_parse_md_from_folder(
     rewind(out_file);
 
     char * buf = malloc(out_file_length + 1);
-    fread(buf, out_file_length, 1, out_file);
+    if (!fread(buf, out_file_length, 1, out_file)) kevlar_err("was unable to read %s", out_file);
+
     strcpy(itemsList[post_count].lContent, buf);
     buf[out_file_length] = '\0';
     free(buf);
@@ -184,7 +185,6 @@ void kevlar_handle_build_command(const char * file_path) {
   utl_mkdir_crossplatform("dist");
 
   size_t md_count = kevlar_count_files_in_folder("./posts", "md");
-  printf("%zu\n", md_count);
   ListingItem * itemsList = malloc(md_count*sizeof(ListingItem));
   kevlar_parse_md_from_folder("./posts", "./dist", themePath, itemsList);
 
