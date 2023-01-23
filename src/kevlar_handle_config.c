@@ -16,7 +16,6 @@ void kevlar_get_opt_from_config(char *file_path, char *opt, char *arg) {
     exit(1);
   }
 
-  int line_count = 0;
   char cur_line[CONFIG_MAX_FILE_SIZE];
 
   char curOpt[CONFIG_MAX_OPT_SIZE];
