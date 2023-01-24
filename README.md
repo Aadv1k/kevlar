@@ -1,23 +1,15 @@
-# Kevlar 🪢
+# Kevlar v2
 
 An _utterly_ simple and fast Static Site Generator built using C
 
-**elevator pitch**
+- [✅] Simple and fast
+- [✅] HTML-first approach
+- [✅] Crossplatform (Tested on `Windows 11 v21H2` and `Debian GNU/Linux 11 x86_64`)
+- [❌] JS-first SPA experience
+- [❌] Frameworks and external build tools
+- [❌] Plugins and lifecycle hooks
 
-> maybe you take notes, or write articles in X format, you would like to quickly convert your project into a website without any extra baggage and minimal shift to your existing workflow, introducing kevlar, an utterly simple SSG.
-
-## Features
-
-- **Cross platform:** Runs both on windows and unix-like operating systems!, tested with -
-  - windows 11 v21H2
-  - Debian GNU/Linux 11 (bullseye) on Windows 10 x86_64 ([WSL](https://learn.microsoft.com/en-us/windows/wsl/))
-- **Recipes included:** with support for a custom spec of reStructuredText out of the box, (more to come)
-  - [Markdown](#convert-markdown)
-  - [DEPRECATED] [reStructuredText](#convert-restructured-text)
-- **Highly extensible:** Support for basic yet scalable templating
-- **Simple:** Kevlar does not try to do too little or too much, just enough to get the job done.
-
-## Get
+## Install
 
 To get kevlar, you can either get a [binary from releases](https://github.com/Aadv1k/kevlar/releases/latest) or build from scratch; instructions for which are given here.
 
@@ -45,9 +37,82 @@ cd kevlar && make kevlar_win32
 
 ## Recipes
 
-You can build the loader kevlar uses to parse ~~`.rst` and~~ `.md` files as their own executables by running
-
-- `make md2html`
-- `make rst2html` NOTE: while you can still build the executable, the rst parser is not being actively maintained or fixed.
+Kevlar has it's own markdown loader if you would like to build it as it's own executable you can run `make md2html`
+You can build the loader kevlar uses to parse `.md` files as their own executables by running.
 
 You will get the respective CLI
+
+## CLI
+
+```shell
+$ kevlar
+kevlar <cmd> <opt>
+  help       -- print this help message
+  new        -- create a new site skeleton
+  new-post   -- create a new post with defaults
+  build      -- build if in a kevlar project
+```
+
+### `kevlar new <NAME>`
+
+Sets up a basic skeleton for a site and a basic `config.ini`
+
+```ini
+theme=listing-kevlar-theme
+```
+
+- `theme=`: looks for the given theme within the `./templates/` dir.
+
+### `kevlar new-post <TITLE>`
+
+Generates a `.md` file in the current folder with the following archetype
+
+```
+Title=This is a title
+Date=2023-01-24 17:44:10
+Order=1
+```
+
+- Title: the name of the link that will show up with `--TITLE--`
+- Date: current date, put AS-IS with `--DATE--`
+- Order: the order in which the post will show up in `--LISTING--`
+
+## Config
+
+the only required config is the `theme` option in the `config.ini` files.
+
+## Templating
+
+### `*.html`
+
+| Tags                     | Description                                                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `--HEADER--`             | Reads and parses `header.html` in your theme                                                    |
+| `--FOOTER--`             | Reads and parses `footer.html` in your theme                                                    |
+| `--SCRIPT ./script.js--` | Finds the provided file within yout theme and inserts an inline script                          |
+| `--STYLE ./style.css--`  | Finds the provided file within yout theme and inserts an inline style                           |
+| `--CUSTOM_TAG--`         | will look up the tag (lowercase) in `config.ini`, where you can provide the option for this tag |
+
+### `post.html`
+
+Defines the layout of a post
+
+| Tags          | Description                 |
+| ------------- | --------------------------- |
+| `--CONTENT--` | The parsed markdown content |
+
+### `entry.html`
+
+Defines to how a singular list item within `--LISTING--` will look like
+
+| Tags          | Description                         |
+| ------------- | ----------------------------------- |
+| `--DATE--`    | The `Date=` option in the post file |
+| `--PATH--`    | Html link of the parsed post        |
+| `--CONTENT--` | parsed html content                 |
+
+## `index.html`
+
+| Tags          | Description                                        |
+| ------------- | -------------------------------------------------- |
+| `--LISTING--` | provides a list of all posts based on `entry.html` |
