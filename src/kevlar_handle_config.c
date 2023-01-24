@@ -61,6 +61,6 @@ void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
   if (!file_buf)
     kevlar_err("[kevlar] something went wrong while generating sample config\n");
   // This works for now since the file we will be generating won't be that big
-  fprintf(file_buf, "author=John\ntitle=My example site\ntheme=kyudo\n");
+  fprintf(file_buf, "title=Begin\ntheme=listed-kevlar-theme\n");
   fclose(file_buf);
 }
