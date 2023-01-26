@@ -162,6 +162,7 @@ void kevlar_parse_footer(FILE *output_buf, char *template_folder, char *config_f
 
 void kevlar_generate_listing(char *entry_template_file_path, char *config_file_path,
                              ListingItem *itemsList, char *target, int size) {
+  target[0] = '\0';
   FILE *template = fopen(entry_template_file_path, "r");
   if (!template)
     kevlar_err("couldn't open %s Perhaps your theme is invalid?", entry_template_file_path);
