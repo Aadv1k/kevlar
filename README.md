@@ -1,4 +1,22 @@
-# Kevlar v2
+# Kevlar V3
+
+## Plan for v3
+
+- Add unit testing, particularly for the markdown component of the application
+- GET RID OF ALL THE MEMORY LEAKS
+- More robust and modern markdown parsing that implements best practices
+- Introduce JSON as the standard config format for both the config files as well
+  as the meta-data
+- Implement first-class support for dates, and sorting the listing  
+
+- better templating, with ``--IF {cond}--`` and ``--ELSE--`` where cond can be a
+  flag that the user set in his config. The idea is that a template author may
+  use this to write robust templates which work for a wide variety of formats. I
+  really want this to be a highly configuration heavy experience. 
+
+- `--IF {some_flag}--`, `--ELIF {some_flag}--`, `--ELSE--`, 
+- `--CONF {some_opt}--` pick and replace a config option at place
+- `--LISTING :asc :tag--` 
 
 An _utterly_ simple and fast Static Site Generator built using C
 
