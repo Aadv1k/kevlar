@@ -1,22 +1,30 @@
 # Kevlar V3
 
-## Plan for v3
+## Goals for V3
 
-- Add unit testing, particularly for the markdown component of the application
-- GET RID OF ALL THE MEMORY LEAKS
-- More robust and modern markdown parsing that implements best practices
-- Introduce JSON as the standard config format for both the config files as well
-  as the meta-data
-- Implement first-class support for dates, and sorting the listing  
+> To make kevlar ready for real production use for my personal blog
 
-- better templating, with ``--IF {cond}--`` and ``--ELSE--`` where cond can be a
-  flag that the user set in his config. The idea is that a template author may
+1. Develop a somewhat spec-compliant markdown compiler. The current version has a lot of rough edges, to name a few
+    - No support for tables
+    - No support for injecting HTML directly into markdown (current version tries to wrap all the HTML tags into `<p>` which breaks it)
+    - Images work, but the alt-text is appended to the raw text instead of actually being an alt tag 
+
+2. Improve the code architecture. The current approach has a lot of shorcomings which make adding any new features quite hard, (I will speak about these at length in the blog post about this project), and introduce testing, atleast for the markdown component. Also get rid of the memory leaks, and heavy usage of stack allocation from the code
+
+3. Imporve front-matter parsing to be more robust
+    - Handle dates properly instead of the abomination that is `Order=`
+    - Allow the template author to specify custom front-matter properties, and provide it at the `post` context
+
+4. Better templating, with ``--IF {cond}--`` and ``--ELSE--`` where cond can be a
+  flag that the user set in his global config. The idea is that a template author may
   use this to write robust templates which work for a wide variety of formats. I
   really want this to be a highly configuration heavy experience. 
+    - `--IF {some_flag}--`, `--ELIF {some_flag}--`, `--ELSE--`, 
+    - `--CONF {some_opt}--` pick and replace a config option at place
+    - `--LISTING :asc :tag--` 
 
-- `--IF {some_flag}--`, `--ELIF {some_flag}--`, `--ELSE--`, 
-- `--CONF {some_opt}--` pick and replace a config option at place
-- `--LISTING :asc :tag--` 
+5. Implement a more robust `.ini` parsing. Current implementation is literally a `key=val` parser implemented hastily. We want to pack in a lot of good features such as namespacing, while keeping it lean. Hence, I will be loosely following the [`.ini` wikipedia article](https://en.wikipedia.org/wiki/INI_file) as a convention.
+
 
 An _utterly_ simple and fast Static Site Generator built using C
 
