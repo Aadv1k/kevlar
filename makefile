@@ -2,6 +2,8 @@ CFLAGS = -Wall -Werror -Wextra
 CC = gcc
 
 SRC_FILES = $(wildcard ./src/*.c)
+TEST_FILES = $(wildcard ./tests/*.c)
+
 
 OBJ_FILES := $(patsubst ./src/%.c,./bin/obj/%.o,$(SRC_FILES))
 
@@ -24,6 +26,10 @@ else
 	mkdir -p $(@D)
 endif
 	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: test
+test: $(TEST_FILES) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
+	$(CC) $(CFLAGS) -o ./bin/test $^
 
 .PHONY: clean
 clean:
