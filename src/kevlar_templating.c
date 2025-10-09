@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../utils/utils.h"
+#include "utils.h"
 
 #include "kevlar_build.h"
 #include "kevlar_errors.h"

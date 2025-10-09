@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../utils/utils.h"
+#include "utils.h"
 #include "kevlar_errors.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"

@@ -1,56 +1,34 @@
-CFLAGS=-Wall -Wextra -O3
-CC=gcc
-CMD := $(CC) $(CFLAGS)
+CFLAGS = -Wall -Werror -Wextra
+CC = gcc
 
-kevlar_files := ./src/main.o ./src/kevlar_new.o ./src/kevlar_build.o ./src/kevlar_handle_config.o ./src/kevlar_templating.o ./utils/utils.o ./src/kevlar_rst_to_html.o ./src/kevlar_md_to_html.o ./src/kevlar_errors.o
+SRC_FILES = $(wildcard ./src/*.c)
 
-kevlar: $(kevlar_files)
-	mkdir -p bin
-	$(CC) $(kevlar_files) -o ./bin/kevlar
+OBJ_FILES := $(patsubst ./src/%.c,./bin/obj/%.o,$(SRC_FILES))
 
-kevlar_win32: $(kevlar_files)
-	if not exist bin mkdir bin
-	$(CC) $(kevlar_files) -o ./bin/kevlar.exe
+./bin/kelvar: $(OBJ_FILES)
+ifeq ($(OS), Windows_NT)
+	IF NOT EXIST $(@D) (
+		mkdir $(@D)
+	)
+else
+	mkdir -p $(@D)
+endif
+	$(CC) -o $@ $^
 
-kevlar/main: ./src/main.c
-	$(CMD) ./src/main.c
+./bin/obj/%.o: ./src/%.c
+ifeq ($(OS), Windows_NT)
+	IF NOT EXIST $(@D) (
+		mkdir $(@D)
+	)
+else
+	mkdir -p $(@D)
+endif
+	$(CC) $(CFLAGS) -c $< -o $@
 
-utils: ./utils/utils.c ./utils/utils.h
-	$(CMD) ./utils/utils.c
-
-kevlar/new: ./src/kevlar_new.c ./src/kevlar_new.h utils
-	$(CMD) ./src/kevlar_new.c
-
-kevlar/handle_config: ./src/kevlar_handle_config.c ./src/kevlar_handle_config.h utils
-	$(CMD) ./src/kevlar_handle_config.c
-
-kevlar/errors: ./src/kevlar_errors.c ./src/kevlar_errors.h
-	$(CMD) ./src/kevlar_handle_stdout.c
-
-kevlar/templating: ./src/kevlar_templating.c ./src/kevlar_templating.h kevlar/handle_config utils
-	$(CMD)./src/kevlar_handle_templates.c
-
-kevlar/build: ./src/kevlar_build.c ./src/kevlar_build.h kevlar/rst_to_html
-	$(CMD) ./src/kevlar_build.c
-
-kevlar/rst_to_html: ./src/kevlar_rst_to_html.c ./src/kevlar_rst_to_html.h utils kevlar/errors
-	$(CMD) ./src/kevlar_rst_to_html.c
-
-kevlar/md_to_html: ./src/kevlar_md_to_html.c ./src/kevlar_md_to_html.h kevlar/rst_to_html utils kevlar/errors
-	$(CMD) ./src/kevlar_md_to_html.c
-
-rst2html: ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o ./src/kevlar_errors.o
-	mkdir -p bin 
-	$(CC) ./recipes/rst2html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -o ./bin/rst2html
-
-md2html: ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o
-	mkdir -p bin 
-	gcc ./recipes/md2html.o ./src/kevlar_md_to_html.o ./src/kevlar_rst_to_html.o ./utils/utils.o ./src/kevlar_errors.o -lm -o ./bin/md2html
-
-all: kevlar rst2html md2html
-
-clean: 
-	rm -rf ./src/*.o
-	rm -rf ./recipes/*.o
-	rm -rf ./bin
-	rm -rf ./utils/*.o
+.PHONY: clean
+clean:
+ifeq ($(OS), Windows_NT)
+	del /s /q bin
+else
+	rm -rf bin
+endif

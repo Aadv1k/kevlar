@@ -10,7 +10,7 @@
 
 #endif
 
-#include "../utils/utils.h"
+#include "utils.h"
 #include "kevlar_errors.h"
 #include "kevlar_build.h"
 #include "kevlar_handle_config.h"
