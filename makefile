@@ -29,7 +29,7 @@ endif
 
 .PHONY: test
 test: $(TEST_FILES) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
-	$(CC) $(CFLAGS) -o ./bin/test $^
+	$(CC) $(CFLAGS) -g -ggdb -o ./bin/test $^
 
 .PHONY: clean
 clean:
