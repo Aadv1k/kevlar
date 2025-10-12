@@ -7,6 +7,8 @@ void utl_prepend_str(char prefix[], char str[]);
 
 void utl_prepend(char *string, const char *prefix);
 
+size_t utl_lstrip_offset(char* data, size_t length);
+
 void utl_truncateLast(char *str);
 char *utl_get_date_time_unsafe();
 

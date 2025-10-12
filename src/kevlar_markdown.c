@@ -1,11 +1,25 @@
 #include "kevlar_markdown.h"
 #include "kevlar_errors.h"
+#include "utils.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+Md_Line_End_Type get_line_end_type(const char *source, size_t pos) {
+	size_t len = strlen(source);
+
+	if (pos + 1 > len) return MD_EOF;
+
+	if (source[pos] == '\n' && source[pos + 1] == '\n')
+		return MD_DOUBLE_LINE_BREAK;
+
+	return MD_SINGLE_LINE_BREAK;
+}
+
 
 void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
     Md_Ast** a;
@@ -16,24 +30,6 @@ void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
     parent->children = a;
 	parent->children[parent->c_count] = child;
 	parent->c_count++;
-}
-
-typedef enum Md_Line_End_Type {
-	MD_DOUBLE_LINE_BREAK,
-	MD_SINGLE_LINE_BREAK,
-	MD_EOF,
-} Md_Line_End_Type;
-
-Md_Line_End_Type get_line_end_type(const char *source, size_t pos) {
-	size_t len = strlen(source);
-
-	if (pos + 1 > len)
-		return MD_EOF;
-
-	if (source[pos] == '\n' && source[pos + 1] == '\n')
-		return MD_DOUBLE_LINE_BREAK;
-
-	return MD_SINGLE_LINE_BREAK;
 }
 
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_break) {
@@ -56,7 +52,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 			switch (line_end) {
 			case MD_SINGLE_LINE_BREAK: {
 				if (allow_line_break) break;
-				offset = i - 1 - *pos;
+				offset = i - *pos;
 				cursor_jmp = i;
                 break;
 			}
@@ -72,29 +68,28 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 				cursor_jmp = i;
                 break;
 			}
-
-			default:
-				assert(false && "Unreachable");
+			default: /* Unreachable */
+                 goto parsing_error;
 			}
 
+            if (offset == 0) 
+                goto parsing_error;
 
-            if (offset == 0) break;
-
-			ast_node->opt.text_opt.data = malloc(sizeof(char) * offset);
-
-			if (ast_node->opt.text_opt.data == NULL)
-				break;
+			if ((ast_node->opt.text_opt.data = malloc(sizeof(char) * offset)) == NULL) 
+                goto parsing_error;
 
 			ast_node->opt.text_opt.len = offset;
 
-			strncpy(ast_node->opt.text_opt.data, (source + (*pos)), i);
+			strncpy(ast_node->opt.text_opt.data, (source + (*pos)), offset);
 
 			*pos = cursor_jmp;
-
-			return ast_node;
+            return ast_node;
 		}
 	}
 
+
+parsing_error:
+	free(ast_node);
 	return NULL;
 }
 
@@ -116,8 +111,7 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
 		if (source[i] == '#')
 			level++;
 
-		if (source[i] == ' ') {
-
+		if (isspace(source[i]) != 0) {
 			if (level > 6) goto parsing_error;
 			ast_node->opt.h_opt.level = level;
 
@@ -129,6 +123,18 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
 			Md_Ast *txt_node = kevlar_md_process_text_node(source, pos, /* allow_line_break */ false);
 			if (txt_node == NULL)
 				return ast_node;
+
+             size_t left_offset = utl_lstrip_offset(txt_node->opt.text_opt.data, txt_node->opt.text_opt.len);
+             size_t new_len = txt_node->opt.text_opt.len - left_offset;
+
+             if (left_offset) {
+                char* new_data = malloc(sizeof(char) * new_len);
+                strncpy(new_data, txt_node->opt.text_opt.data + left_offset, new_len);
+                free(txt_node->opt.text_opt.data);
+
+                txt_node->opt.text_opt.data = new_data;
+                txt_node->opt.text_opt.len = new_len;
+             }
 
 			kevlar_md_ast_child_append(ast_node, txt_node);
 

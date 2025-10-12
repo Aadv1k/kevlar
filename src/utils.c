@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <ctype.h>
 
 #if __has_include("windows.h")
 #include <windows.h>
@@ -13,6 +14,19 @@ void utl_prepend_str(char prefix[], char str[]) {
   strcpy(temp_str, str);
   strcpy(str, prefix);
   strcat(str, temp_str);
+}
+
+size_t utl_lstrip_offset(char* data, size_t length) {
+    // "        foo bar" -> "foo bar"
+    
+    size_t end_p = 0;
+
+    for (size_t i = 0; i < length; ++i) {
+        if (isspace(data[i]) != 0) end_p++;
+        if (isspace(data[i]) == 0) break;
+    }
+
+    return end_p;
 }
 
 size_t utl_count_repeating_char(char chr, const char *str) {
