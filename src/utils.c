@@ -5,6 +5,8 @@
 #include <time.h>
 #include <ctype.h>
 
+#include "kevlar_markdown.h"
+
 #if __has_include("windows.h")
 #include <windows.h>
 #endif
@@ -88,4 +90,39 @@ void utl_mkdir_crossplatform(char *folder_path) {
   // the EEXIST error anyways.
   mkdir(folder_path, 0777);
 #endif
+}
+
+
+const char* _node_type_to_str(NodeType type) {
+    switch (type) {
+        case MD_ROOT_NODE:    return "MD_ROOT_NODE";
+        case MD_PARA_NODE:    return "MD_PARA_NODE";
+        case MD_EM_NODE:      return "MD_EM_NODE";
+        case MD_STRONG_NODE:  return "MD_STRONG_NODE";
+        case MD_DEL_NODE:     return "MD_DEL_NODE";
+        case MD_TEXT_NODE:    return "MD_TEXT_NODE";
+        case MD_HEADING_NODE: return "MD_HEADING_NODE";
+        default:              return "UNKNOWN_NODE_TYPE";
+    }
+}
+
+void utl_visualize_ast(Md_Ast* ast, int spaces) {
+
+    char* indent = malloc(sizeof(char) * spaces);
+    memset(indent, ' ', spaces*2);
+
+    printf("%s%s\n", indent, _node_type_to_str(ast->node_type));
+    if (ast->node_type == MD_TEXT_NODE) {
+        printf("%s└ Data: %s\n", indent, ast->opt.text_opt.data);
+    }
+
+    if (ast->node_type == MD_HEADING_NODE) {
+        printf("%s└ Level: %d\n", indent, ast->opt.h_opt.level);
+    }
+
+    for (size_t i = 0; i < ast->c_count; ++i) {
+        utl_visualize_ast(ast->children[i], spaces + 1);
+    }
+
+    free(indent);
 }
