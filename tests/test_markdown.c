@@ -105,6 +105,25 @@ void test_md_content() {
 
     /*************************************/
     puts("Test A");
+    ast = kevlar_md_generate_ast("Hello *World*");
+
+    /*
+     * - Para
+     * -- text
+     * -- em
+     * --- text
+     */
+
+    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
+        test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test B");
     ast = kevlar_md_generate_ast("The _quick_ *brown* **fox** ***jumps*** ~~over~~ the lazy dog");
 
     test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
