@@ -27,8 +27,8 @@ void test_match_text_node_text(Md_Ast* txt_node, const char* dest) {
     assert(txt_node->node_type == MD_TEXT_NODE);
 
     if (strcmp(txt_node->opt.text_opt.data, dest) != 0) {
-        printf("\tWANTED: %s\n", dest);
-        printf("\tGOT: %s\n", txt_node->opt.text_opt.data);
+        printf("\tWANTED: \"%s\"\n", dest);
+        printf("\tGOT: \"%s\"\n", txt_node->opt.text_opt.data);
         assert(0 && "txt_node content did not match data");
     }
 }

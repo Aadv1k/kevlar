@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
 #include "kevlar_errors.h"
 #include "kevlar_handle_config.h"
 #include "kevlar_new.h"
+#include "utils.h"
 
 void trimWhitespace(char *str) {
     int len = strlen(str);
@@ -42,7 +42,7 @@ void kevlar_get_opt_from_config(char *file_path, char *opt, char *arg) {
 
         trimWhitespace(cur_line);
 
-        char command[2][CONFIG_MAX_OPT_SIZE] = { "", "" };
+        char command[2][CONFIG_MAX_OPT_SIZE] = {"", ""};
 
         char *token = strtok(cur_line, "=");
         int i = 0;
@@ -78,10 +78,10 @@ void kevlar_get_opt_from_config(char *file_path, char *opt, char *arg) {
 }
 
 void kevlar_generate_skeleton_config(char file_path[CONFIG_MAX_PATH_SIZE]) {
-  FILE *file_buf = fopen(file_path, "w");
-  if (!file_buf)
-    kevlar_err("something went wrong while generating sample config\n");
-  // This works for now since the file we will be generating won't be that big
-  fprintf(file_buf, "title=Begin\ntheme=listed-kevlar-theme\n");
-  fclose(file_buf);
+    FILE *file_buf = fopen(file_path, "w");
+    if (!file_buf)
+        kevlar_err("something went wrong while generating sample config\n");
+    // This works for now since the file we will be generating won't be that big
+    fprintf(file_buf, "title=Begin\ntheme=listed-kevlar-theme\n");
+    fclose(file_buf);
 }
