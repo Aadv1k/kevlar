@@ -30,6 +30,7 @@ endif
 .PHONY: test
 test: $(TEST_FILES) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
 	$(CC) $(CFLAGS) -g -ggdb -o ./bin/test $^
+	./bin/test
 
 .PHONY: clean
 clean:
@@ -38,3 +39,6 @@ ifeq ($(OS), Windows_NT)
 else
 	rm -rf bin
 endif
+
+all: clean ./bin/kelvar test
+

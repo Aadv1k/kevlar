@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 typedef enum e_NodeType {
-    MD_ROOT_NODE = 1,
+    MD_ROOT_NODE = 0,
 
     MD_PARA_NODE,
     MD_EM_NODE,
@@ -16,8 +16,8 @@ typedef enum e_NodeType {
 } NodeType;
 
 typedef enum Md_Line_End_Type {
-	MD_DOUBLE_LINE_BREAK,
 	MD_SINGLE_LINE_BREAK,
+	MD_DOUBLE_LINE_BREAK,
 	MD_EOF,
 } Md_Line_End_Type;
 

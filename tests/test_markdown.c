@@ -1,16 +1,24 @@
 #include "../src/kevlar_markdown.h"
+#include "../src/utils.h"
 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 void test_check_count_and_type(Md_Ast* ast, size_t c_count, NodeType typ) {
-    assert(ast->c_count == c_count);
-
     if (ast->node_type != typ) {
+        puts("NodeType mismatch");
         printf("\tWANTED: %d\n", typ);
         printf("\tGOT: %d\n", ast->node_type);
         assert(0 && "NodeType mismatch");
+    }
+
+    if (ast->c_count != c_count) {
+        puts("c_count mismatch");
+        printf("\tWANTED: %zu\n", c_count);
+        printf("\tGOT: %zu\n", ast->c_count);
+        assert(0 && "c_count mismatch");
     }
 
 }
@@ -44,7 +52,7 @@ void test_md_heading() {
     puts("Test B");
     ast = kevlar_md_generate_ast("###");
 
-    test_check_count_and_type(ast->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -64,8 +72,9 @@ void test_md_heading() {
     puts("Test D");
     ast = kevlar_md_generate_ast("########## Should NOT be a heading");
 
-    test_check_count_and_type(ast->children[0], 0, MD_TEXT_NODE);
-    test_match_text_node_text(ast->children[0], "########## Should NOT be a heading");
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "########## Should NOT be a heading");
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -100,6 +109,7 @@ void test_md_heading() {
     /*************************************/
 }
 
+
 void test_md_content() {
     Md_Ast* ast;
 
@@ -114,8 +124,12 @@ void test_md_content() {
      * --- text
      */
 
+
+    utl_visualize_ast(ast, 0);
+
     test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
     test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+
     test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
         test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
 

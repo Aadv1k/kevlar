@@ -18,6 +18,8 @@ char *utl_spaces_to_dash_case(char *input, char *output);
 
 size_t utl_count_repeating_char(char chr, const char *str);
 
+void utl_visualize_ast(Md_Ast* ast, int level);
+
 void utl_mkdir_crossplatform(char *folder_path);
 
 #endif
