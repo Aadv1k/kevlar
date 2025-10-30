@@ -44,4 +44,4 @@ all: clean ./bin/kelvar test
 
 .PHONY: format
 format:
-	clang-fotmat -i ./src/*
+	clang-format -i ./src/*

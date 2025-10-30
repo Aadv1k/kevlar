@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "kevlar_markdown.h"
+
 #include <stddef.h>
 
 void utl_prepend_str(char prefix[], char str[]);
