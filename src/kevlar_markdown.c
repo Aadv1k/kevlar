@@ -36,35 +36,78 @@ void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
     parent->c_count++;
 }
 
-// The quick brown fox *jumps* over the lazy *brown dog foo*
-// Here we will reigster a text block either when we hit the end of line, end of file or we
-// encounter a block. This means a particular line is finished
-//
+Md_Ast* create_text_node_from_buffer(char* buffer, size_t buffer_len) {
+    Md_Ast* txt_node = malloc(sizeof(Md_Ast));
 
-bool kevlar_md_get_next_occurance_of_str(char *data, size_t len, size_t pos, const char *label,
-                                         size_t *index) {
-    size_t label_len = strlen(label);
-    bool matched = false;
+    txt_node->node_type = MD_TEXT_NODE;
+    txt_node->opt.text_opt.len = buffer_len;
 
-    for (size_t i = 0; i < len; ++i) {
-        if (data[i] == label[0]) {
-            for (size_t j = 0; j < label_len; ++j) {
-                if (i + j > len || source[i + j] != label[j])
-                    break;
-                matched = true;
-            }
+    txt_node->opt.text_opt.data = malloc(sizeof(char) * buffer_len);
+    strncpy(txt_node->opt.text_opt.data, buffer, buffer_len);
 
-            if (matched) {
-                *index = i;
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return txt_node;
 }
 
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
+    Md_Ast *ast_node;
+    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
+        return NULL;
+
+    // TODO: this is a place holder. For a fucntion that processes markdown text, it inherently needs to be a parent of some kind, the onus is on the caller to recongize this
+    ast_node->node_type = MD_ROOT_NODE;
+
+    size_t src_len = strlen(source);
+
+    char text_buffer[MD_MAX_TEXT_BUFFER] = {0};
+    size_t text_buffer_pos = 0;
+
+    for (size_t i = *pos; i <= src_len; ++i) {
+        switch (source[i]) {
+
+        case '\n': {
+            Md_Line_End_Type line_end = get_line_end_type(source, i);
+
+            // All the situations where we can no longer proceed
+            if ((line_end == MD_SINGLE_LINE_BREAK && !allow_line_breaks) ||
+                line_end == MD_DOUBLE_LINE_BREAK || line_end == MD_EOF
+            ) {
+
+                *pos = line_end == MD_DOUBLE_LINE_BREAK ? i + 1 : i;
+
+                Md_Ast* txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
+                kevlar_md_ast_child_append(ast_node, txt_node);
+
+
+                goto return_ast_and_exit;
+            }
+        }
+
+        default: {
+            text_buffer[text_buffer_pos] = source[i];
+            if (source[i] != '\0') {
+                text_buffer_pos++;
+            }
+        }
+        }
+    }
+
+
+    size_t strip_offset = utl_lstrip_offset(text_buffer, text_buffer_pos);
+    if (strip_offset == text_buffer_pos) return ast_node;
+
+    Md_Ast* txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
+    kevlar_md_ast_child_append(ast_node, txt_node);
+
+    return ast_node;
+
+return_ast_and_exit:
+    return ast_node;
+}
+
+#if 0
+
+Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
+
     Md_Ast *ast_node;
     if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
         return NULL;
@@ -219,6 +262,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 
     return ast_node;
 }
+#endif
 
 Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
     Md_Ast *ast_node;
@@ -248,25 +292,34 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
             if (i >= src_len)
                 return ast_node;
 
-            Md_Ast *txt_node =
+            Md_Ast *root_txt_node =
                 kevlar_md_process_text_node(source, pos, /* allow_line_breaks */ false);
-            if (txt_node == NULL)
+
+            if (root_txt_node == NULL)
                 return ast_node;
 
-            size_t left_offset =
-                utl_lstrip_offset(txt_node->opt.text_opt.data, txt_node->opt.text_opt.len);
-            size_t new_len = txt_node->opt.text_opt.len - left_offset;
+            ast_node->children = root_txt_node->children;
+            ast_node->c_count = root_txt_node->c_count;
 
-            if (left_offset) {
-                char *new_data = malloc(sizeof(char) * new_len);
-                strncpy(new_data, txt_node->opt.text_opt.data + left_offset, new_len);
-                free(txt_node->opt.text_opt.data);
+            free(root_txt_node);
 
-                txt_node->opt.text_opt.data = new_data;
-                txt_node->opt.text_opt.len = new_len;
+
+            if (ast_node->c_count > 0 && ast_node->children[0]->node_type == MD_TEXT_NODE) {
+                Md_Ast* txt_node = ast_node->children[0];
+
+                size_t left_offset =
+                    utl_lstrip_offset(txt_node->opt.text_opt.data, txt_node->opt.text_opt.len);
+                size_t new_len = txt_node->opt.text_opt.len - left_offset;
+
+                if (left_offset) {
+                    char *new_data = malloc(sizeof(char) * new_len);
+                    strncpy(new_data, txt_node->opt.text_opt.data + left_offset, new_len);
+                    free(txt_node->opt.text_opt.data);
+
+                    txt_node->opt.text_opt.data = new_data;
+                    txt_node->opt.text_opt.len = new_len;
+                }
             }
-
-            kevlar_md_ast_child_append(ast_node, txt_node);
 
             return ast_node;
         }
@@ -304,12 +357,14 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
         }
 
         default: {
-            Md_Ast *para_node =
+            Md_Ast *root_text_node =
                 kevlar_md_process_text_node(source, &i, /* allow_line_breaks */ true);
-            if (!para_node)
+
+            if (!root_text_node)
                 kevlar_err("Could not process text node at position %zu\n", i);
 
-            kevlar_md_ast_child_append(ast, para_node);
+            root_text_node->node_type = MD_PARA_NODE;
+            kevlar_md_ast_child_append(ast, root_text_node);
         }
         }
     }
