@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Werror -Wextra
+CFLAGS = -Wall -Werror -Wextra -g -ggdb
 CC = gcc
 
 SRC_FILES = $(wildcard ./src/*.c)
@@ -30,7 +30,6 @@ endif
 .PHONY: test
 test: $(TEST_FILES) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
 	$(CC) $(CFLAGS) -g -ggdb -o ./bin/test $^
-	./bin/test
 
 .PHONY: clean
 clean:
