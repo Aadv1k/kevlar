@@ -90,6 +90,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
                 // is double
                 // _kevlar_md_find_next_occurrence('**');
                 assert(false && "Not implemented");
+
             }
 
             size_t closing_astrsk_pos;
@@ -125,7 +126,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
                 root_txt_node->node_type = MD_EM_NODE;
                 kevlar_md_ast_child_append(ast_node, root_txt_node);
 
-                *pos = closing_astrsk_pos+1;
+                *pos = closing_astrsk_pos;
                 i = *pos;
             }
 
@@ -142,10 +143,10 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
             ) {
 
                 *pos = line_end == MD_DOUBLE_LINE_BREAK ? i + 1 : i;
+                i = *pos;
 
                 Md_Ast* txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
                 kevlar_md_ast_child_append(ast_node, txt_node);
-
 
                 goto return_ast_and_exit;
             }
@@ -159,6 +160,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
         }
     }
 
+    *pos += text_buffer_pos;
 
     size_t strip_offset = utl_lstrip_offset(text_buffer, text_buffer_pos);
     if (strip_offset == text_buffer_pos) return ast_node;
@@ -171,166 +173,6 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 return_ast_and_exit:
     return ast_node;
 }
-
-#if 0
-
-Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
-
-    Md_Ast *ast_node;
-    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
-        return NULL;
-
-    ast_node->node_type = allow_line_breaks ? MD_PARA_NODE : MD_TEXT_NODE;
-
-    size_t src_len = strlen(source);
-    char text_buffer[MD_MAX_TEXT_BUFFER] = {0};
-
-    size_t text_buffer_pos = 0;
-
-    for (size_t i = *pos; i <= src_len; ++i) {
-        switch (source[i]) {
-        case '*': {
-            if (i + 1 < src_len && source[i + 1] != '*') {
-                size_t sub_cur = 0;
-
-                size_t cur = 0;
-                for (cur = i + 1; cur < src_len; ++cur) {
-                    if (source[cur] == '*')
-                        break;
-                }
-
-                if (cur == 0)
-                    assert(false && "Unreachable as this would be caught in the above loop");
-                // if (cur == src_len - 1) break;
-
-                // TODO: clean this logic up, and make it not hard coded like this
-                /******************************* */
-                assert(allow_line_breaks);
-                Md_Ast *sibling_txt_node = malloc(sizeof(Md_Ast));
-                sibling_txt_node->node_type = MD_TEXT_NODE;
-
-                if ((sibling_txt_node->opt.text_opt.data =
-                         malloc(sizeof(char) * text_buffer_pos)) == NULL) {
-                    free(ast_node);
-                    kevlar_err("malloc of size %zu failed", sizeof(char) * text_buffer_pos);
-                }
-
-                strncpy(sibling_txt_node->opt.text_opt.data, text_buffer, text_buffer_pos);
-                sibling_txt_node->opt.text_opt.len = text_buffer_pos;
-
-                kevlar_md_ast_child_append(ast_node, sibling_txt_node);
-                /******************************* */
-
-                char *tmp_buf;
-                size_t tmp_buf_size = cur - (i + 1);
-                tmp_buf = malloc(sizeof(char) * tmp_buf_size);
-
-                strncpy(tmp_buf, &source[i + 1], tmp_buf_size);
-
-                sub_cur = 0;
-                Md_Ast *em_node = kevlar_md_process_text_node(tmp_buf, &sub_cur, true);
-                if (em_node == NULL) {
-                    free(ast_node);
-                    free(tmp_buf);
-
-                    kevlar_err("Failed to parse content inside asterisks");
-                }
-                em_node->node_type = MD_EM_NODE;
-                kevlar_md_ast_child_append(ast_node, em_node);
-
-                *pos = cur + 1;
-                i = cur;
-                free(tmp_buf);
-
-                break;
-            }
-        }
-        case '_':
-        case '`':
-        case '[':
-        case '<':
-        default: {
-            printf("\"%c\"\n", source[i]);
-            // if at last position
-            // # The quick brown fox \n
-            if (i == src_len || source[i] == '\n') {
-                Md_Line_End_Type line_end = get_line_end_type(source, i);
-                text_buffer[text_buffer_pos] = '\0';
-
-                switch (line_end) {
-                case MD_SINGLE_LINE_BREAK:
-                    if (allow_line_breaks)
-                        break;
-                    *pos = i + 1;
-                case MD_DOUBLE_LINE_BREAK:
-                    *pos = i + 2;
-                case MD_EOF:
-                    *pos = i;
-                }
-
-                // // TODO: should we return an empty paragraph node only?
-                // if (utl_lstrip_offset(text_buffer, text_buffer_pos) == text_buffer_pos) {
-                // 	free(ast_node);
-                // 	return NULL;
-                // }
-
-                // Md_Ast* txt_node = ast_node;
-                // if (allow_line_breaks) {
-                //     txt_node = malloc(sizeof(Md_Ast));
-                // 	txt_node->node_type = MD_TEXT_NODE;
-                // }
-
-                // if ((txt_node->opt.text_opt.data = malloc(sizeof(char) * text_buffer_pos)) ==
-                // NULL) { 	free(ast_node); 	kevlar_err("malloc of size %zu failed",
-                // sizeof(char) * text_buffer_pos);
-                // }
-
-                // strncpy(txt_node->opt.text_opt.data, text_buffer, text_buffer_pos);
-                // txt_node->opt.text_opt.len = text_buffer_pos;
-
-                // if (allow_line_breaks) kevlar_md_ast_child_append(ast_node, txt_node);
-
-                // return ast_node;
-            }
-
-            text_buffer[text_buffer_pos] = source[i];
-            text_buffer_pos++;
-        }
-        }
-    }
-
-    /*
-            The quick _hello_ fox jumps over *World*
-            Hello world
-    */
-
-    if (ast_node->c_count == 0 && text_buffer_pos != 0) {
-        if (utl_lstrip_offset(text_buffer, text_buffer_pos) == text_buffer_pos) {
-            free(ast_node);
-            return NULL;
-        }
-
-        Md_Ast *txt_node = ast_node;
-        if (allow_line_breaks) {
-            txt_node = malloc(sizeof(Md_Ast));
-            txt_node->node_type = MD_TEXT_NODE;
-        }
-
-        if ((txt_node->opt.text_opt.data = malloc(sizeof(char) * text_buffer_pos)) == NULL) {
-            free(ast_node);
-            kevlar_err("malloc of size %zu failed", sizeof(char) * text_buffer_pos);
-        }
-
-        strncpy(txt_node->opt.text_opt.data, text_buffer, text_buffer_pos);
-        txt_node->opt.text_opt.len = text_buffer_pos;
-
-        if (allow_line_breaks)
-            kevlar_md_ast_child_append(ast_node, txt_node);
-    }
-
-    return ast_node;
-}
-#endif
 
 Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
     Md_Ast *ast_node;
@@ -408,8 +250,6 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
     }
 
     ast->node_type = MD_ROOT_NODE;
-    ast->children = NULL;
-    ast->c_count = 0;
 
     size_t src_len = strlen(source);
 

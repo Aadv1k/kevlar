@@ -158,7 +158,6 @@ void test_kevlar_md_find_next_occurrence() {
 void test_md_content() {
     Md_Ast* ast;
 
-#if 0
     /*************************************/
     puts("Test A");
     ast = kevlar_md_generate_ast("*Bedazzled*");
@@ -177,33 +176,59 @@ void test_md_content() {
     kevlar_md_free_ast(ast);
     /*************************************/
 
-#endif
-
     /*************************************/
     puts("Test B");
-    ast = kevlar_md_generate_ast("Hello *World*");
+    ast = kevlar_md_generate_ast("Hello, *World*!");
 
     /*
      * - Para
      * -- text
      * -- em
      * --- text
+     * -- text
      */
 
 
-    utl_visualize_ast(ast, 0);
-
-    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
     test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "Hello, ");
 
     test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
         test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[1]->children[0], "World");
+
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[2], "!");
 
     kevlar_md_free_ast(ast);
     /*************************************/
 
     /*************************************/
     puts("Test C");
+    ast = kevlar_md_generate_ast("*नमस्ते* दुनिया! 👋🌏");
+    
+    /*
+     * - Para
+     * -- em
+     * --- text
+     * -- text
+     */
+
+    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "नमस्ते");
+
+    test_check_count_and_type(ast->children[0]->children[1], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[1], " दुनिया! 👋🌏");
+
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test D");
     ast = kevlar_md_generate_ast("The _quick_ *brown* **fox** ***jumps*** ~~over~~ the lazy dog");
 
     test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
