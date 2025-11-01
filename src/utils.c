@@ -116,7 +116,6 @@ const char *_node_type_to_str(NodeType type) {
 }
 
 void utl_visualize_ast(Md_Ast *ast, int spaces) {
-
     char *indent = malloc(sizeof(char) * spaces);
     memset(indent, ' ', spaces * 2);
 

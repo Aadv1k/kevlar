@@ -110,11 +110,77 @@ void test_md_heading() {
 }
 
 
-void test_md_content() {
-    Md_Ast* ast;
+void test_kevlar_md_find_next_occurrence() {
+    char* data;
+    size_t index;
+    bool match;
 
     /*************************************/
     puts("Test A");
+
+    data = "*Foo*";
+    match =  kevlar_md_find_next_occurrence(data, strlen(data), 1, "*", &index, false);
+
+    assert(match);
+    assert(index == 4);
+    /*************************************/
+
+    /*************************************/
+    puts("Test B");
+
+    data = "**Bar**";
+    match =  kevlar_md_find_next_occurrence(data, strlen(data), 2, "**", &index, false);
+
+    assert(match);
+    assert(index == 5);
+    /*************************************/
+
+    /*************************************/
+    puts("Test C");
+
+    data = "**Bar\n**";
+    match =  kevlar_md_find_next_occurrence(data, strlen(data), 2, "**", &index, true);
+
+    assert(!match);
+    /*************************************/
+
+    /*************************************/
+    puts("Test D");
+
+    data = "~~Bar\n~~";
+    match =  kevlar_md_find_next_occurrence(data, strlen(data), 2, "~~", &index, false);
+
+    assert(match);
+    assert(index == 6);
+    /*************************************/
+}
+
+void test_md_content() {
+    Md_Ast* ast;
+
+#if 0
+    /*************************************/
+    puts("Test A");
+    ast = kevlar_md_generate_ast("*Bedazzled*");
+    /*
+     * - Para
+     * -- Em
+     * --- Text
+     */
+
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0]->children[0], "Bedazzled");
+
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+#endif
+
+    /*************************************/
+    puts("Test B");
     ast = kevlar_md_generate_ast("Hello *World*");
 
     /*
@@ -137,7 +203,7 @@ void test_md_content() {
     /*************************************/
 
     /*************************************/
-    puts("Test B");
+    puts("Test C");
     ast = kevlar_md_generate_ast("The _quick_ *brown* **fox** ***jumps*** ~~over~~ the lazy dog");
 
     test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
@@ -182,11 +248,15 @@ void test_markdown() {
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
-#endif
 
     puts("INFO: test_md_heading()");
     test_md_heading();
     puts("SUCCESS: test_md_heading()");
+
+    puts("INFO: test_kevlar_md_find_next_occurrence()");
+    test_kevlar_md_find_next_occurrence();
+    puts("SUCCESS: test_kevlar_md_find_next_occurrence()");
+#endif
 
     puts("INFO: test_md_content()");
     test_md_content();

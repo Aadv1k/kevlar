@@ -48,6 +48,27 @@ Md_Ast* create_text_node_from_buffer(char* buffer, size_t buffer_len) {
     return txt_node;
 }
 
+size_t kevlar_md_find_next_occurrence(const char* data, size_t len, size_t start, const char* tag, size_t* index, bool respect_line_break) {
+    size_t tag_len = strlen(tag);
+
+    for (size_t i = start; i < len; ++i) {
+        size_t matches = 0;
+
+        if (respect_line_break && data[i] == '\n') return false;
+
+        for (size_t j = 0; j < tag_len; ++j) {
+            if (data[i+j] == tag[j]) matches++;
+        }
+
+        if (matches == tag_len) {
+            *index = i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
     Md_Ast *ast_node;
     if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
@@ -63,6 +84,54 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 
     for (size_t i = *pos; i <= src_len; ++i) {
         switch (source[i]) {
+
+        case '*': {
+            if (i+1 < src_len && source[i+1] == '*') {
+                // is double
+                // _kevlar_md_find_next_occurrence('**');
+                assert(false && "Not implemented");
+            }
+
+            size_t closing_astrsk_pos;
+            // We allow for the recursive call to respect the parent's config. i.e in a heading, we still need to respect line break
+            bool found_match = kevlar_md_find_next_occurrence(source, src_len, i+1, "*", 
+                        &closing_astrsk_pos, /* respect_line_break */ allow_line_breaks);
+
+            if (!found_match) break;
+
+            size_t content_len = closing_astrsk_pos - i - 1;
+
+            if (content_len == 0) break;
+
+            char* content_buffer = malloc(sizeof(char) * content_len);
+            size_t content_buffer_pos = 0;
+
+            strncpy(content_buffer, &source[i+1], content_len);
+
+            Md_Ast* root_txt_node = kevlar_md_process_text_node(content_buffer, &content_buffer_pos, allow_line_breaks);
+
+            if (!root_txt_node) {
+                puts("Bruh this is really weird");
+            } else {
+
+                if (text_buffer_pos > 0) {
+                    Md_Ast* buffered_txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
+                    kevlar_md_ast_child_append(ast_node, buffered_txt_node);
+
+                    memset(text_buffer, 0, text_buffer_pos);
+                    text_buffer_pos = 0;
+                }
+
+                root_txt_node->node_type = MD_EM_NODE;
+                kevlar_md_ast_child_append(ast_node, root_txt_node);
+
+                *pos = closing_astrsk_pos+1;
+                i = *pos;
+            }
+
+            free(content_buffer);
+            break;
+        }
 
         case '\n': {
             Md_Line_End_Type line_end = get_line_end_type(source, i);
@@ -81,7 +150,6 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
                 goto return_ast_and_exit;
             }
         }
-
         default: {
             text_buffer[text_buffer_pos] = source[i];
             if (source[i] != '\0') {

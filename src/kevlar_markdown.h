@@ -2,6 +2,7 @@
 #define _KEVLAR_MARKDOWN_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum e_NodeType {
     MD_ROOT_NODE = 0,
@@ -43,5 +44,7 @@ typedef struct Md_Ast {
 Md_Ast *kevlar_md_generate_ast(const char *source);
 
 void kevlar_md_free_ast(Md_Ast *ast);
+
+size_t kevlar_md_find_next_occurrence(const char* data, size_t len, size_t start, const char* tag, size_t* index, bool respect_line_break);
 
 #endif //  _KEVLAR_MARKDOWN_H
