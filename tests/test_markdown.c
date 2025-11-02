@@ -690,6 +690,353 @@ void test_md_content() {
     /*************************************/
 }
 
+void test_md_inline_code() {
+    Md_Ast* ast;
+#if 1
+    /*************************************/
+    puts("Test: Simple Inline Code");
+    ast = kevlar_md_generate_ast("`code`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "code");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Inline Code in Sentence");
+    ast = kevlar_md_generate_ast("Use the `printf` function here.");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "Use the ");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[0]->children[1]->children[0], "printf");
+        test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[2], " function here.");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Multiple Inline Code Blocks");
+    ast = kevlar_md_generate_ast("`foo` and `bar` and `baz`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 5, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "foo");
+        test_check_count_and_type(ast->children[0]->children[1], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[1], " and ");
+        test_check_count_and_type(ast->children[0]->children[2], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[2]->children[0], "bar");
+        test_check_count_and_type(ast->children[0]->children[3], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[3], " and ");
+        test_check_count_and_type(ast->children[0]->children[4], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[4]->children[0], "baz");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code Block with Asterisks - No Formatting");
+    ast = kevlar_md_generate_ast("`*not* **emphasis**`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "*not* **emphasis**");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code Block with Tildes - No Strikethrough");
+    ast = kevlar_md_generate_ast("`~~not deleted~~`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "~~not deleted~~");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+#endif
+
+    /*************************************/
+    puts("Test: Escaped Backtick Outside Code");
+    ast = kevlar_md_generate_ast("This is \\`not code\\` text.");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "This is `not code` text.");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Asterisk");
+    ast = kevlar_md_generate_ast("\\*not emphasis\\*");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "*not emphasis*");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Underscore");
+    ast = kevlar_md_generate_ast("\\_not emphasis\\_");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "_not emphasis_");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Tilde");
+    ast = kevlar_md_generate_ast("\\~\\~not deleted\\~\\~");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "~~not deleted~~");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Hash");
+    ast = kevlar_md_generate_ast("\\# Not a heading");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "# Not a heading");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Backslash");
+    ast = kevlar_md_generate_ast("Double backslash: \\\\");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "Double backslash: \\");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Backslash Before Non-Special Character");
+    ast = kevlar_md_generate_ast("\\a normal text");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        // Backslash before non-special char should be literal backslash
+        test_match_text_node_text(ast->children[0]->children[0], "\\a normal text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code with Spaces");
+    ast = kevlar_md_generate_ast("` spaced out `");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], " spaced out ");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Empty Code Block");
+    ast = kevlar_md_generate_ast("``");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "``");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unclosed Code Block");
+    ast = kevlar_md_generate_ast("`unclosed code");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        // Should treat as literal backtick if unclosed
+        test_match_text_node_text(ast->children[0]->children[0], "`unclosed code");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code in Heading");
+    ast = kevlar_md_generate_ast("# Heading with `code` inside");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_HEADING_NODE);
+    assert(ast->children[0]->opt.h_opt.level == 1);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "Heading with ");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[0]->children[1]->children[0], "code");
+        test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[2], " inside");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code with Emphasis Around It");
+    ast = kevlar_md_generate_ast("*emphasis `code` more emphasis*");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 3, MD_EM_NODE);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "emphasis ");
+        test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[0]->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0], "code");
+        test_check_count_and_type(ast->children[0]->children[0]->children[2], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[2], " more emphasis");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Adjacent Code Blocks");
+    ast = kevlar_md_generate_ast("`first``second`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "first");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[1]->children[0], "second");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code Block with HTML Tags");
+    ast = kevlar_md_generate_ast("`<div>HTML</div>`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "<div>HTML</div>");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code Block with Special Characters");
+    ast = kevlar_md_generate_ast("`!@#$%^&*()_+-=[]{}|;:',.<>?/`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "!@#$%^&*()_+-=[]{}|;:',.<>?/");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Backtick in Code - Double Backtick Delimiter");
+    ast = kevlar_md_generate_ast("``code with ` backtick``");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "code with ` backtick");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Mixed Escaping and Formatting");
+    ast = kevlar_md_generate_ast("Text with \\*escaped\\* and *real* emphasis and `code`.");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 5, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "Text with *escaped* and ");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
+            test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[0]->children[1]->children[0], "real");
+        test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[2], " emphasis and ");
+        test_check_count_and_type(ast->children[0]->children[3], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[0]->children[3]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[0]->children[3]->children[0], "code");
+        test_check_count_and_type(ast->children[0]->children[4], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[4], ".");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Code Block Across Paragraphs - Should Not Span");
+    ast = kevlar_md_generate_ast("`code start\n\ncode end`");
+    // Double newline should break the code block
+    test_check_count_and_type(ast, 2, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "`code start");
+    test_check_count_and_type(ast->children[1], 1, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[1]->children[0], "code end`");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Complex Document with Code");
+    ast = kevlar_md_generate_ast(
+        "# Code Examples\n\n"
+        "Use `printf(\"Hello\")` to print.\n\n"
+        "**Important:** The `main()` function is *required*.\n\n"
+        "## Escaping\n\n"
+        "Use \\` to show a literal backtick."
+    );
+    
+
+    test_check_count_and_type(ast, 5, MD_ROOT_NODE);
+    
+    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
+    assert(ast->children[0]->opt.h_opt.level == 1);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[0], "Code Examples");
+    
+    test_check_count_and_type(ast->children[1], 3, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[1]->children[0], "Use ");
+        test_check_count_and_type(ast->children[1]->children[1], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[1]->children[1]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[1]->children[1]->children[0], "printf(\"Hello\")");
+        test_check_count_and_type(ast->children[1]->children[2], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[1]->children[2], " to print.");
+    
+    test_check_count_and_type(ast->children[2], 6, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[2]->children[0], 1, MD_STRONG_NODE);
+            test_check_count_and_type(ast->children[2]->children[0]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[2]->children[0]->children[0], "Important:");
+        test_check_count_and_type(ast->children[2]->children[1], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[2]->children[1], " The ");
+        test_check_count_and_type(ast->children[2]->children[2], 1, MD_INLINE_CODE_BLOCK);
+            test_check_count_and_type(ast->children[2]->children[2]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[2]->children[2]->children[0], "main()");
+        test_check_count_and_type(ast->children[2]->children[3], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[2]->children[3], " function is ");
+        test_check_count_and_type(ast->children[2]->children[4], 1, MD_EM_NODE);
+            test_check_count_and_type(ast->children[2]->children[4]->children[0], 0, MD_TEXT_NODE);
+            test_match_text_node_text(ast->children[2]->children[4]->children[0], "required");
+
+        test_check_count_and_type(ast->children[2]->children[5], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[2]->children[5], ".");
+    
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unicode in Code");
+    ast = kevlar_md_generate_ast("`日本語` and `🚀emoji🔥`");
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
+        test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "日本語");
+        test_check_count_and_type(ast->children[0]->children[1], 0, MD_TEXT_NODE);
+        test_match_text_node_text(ast->children[0]->children[1], " and ");
+        test_check_count_and_type(ast->children[0]->children[2], 1, MD_INLINE_CODE_BLOCK);
+        test_match_text_node_text(ast->children[0]->children[2]->children[0], "🚀emoji🔥");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+}
+
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
 
@@ -700,6 +1047,7 @@ void test_md_basic() {
 
 void test_markdown() {
 
+#if 1
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
@@ -715,4 +1063,9 @@ void test_markdown() {
     puts("INFO: test_md_content()");
     test_md_content();
     puts("SUCCESS: test_md_content()");
+#endif
+
+    puts("INFO: test_md_inline_code(()");
+    test_md_inline_code();
+    puts("SUCCESS: test_md_inline_code(()");
 };

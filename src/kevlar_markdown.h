@@ -6,14 +6,13 @@
 
 typedef enum e_NodeType {
     MD_ROOT_NODE = 0,
-
     MD_PARA_NODE,
     MD_EM_NODE,
     MD_STRONG_NODE,
     MD_STRONG_EM_NODE, // hacky solution
     MD_DEL_NODE,
     MD_TEXT_NODE,
-
+    MD_INLINE_CODE_BLOCK,
     MD_HEADING_NODE,
 } NodeType;
 
