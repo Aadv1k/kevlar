@@ -110,6 +110,8 @@ const char *_node_type_to_str(NodeType type) {
         return "MD_TEXT_NODE";
     case MD_HEADING_NODE:
         return "MD_HEADING_NODE";
+    case MD_STRONG_EM_NODE:
+        return "MD_STRONG_EM_NODE";
     default:
         return "UNKNOWN_NODE_TYPE";
     }
