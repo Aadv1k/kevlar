@@ -112,6 +112,8 @@ const char *_node_type_to_str(NodeType type) {
         return "MD_HEADING_NODE";
     case MD_STRONG_EM_NODE:
         return "MD_STRONG_EM_NODE";
+    case MD_INLINE_CODE_BLOCK:
+        return "MD_INLINE_CODE_BLOCK";
     default:
         return "UNKNOWN_NODE_TYPE";
     }
