@@ -114,6 +114,10 @@ const char *_node_type_to_str(NodeType type) {
         return "MD_STRONG_EM_NODE";
     case MD_INLINE_CODE_BLOCK:
         return "MD_INLINE_CODE_BLOCK";
+    case MD_LINK_NODE:
+        return "MD_LINK_NODE";
+    case MD_CODE_BLOCK:
+        return "MD_CODE_BLOCK";
     default:
         return "UNKNOWN_NODE_TYPE";
     }
@@ -130,6 +134,14 @@ void utl_visualize_ast(Md_Ast *ast, int spaces) {
 
     if (ast->node_type == MD_HEADING_NODE) {
         printf("%s└ Level: %d\n", indent, ast->opt.h_opt.level);
+    }
+
+    if (ast->node_type == MD_LINK_NODE) {
+        printf("%s└ HREF: %s\n", indent, ast->opt.link_opt.href_str);
+    }
+
+    if (ast->node_type == MD_CODE_BLOCK) {
+        printf("%s└ LANG: %s\n", indent, ast->opt.code_opt.lang_str);
     }
 
     for (size_t i = 0; i < ast->c_count; ++i) {

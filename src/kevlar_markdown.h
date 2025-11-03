@@ -14,6 +14,19 @@ typedef enum e_NodeType {
     MD_TEXT_NODE,
     MD_INLINE_CODE_BLOCK,
     MD_HEADING_NODE,
+    MD_LINK_NODE,
+    MD_IMG_LINK,
+
+    MD_CODE_BLOCK,
+
+    MD_BLOCKQUOTE_NODE,
+
+    MD_TABLE_NODE,
+    MD_TABLE_ROW,
+    MD_TABLE_CELL,
+
+    MD_LIST_NODE,
+    MD_LIST_ITEM_NODE,
 } NodeType;
 
 typedef enum Md_Line_End_Type {
@@ -31,6 +44,22 @@ typedef struct Md_H_Opt {
     unsigned char level;
 } Md_H_Opt;
 
+// The actual link label content is parsed as proper markdown text and added as children
+typedef struct Md_Link_Opt {
+    char *href_str;
+    size_t href_len;
+} Md_Link_Opt;
+
+typedef struct Md_List_Opt {
+    bool ordered;
+    size_t ordered_list_start_num; // starting number of the ordered list
+} Md_List_Opt;
+
+typedef struct Md_Code_Opt {
+    char* lang_str;
+    size_t lang_str_len;
+} Md_Code_Opt;
+
 typedef struct Md_Ast {
     NodeType node_type;
     struct Md_Ast **children;
@@ -38,6 +67,9 @@ typedef struct Md_Ast {
     union {
         Md_Text_Opt text_opt;
         Md_H_Opt h_opt;
+        Md_Link_Opt link_opt;
+        Md_List_Opt list_opt;
+        Md_Code_Opt code_opt;
     } opt;
 } Md_Ast;
 
@@ -46,7 +78,7 @@ Md_Ast *kevlar_md_generate_ast(const char *source);
 void kevlar_md_free_ast(Md_Ast *ast);
 
 size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start, const char *tag,
-                                      size_t *index, bool respect_line_break);
+                                      size_t *index, bool respect_line_break, bool respect_double_line_break);
 
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks);
 
