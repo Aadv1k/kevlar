@@ -53,14 +53,23 @@ Md_Ast *create_text_node_from_buffer(char *buffer, size_t buffer_len) {
 }
 
 size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start, const char *tag,
-                                      size_t *index, bool respect_line_break) {
+                                      size_t *index, bool respect_line_break, bool respect_double_line_break) {
     size_t tag_len = strlen(tag);
 
     for (size_t i = start; i < len; ++i) {
         size_t matches = 0;
 
-        if (respect_line_break && data[i] == '\n')
-            return false;
+        if (data[i] == '\n') {
+            Md_Line_End_Type line_end = get_line_end_type(data, i);
+            if ((respect_double_line_break && line_end == MD_DOUBLE_LINE_BREAK) ||
+                (respect_line_break && line_end == MD_SINGLE_LINE_BREAK))
+                return false;
+        }
+
+        if (data[i] == '\\' && i + 1 < len && SPECIAL_CHAR_SET[(unsigned char)data[i + 1]]) {
+            i += 1;
+            continue;
+        }
 
         for (size_t j = 0; j < tag_len; ++j) {
             if (data[i + j] == tag[j])
@@ -81,12 +90,12 @@ size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start
 // look like this [foo ][bar][ baz] however, realistically this situation is rare. Getting around to
 // this isn't hard but would require a rewrite of this function with some kind of stack
 Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
-                               NodeType type, bool respect_line_break, bool formatting_enabled) {
+                               NodeType type, bool respect_line_break, bool formatting_enabled, bool respect_double_line_break) {
 
     size_t suffix_len = strlen(suffix), closing_pos;
 
     bool match_found =
-        kevlar_md_find_next_occurrence(data, len, *pos, suffix, &closing_pos, respect_line_break);
+        kevlar_md_find_next_occurrence(data, len, *pos, suffix, &closing_pos, respect_line_break, respect_double_line_break);
 
     if (!match_found)
         return NULL;
@@ -101,17 +110,17 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
     if (content_len == 0)
         return NULL;
 
-
-    char *content_buffer = malloc(sizeof(char) * content_len);
+    // TODO: this malloc is redundant, here we can directly use lenghts and pointers
+    char *content_buffer = malloc(sizeof(char) * content_len + 1);
     size_t content_buffer_pos = 0;
 
     strncpy(content_buffer, &data[*pos], content_len);
+    content_buffer[content_len] = '\0';
 
     if (!formatting_enabled) {
-        Md_Ast* raw_node = malloc(sizeof(Md_Ast));
+        Md_Ast *raw_node = malloc(sizeof(Md_Ast));
         raw_node->node_type = type;
-        Md_Ast* txt_node = create_text_node_from_buffer(content_buffer, content_len);
-
+        Md_Ast *txt_node = create_text_node_from_buffer(content_buffer, content_len);
 
         *pos = closing_pos + suffix_len - 1;
         kevlar_md_ast_child_append(raw_node, txt_node);
@@ -122,7 +131,7 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
     }
 
     Md_Ast *root_txt_node =
-        kevlar_md_process_text_node(content_buffer, &content_buffer_pos, respect_line_break);
+        kevlar_md_process_text_node(content_buffer, &content_buffer_pos, !respect_line_break);
 
     if (!root_txt_node) {
         free(content_buffer);
@@ -139,6 +148,34 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
     return root_txt_node;
 }
 
+bool _md_handle_escaping(char **buffer, size_t *buffer_len) {
+    char tmp_buffer[MD_MAX_TEXT_BUFFER];
+    size_t tmp_buffer_pos = 0;
+
+    for (size_t i = 0; i < *buffer_len; ++i) {
+        if ((*buffer)[i] == '\\' && i + 1 < *buffer_len &&
+            SPECIAL_CHAR_SET[(unsigned char)(*buffer)[i + 1]]) {
+            continue;
+        }
+
+        tmp_buffer[tmp_buffer_pos] = (*buffer)[i];
+        tmp_buffer_pos++;
+    }
+
+    tmp_buffer[tmp_buffer_pos] = '\0';
+
+    char *new_buffer = strndup(tmp_buffer, tmp_buffer_pos);
+    if (!new_buffer) {
+        *buffer = NULL;
+        return false;
+    }
+    free(*buffer);
+    *buffer = new_buffer;
+    *buffer_len = tmp_buffer_pos;
+
+    return true;
+}
+
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
     Md_Ast *ast_node;
     if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
@@ -150,22 +187,85 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 
     size_t src_len = strlen(source);
 
+    // printf("\"%s\" %zu\n", source, src_len);
+
     char text_buffer[MD_MAX_TEXT_BUFFER] = {0};
     size_t text_buffer_pos = 0;
 
     for (size_t i = *pos; i <= src_len; ++i) {
-        switch (source[i]) {
+        if (source[i] == '~' && i + 1 < src_len && source[i + 1] == '~') {
+            size_t sub_pos = i + 2;
+            Md_Ast *del_node = kevlar_md_process_pair(source, src_len, "~~", &sub_pos, MD_DEL_NODE,
+                                                      allow_line_breaks, true, true);
+            if (del_node) {
+                if (text_buffer_pos > 0) {
+                    Md_Ast *txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
+                    kevlar_md_ast_child_append(ast_node, txt_node);
 
-        case '`': {
+                    memset(text_buffer, 0, text_buffer_pos);
+                    text_buffer_pos = 0;
+                }
+
+                *pos = sub_pos;
+                i = *pos;
+
+                kevlar_md_ast_child_append(ast_node, del_node);
+                continue;
+            }
+        } else if (source[i] == '[') {
+            size_t sub_pos = i + 1;
+            Md_Ast *link_title_component =
+                kevlar_md_process_pair(source, src_len, "]", &sub_pos, MD_LINK_NODE, false, true, true);
+
+            if (source[sub_pos + 1] != '(')
+                free(link_title_component);
+
+            if (link_title_component != NULL && source[sub_pos + 1] == '(') {
+                size_t sub_pos_pre = sub_pos + 2;
+
+                Md_Ast *href_text_node = kevlar_md_process_pair(
+                    source, src_len, ")", &sub_pos_pre, MD_ROOT_NODE, allow_line_breaks, false, true);
+
+                if (href_text_node) {
+                    if (href_text_node->c_count > 0) {
+                        link_title_component->opt.link_opt.href_len = sub_pos_pre - sub_pos - 2;
+                        link_title_component->opt.link_opt.href_str =
+                            strndup(href_text_node->children[0]->opt.text_opt.data,
+                                    href_text_node->children[0]->opt.text_opt.len);
+                    }
+                    kevlar_md_free_ast(href_text_node);
+
+                    _md_handle_escaping(&link_title_component->opt.link_opt.href_str,
+                                        &link_title_component->opt.link_opt.href_len);
+
+                    if (text_buffer_pos > 0) {
+                        Md_Ast *txt_node =
+                            create_text_node_from_buffer(text_buffer, text_buffer_pos);
+                        kevlar_md_ast_child_append(ast_node, txt_node);
+
+                        memset(text_buffer, 0, text_buffer_pos);
+                        text_buffer_pos = 0;
+                    }
+
+                    kevlar_md_ast_child_append(ast_node, link_title_component);
+
+                    *pos = sub_pos_pre;
+                    i = *pos;
+
+                    continue;
+                }
+            }
+        } else if (source[i] == '`') {
             size_t repeating_count = utl_count_repeating_char('`', &source[i]);
             if (repeating_count <= 3) {
-                char *suffix = malloc(sizeof(char) * repeating_count + 1 );
+                char *suffix = malloc(sizeof(char) * repeating_count + 1);
                 memset(suffix, '`', repeating_count);
                 suffix[repeating_count] = '\0';
 
                 size_t sub_pos = i + repeating_count;
-                Md_Ast *inline_code_block = kevlar_md_process_pair(source, src_len, suffix, &sub_pos,
-                                                            MD_INLINE_CODE_BLOCK, allow_line_breaks, false);
+                Md_Ast *inline_code_block =
+                    kevlar_md_process_pair(source, src_len, suffix, &sub_pos, MD_INLINE_CODE_BLOCK,
+                                           allow_line_breaks, false, true);
 
                 if (inline_code_block) {
                     if (text_buffer_pos > 0) {
@@ -182,40 +282,15 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 
                     kevlar_md_ast_child_append(ast_node, inline_code_block);
                     free(suffix);
-                    break;
+                    continue;
                 }
 
                 free(suffix);
             }
-        }
-
-        case '~': {
-            if (i + 1 < src_len && source[i + 1] == '~') {
-                size_t sub_pos = i + 2;
-                Md_Ast *del_node = kevlar_md_process_pair(source, src_len, "~~", &sub_pos,
-                                                          MD_DEL_NODE, allow_line_breaks, true);
-                if (del_node) {
-                    if (text_buffer_pos > 0) {
-                        Md_Ast *txt_node =
-                            create_text_node_from_buffer(text_buffer, text_buffer_pos);
-                        kevlar_md_ast_child_append(ast_node, txt_node);
-
-                        memset(text_buffer, 0, text_buffer_pos);
-                        text_buffer_pos = 0;
-                    }
-
-                    *pos = sub_pos;
-                    i = *pos;
-
-                    kevlar_md_ast_child_append(ast_node, del_node);
-                    break;
-                }
-            }
-        }
-        case '_': {
+        } else if (source[i] == '_') {
             size_t sub_pos = i + 1;
             Md_Ast *em_node = kevlar_md_process_pair(source, src_len, "_", &sub_pos, MD_EM_NODE,
-                                                     allow_line_breaks, true);
+                                                     allow_line_breaks, true, true);
             if (em_node) {
                 if (text_buffer_pos > 0) {
                     Md_Ast *txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
@@ -229,10 +304,9 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
                 i = *pos;
 
                 kevlar_md_ast_child_append(ast_node, em_node);
-                break;
+                continue;
             }
-        }
-        case '*': {
+        } else if (source[i] == '*') {
             size_t sub_pos = i + 1;
             char *suffix = "*";
             NodeType node_type = MD_EM_NODE;
@@ -248,7 +322,7 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
             }
 
             Md_Ast *em_or_strong_node = kevlar_md_process_pair(source, src_len, suffix, &sub_pos,
-                                                               node_type, allow_line_breaks, true);
+                                                               node_type, allow_line_breaks, true, true);
             if (em_or_strong_node) {
 
                 if (text_buffer_pos > 0) {
@@ -263,10 +337,9 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
                 i = *pos;
 
                 kevlar_md_ast_child_append(ast_node, em_or_strong_node);
-                break;
+                continue;
             }
-        }
-        case '\n': {
+        } else if (source[i] == '\n') {
             Md_Line_End_Type line_end = get_line_end_type(source, i);
 
             // All the situations where we can no longer proceed
@@ -286,33 +359,31 @@ Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_
 
                 goto return_ast_and_exit;
             }
-
-            __attribute__((fallthrough));
         }
-        default: {
-            if (source[i] == '\\' && i + 1 < src_len &&
-                (SPECIAL_CHAR_SET[(unsigned char)source[i+1]])) {
-                text_buffer[text_buffer_pos] = source[i + 1];
-                text_buffer_pos++;
 
-                i++;
-                (*pos)+=2;
-                break;
-            }
-
-            if (source[i] == '\0') break;
-
-            text_buffer[text_buffer_pos] = source[i];
+        if (source[i] == '\\' && i + 1 < src_len &&
+            (SPECIAL_CHAR_SET[(unsigned char)source[i + 1]])) {
+            text_buffer[text_buffer_pos] = source[i + 1];
             text_buffer_pos++;
-            (*pos)++;
-        }
-        }
-    }
 
+            i++;
+            (*pos) += 2;
+            continue;
+        }
+
+        if (source[i] == '\0')
+            break;
+
+        text_buffer[text_buffer_pos] = source[i];
+        text_buffer_pos++;
+        (*pos)++;
+    }
 
     size_t strip_offset = utl_lstrip_offset(text_buffer, text_buffer_pos);
     if (strip_offset == text_buffer_pos)
         return ast_node;
+
+    // printf("\"%s\" %zu\n", text_buffer, text_buffer_pos);
 
     Md_Ast *txt_node = create_text_node_from_buffer(text_buffer, text_buffer_pos);
     kevlar_md_ast_child_append(ast_node, txt_node);
@@ -397,6 +468,10 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
     SPECIAL_CHAR_SET['`'] = 1;
     SPECIAL_CHAR_SET['#'] = 1;
     SPECIAL_CHAR_SET['\\'] = 1;
+    SPECIAL_CHAR_SET[']'] = 1;
+    SPECIAL_CHAR_SET['['] = 1;
+    SPECIAL_CHAR_SET[')'] = 1;
+    SPECIAL_CHAR_SET['('] = 1;
 
     Md_Ast *ast;
     if ((ast = malloc(sizeof(Md_Ast))) == NULL) {
@@ -408,30 +483,53 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
     size_t src_len = strlen(source);
 
     for (size_t i = 0; i < src_len; ++i) {
-        switch (source[i]) {
-        case '#': {
+
+        if (source[i] == '#') {
             Md_Ast *h_node;
-
-            if ((i-1 >= 0 && source[i-1] != '\\') && (h_node = kevlar_md_process_heading_node(source, &i)) != NULL) {
+            if ((h_node = kevlar_md_process_heading_node(source, &i)) != NULL) {
                 kevlar_md_ast_child_append(ast, h_node);
-                break;
+                continue;
             }
+        } else if (source[i] == '`' && (i + 1 < src_len && source[i + 1] == '`') &&
+                   (i + 2 < src_len && source[i + 2] == '`')) {
 
-        }
-        // case '`': {
-        //     assert(false && "Top level code blocks not implemented yet");
-        // }
-        default: {
-            Md_Ast *root_text_node =
-                kevlar_md_process_text_node(source, &i, /* allow_line_breaks */ true);
+            size_t pos = i + 2;
+            size_t newline_offset;
 
-            if (!root_text_node)
-                kevlar_err("Could not process text node at position %zu\n", i);
+            char *newline_char = memchr(&source[pos], '\n', src_len);
+            if (newline_char != NULL) {
+                newline_offset = (newline_char - &source[pos]) - 1;
 
-            root_text_node->node_type = MD_PARA_NODE;
-            kevlar_md_ast_child_append(ast, root_text_node);
+                char *code_lang_str = NULL;
+                if (newline_offset > 0) {
+                    code_lang_str = malloc(sizeof(char) * newline_offset);
+                    strncpy(code_lang_str, &source[pos+1], newline_offset);
+                }
+
+                pos += newline_offset + 2;
+
+                Md_Ast* code_block = kevlar_md_process_pair(source, src_len, "\n```", &pos, MD_CODE_BLOCK, false, false, false);
+                if (code_block) {
+                    kevlar_md_ast_child_append(ast, code_block);
+                    code_block->opt.code_opt.lang_str = code_lang_str;
+                    code_block->opt.code_opt.lang_str_len = newline_offset;
+
+                    i = pos + 2;
+                    continue;
+                }
+
+                free(code_lang_str);
+            }
         }
-        }
+
+        Md_Ast *root_text_node =
+            kevlar_md_process_text_node(source, &i, /* allow_line_breaks */ true);
+
+        if (!root_text_node)
+            kevlar_err("Could not process text node at position %zu\n", i);
+
+        root_text_node->node_type = MD_PARA_NODE;
+        kevlar_md_ast_child_append(ast, root_text_node);
     }
 
     return ast;
@@ -441,8 +539,10 @@ void kevlar_md_free_ast(Md_Ast *ast) {
     for (size_t i = 0; i < ast->c_count; ++i) {
         if (ast->children[i]->node_type == MD_TEXT_NODE) {
             free(ast->children[i]->opt.text_opt.data);
-            free(ast->children[i]);
-            continue;
+        }
+
+        if (ast->children[i]->node_type == MD_LINK_NODE) {
+            free(ast->children[i]->opt.link_opt.href_str);
         }
 
         kevlar_md_free_ast(ast->children[i]);
