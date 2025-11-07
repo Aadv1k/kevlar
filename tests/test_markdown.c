@@ -178,17 +178,19 @@ void test_md_content() {
 
     /*************************************/
     puts("Test A");
-    ast = kevlar_md_generate_ast("*Bedazzled*");
-    /*
-     * - Para
-     * -- Em
-     * --- Text
-     */
+    ast = kevlar_md_generate_ast("*Be *dazz* led*");
 
     test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 3, MD_EM_NODE);
     test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
-    test_match_text_node_text(ast->children[0]->children[0]->children[0], "Bedazzled");
+    test_match_text_node_text(ast->children[0]->children[0]->children[0], "Be ");
+
+    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0], "dazz");
+
+    test_check_count_and_type(ast->children[0]->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0]->children[2], " led");
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -2021,6 +2023,10 @@ void test_md_basic() {
 }
 
 void test_markdown() {
+    puts("INFO: test_md_content()");
+    test_md_content();
+    puts("SUCCESS: test_md_content()");
+
 #if 0
     puts("INFO: test_md_basic()");
     test_md_basic();
@@ -2034,10 +2040,6 @@ void test_markdown() {
     test_kevlar_md_find_next_occurrence();
     puts("SUCCESS: test_kevlar_md_find_next_occurrence()");
 
-    puts("INFO: test_md_content()");
-    test_md_content();
-    puts("SUCCESS: test_md_content()");
-
     puts("INFO: test_md_inline_code(()");
     test_md_inline_code();
     puts("SUCCESS: test_md_inline_code(()");
@@ -2045,9 +2047,9 @@ void test_markdown() {
     puts("INFO: test_md_links()");
     test_md_links();
     puts("SUCCESS: test_md_links()");
-#endif
 
     puts("INFO: test_md_code_block()");
     test_md_code_block();
     puts("SUCCESS: test_md_code_block)");
+#endif
 };

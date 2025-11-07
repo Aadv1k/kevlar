@@ -56,9 +56,27 @@ typedef struct Md_List_Opt {
 } Md_List_Opt;
 
 typedef struct Md_Code_Opt {
-    char* lang_str;
+    char *lang_str;
     size_t lang_str_len;
 } Md_Code_Opt;
+
+typedef enum Md_Delim_Run_Type {
+    MD_DELEM_RIGHT_FLANK,
+    MD_DELEM_LEFT_FLANK,
+    MD_DELEM_UNDEFINED
+} Md_Delem_Run_Type;
+
+struct Delim_Pair {
+    NodeType type;
+    char variant;
+    size_t start;
+    size_t end;
+};
+
+typedef struct Delim_Pairs {
+    struct Delim_Pair pairs[100];
+    size_t count;
+} Delim_Pairs;
 
 typedef struct Md_Ast {
     NodeType node_type;
@@ -77,9 +95,7 @@ Md_Ast *kevlar_md_generate_ast(const char *source);
 
 void kevlar_md_free_ast(Md_Ast *ast);
 
-size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start, const char *tag,
-                                      size_t *index, bool respect_line_break, bool respect_double_line_break);
-
-Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks);
+int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast* parent, Delim_Pairs *pairs,
+                                    Md_Line_End_Type line_end_type);
 
 #endif //  _KEVLAR_MARKDOWN_H
