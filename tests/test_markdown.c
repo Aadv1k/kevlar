@@ -38,7 +38,6 @@ void test_md_heading() {
     /*************************************/
     puts("Test A");
     ast = kevlar_md_generate_ast("# Foo\n");
-
     test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
     test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
     test_match_text_node_text(ast->children[0]->children[0], "Foo");

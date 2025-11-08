@@ -30,9 +30,9 @@ typedef enum e_NodeType {
 } NodeType;
 
 typedef enum Md_Line_End_Type {
-    MD_SINGLE_LINE_BREAK,
-    MD_DOUBLE_LINE_BREAK,
-    MD_EOF,
+    MD_SINGLE_LINE_BREAK = 1 << 0,
+    MD_DOUBLE_LINE_BREAK = 1 << 1,
+    MD_EOF = 1 << 2,
 } Md_Line_End_Type;
 
 typedef struct Md_Text_Opt {
@@ -95,7 +95,6 @@ Md_Ast *kevlar_md_generate_ast(const char *source);
 
 void kevlar_md_free_ast(Md_Ast *ast);
 
-int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast* parent, Delim_Pairs *pairs,
-                                    Md_Line_End_Type line_end_type);
+int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast *parent, unsigned int allowed_line_ends);
 
 #endif //  _KEVLAR_MARKDOWN_H
