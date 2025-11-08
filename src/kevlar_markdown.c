@@ -115,6 +115,7 @@ typedef struct Delim {
 
 bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
                                    Delim *closing_delim) {
+    // TODO: find a good default for this
     Delim stack[100] = {};
     size_t stack_pos = 0;
 
@@ -185,7 +186,8 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 em_or_strong_node->node_type = closing_delim.type;
 
                 // TODO: why do we need to handle it like so?
-                size_t buf_len = closing_delim.pos - i - (closing_delim.run_offset > 1 ? closing_delim.run_offset + 1
+                size_t buf_len = closing_delim.pos - i -
+                                 (closing_delim.run_offset > 1 ? closing_delim.run_offset + 1
                                                                : closing_delim.run_offset);
 
                 char *buffer = malloc(sizeof(char) * buf_len);
@@ -209,12 +211,22 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
             }
         }
 
+        if (src[i] == '\\' && i + 1 < len && (SPECIAL_CHAR_SET[(unsigned char)src[i + 1]])) {
+            text_buffer[text_buffer_pos] = src[i + 1];
+            text_buffer_pos++;
+
+            i++;
+            (*cursor) += 2;
+            continue;
+        }
+
         text_buffer[text_buffer_pos] = src[i];
         text_buffer_pos++;
         (*cursor)++;
     }
 
-    if (text_buffer_pos != 0) {
+    if (text_buffer_pos != 0 &&
+        utl_lstrip_offset(text_buffer, text_buffer_pos) != text_buffer_pos) {
         Md_Ast *txt_node = create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
         kevlar_md_ast_child_append(parent, txt_node);
     }
@@ -223,6 +235,17 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
 }
 
 Md_Ast *kevlar_md_generate_ast(const char *source) {
+    SPECIAL_CHAR_SET['*'] = 1;
+    SPECIAL_CHAR_SET['_'] = 1;
+    SPECIAL_CHAR_SET['~'] = 1;
+    SPECIAL_CHAR_SET['`'] = 1;
+    SPECIAL_CHAR_SET['#'] = 1;
+    SPECIAL_CHAR_SET['\\'] = 1;
+    SPECIAL_CHAR_SET[']'] = 1;
+    SPECIAL_CHAR_SET['['] = 1;
+    SPECIAL_CHAR_SET[')'] = 1;
+    SPECIAL_CHAR_SET['('] = 1;
+
     Md_Ast *ast;
     if ((ast = malloc(sizeof(Md_Ast))) == NULL) {
         return NULL;
