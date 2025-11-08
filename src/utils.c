@@ -94,7 +94,7 @@ void utl_mkdir_crossplatform(char *folder_path) {
 #endif
 }
 
-const char *_node_type_to_str(NodeType type) {
+const char *utl_node_type_to_str(NodeType type) {
     switch (type) {
     case MD_ROOT_NODE:
         return "MD_ROOT_NODE";
@@ -127,7 +127,7 @@ void utl_visualize_ast(Md_Ast *ast, int spaces) {
     char *indent = malloc(sizeof(char) * spaces);
     memset(indent, ' ', spaces * 2);
 
-    printf("%s%s\n", indent, _node_type_to_str(ast->node_type));
+    printf("%s%s\n", indent, utl_node_type_to_str(ast->node_type));
     if (ast->node_type == MD_TEXT_NODE) {
         printf("%s└ Data: \"%s\"\n", indent, ast->opt.text_opt.data);
     }

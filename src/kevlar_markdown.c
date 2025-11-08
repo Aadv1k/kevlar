@@ -64,19 +64,21 @@ typedef struct Md_Delem_Properties {
 } Md_Delem_Properties;
 
 // REF: https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
-Md_Delem_Properties _kevlar_md_em_delim_properties(const char *src, size_t len, size_t pos) {
+Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
+                                                size_t run) {
     Md_Delem_Properties props = {0};
 
     bool has_preceeding_whitespace_or_punct =
         (int)(pos - 1) < 0 ? true : (isspace(src[pos - 1]) || ispunct((unsigned char)src[pos - 1]));
 
     bool is_left_flanking_run =
-        pos + 1 < len && !isspace(src[pos + 1]) &&
-        (!ispunct((unsigned char)src[pos + 1]) ||
-         (ispunct((unsigned char)src[pos + 1]) && has_preceeding_whitespace_or_punct));
+        pos + run < len && !isspace(src[pos + run]) &&
+        (!ispunct((unsigned char)src[pos + run]) ||
+         (ispunct((unsigned char)src[pos + run]) && has_preceeding_whitespace_or_punct));
 
     bool has_proceeding_whitespace_or_punct =
-        (pos + 1) > len ? true : (isspace(src[pos + 1]) || ispunct((unsigned char)src[pos + 1]));
+        (pos + run) > len ? true
+                          : (isspace(src[pos + run]) || ispunct((unsigned char)src[pos + run]));
 
     bool is_right_flanking_run =
         ((int)pos - 1 >= 0 && !isspace(src[pos - 1]) &&
@@ -96,7 +98,7 @@ Md_Delem_Properties _kevlar_md_em_delim_properties(const char *src, size_t len, 
 
         if (is_right_flanking_run &&
             (!is_left_flanking_run ||
-             (is_left_flanking_run && pos + 1 < len && ispunct((unsigned char)src[pos + 1]))))
+             (is_left_flanking_run && pos + run < len && ispunct((unsigned char)src[pos + run]))))
             props.closing = true;
     }
 
@@ -107,22 +109,45 @@ typedef struct Delim {
     NodeType type;
     char variant;
     size_t pos;
+    int run_offset;
     bool is_opening;
 } Delim;
 
-bool _kevlar_md_find_closing_em_or_strong(const char *src, size_t len, size_t cursor,
-                                          size_t *index) {
+bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
+                                   Delim *closing_delim) {
     Delim stack[100] = {};
     size_t stack_pos = 0;
 
     for (size_t i = cursor; i < len; ++i) {
-        if (src[i] == '*' || src[i] == '_') {
-            Md_Delem_Properties props = _kevlar_md_em_delim_properties(src, len, i);
-            if (props.closing && stack_pos > 0 && stack[stack_pos - 1].is_opening &&
-                stack[stack_pos - 1].variant == src[i] && stack[stack_pos - 1].type == MD_EM_NODE) {
+        switch (src[i]) {
+        case '*':
+        case '_': {
+            bool is_double = i + 1 < len && src[i + 1] == src[i];
+            bool is_triple = is_double && i + 2 < len && src[i + 2] == src[i];
+
+            int delim_run = (is_double && !is_triple) ? 2 : 1;
+            NodeType n_type = (is_double && !is_triple) ? MD_STRONG_NODE : MD_EM_NODE;
+
+            Md_Delem_Properties props = _kevlar_md_delim_properties(src, len, i, delim_run);
+
+            if (is_triple && (props.closing || (!props.closing && !props.opening))) {
+                delim_run = 2;
+                n_type = MD_STRONG_NODE;
+                props = _kevlar_md_delim_properties(src, len, i, delim_run);
+            }
+
+            if ((props.closing || (!props.closing && !props.opening)) && stack_pos > 0 &&
+                stack[stack_pos - 1].is_opening && stack[stack_pos - 1].variant == src[i] &&
+                stack[stack_pos - 1].type == n_type) {
                 // TODO: the below line is a bit sus
                 if (stack[stack_pos - 1].pos == cursor && ((stack_pos - 1) == 0)) {
-                    *index = i;
+
+                    closing_delim->is_opening = false;
+                    closing_delim->pos = i + (delim_run - 1);
+                    closing_delim->run_offset = delim_run;
+                    closing_delim->variant = stack[stack_pos - 1].variant;
+                    closing_delim->type = n_type;
+
                     return true;
                 }
                 stack_pos--;
@@ -130,9 +155,14 @@ bool _kevlar_md_find_closing_em_or_strong(const char *src, size_t len, size_t cu
                 stack[stack_pos].is_opening = true;
                 stack[stack_pos].variant = src[i];
                 stack[stack_pos].pos = i;
-                stack[stack_pos].type = MD_EM_NODE;
+                stack[stack_pos].run_offset = delim_run;
+                stack[stack_pos].type = n_type;
                 stack_pos++;
             }
+
+            i += delim_run - 1;
+            // }
+        }
         }
     }
 
@@ -149,17 +179,20 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
 
     for (size_t i = *cursor; i < len; ++i) {
         if (src[i] == '*' || src[i] == '_') {
-            size_t sub_cur;
-            if (_kevlar_md_find_closing_em_or_strong(src, len, i, &sub_cur)) {
-                Md_Ast *em_node = malloc(sizeof(Md_Ast));
-                em_node->node_type = MD_EM_NODE;
+            Delim closing_delim = {0};
+            if (_kevlar_md_find_closing_delim(src, len, i, &closing_delim)) {
+                Md_Ast *em_or_strong_node = malloc(sizeof(Md_Ast));
+                em_or_strong_node->node_type = closing_delim.type;
 
-                size_t buf_len = sub_cur - i - 1;
+                // TODO: why do we need to handle it like so?
+                size_t buf_len = closing_delim.pos - i - (closing_delim.run_offset > 1 ? closing_delim.run_offset + 1
+                                                               : closing_delim.run_offset);
+
                 char *buffer = malloc(sizeof(char) * buf_len);
-                strncpy(buffer, &src[i + 1], buf_len);
+                strncpy(buffer, &src[i + closing_delim.run_offset], buf_len);
 
                 size_t sub_sub_cur = 0;
-                kevlar_md_process_text_node(buffer, buf_len, &sub_sub_cur, em_node, NULL,
+                kevlar_md_process_text_node(buffer, buf_len, &sub_sub_cur, em_or_strong_node, NULL,
                                             MD_DOUBLE_LINE_BREAK);
                 if (text_buffer_pos != 0) {
                     Md_Ast *txt_node =
@@ -167,9 +200,10 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                     kevlar_md_ast_child_append(parent, txt_node);
                     text_buffer_pos = 0;
                 }
-                kevlar_md_ast_child_append(parent, em_node);
+                kevlar_md_ast_child_append(parent, em_or_strong_node);
                 free(buffer);
-                *cursor = sub_cur;
+
+                *cursor = closing_delim.pos;
                 i = *cursor;
                 continue;
             }
