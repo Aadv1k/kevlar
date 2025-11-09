@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void test_check_count_and_type(Md_Ast *ast, size_t c_count, NodeType typ) {
+void test_check_count_and_type(Md_Ast *ast, size_t c_count, Md_Node_Type typ) {
     if (ast->node_type != typ) {
         puts("NodeType mismatch");
         printf("\tWANTED: %s\n", utl_node_type_to_str(typ));
@@ -23,7 +23,7 @@ void test_check_count_and_type(Md_Ast *ast, size_t c_count, NodeType typ) {
 }
 
 void test_match_text_node_text(Md_Ast *txt_node, const char *dest) {
-    assert(txt_node->node_type == MD_TEXT_NODE);
+    assert(txt_node->node_type == MD_NODE_TEXT);
 
     if (strcmp(txt_node->opt.text_opt.data, dest) != 0) {
         printf("\tWANTED: \"%s\"\n", dest);
@@ -38,8 +38,8 @@ void test_md_heading() {
     /*************************************/
     puts("Test A");
     ast = kevlar_md_generate_ast("# Foo\n");
-    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_HEADING);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "Foo");
 
     kevlar_md_free_ast(ast);
@@ -49,7 +49,7 @@ void test_md_heading() {
     puts("Test B");
     ast = kevlar_md_generate_ast("###");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -58,8 +58,8 @@ void test_md_heading() {
     puts("Test C");
     ast = kevlar_md_generate_ast("##### A");
 
-    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_HEADING);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "A");
 
     kevlar_md_free_ast(ast);
@@ -69,8 +69,8 @@ void test_md_heading() {
     puts("Test D");
     ast = kevlar_md_generate_ast("########## Should NOT be a heading");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "########## Should NOT be a heading");
 
     kevlar_md_free_ast(ast);
@@ -80,7 +80,7 @@ void test_md_heading() {
     puts("Test E");
     ast = kevlar_md_generate_ast("## ");
 
-    test_check_count_and_type(ast->children[0], 0, MD_HEADING_NODE);
+    test_check_count_and_type(ast->children[0], 0, MD_NODE_HEADING);
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -89,7 +89,7 @@ void test_md_heading() {
     puts("Test F");
     ast = kevlar_md_generate_ast("### ## ### # ## # # # # ## ##### ");
 
-    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_HEADING);
     test_match_text_node_text(ast->children[0]->children[0], "## ### # ## # # # # ## ##### ");
 
     kevlar_md_free_ast(ast);
@@ -99,7 +99,7 @@ void test_md_heading() {
     puts("Test E");
     ast = kevlar_md_generate_ast("#\t\t\t\tHello");
 
-    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_HEADING);
     test_match_text_node_text(ast->children[0]->children[0], "Hello");
 
     kevlar_md_free_ast(ast);
@@ -108,8 +108,8 @@ void test_md_heading() {
     /*************************************/
     puts("Test F");
     ast = kevlar_md_generate_ast("# ये हाथ मुझे दे दे ठाकुर!");
-    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
-    test_check_count_and_type(ast->children[0], 1, MD_HEADING_NODE);
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_HEADING);
     assert(ast->children[0]->opt.h_opt.level == 1);
     test_match_text_node_text(ast->children[0]->children[0], "ये हाथ मुझे दे दे ठाकुर!");
     kevlar_md_free_ast(ast);
@@ -118,9 +118,9 @@ void test_md_heading() {
     /*************************************/
     puts("Test G");
     ast = kevlar_md_generate_ast("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6");
-    test_check_count_and_type(ast, 6, MD_ROOT_NODE);
+    test_check_count_and_type(ast, 6, MD_NODE_ROOT);
     for (int i = 0; i < 6; i++) {
-        test_check_count_and_type(ast->children[i], 1, MD_HEADING_NODE);
+        test_check_count_and_type(ast->children[i], 1, MD_NODE_HEADING);
         assert(ast->children[i]->opt.h_opt.level == i + 1);
     }
     kevlar_md_free_ast(ast);
@@ -134,17 +134,17 @@ void test_md_emphasis_and_strong() {
     puts("Test A");
     ast = kevlar_md_generate_ast("*Be *dazz* led*");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 3, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 3, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "Be ");
 
-    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_NODE_EMPH);
     test_check_count_and_type(ast->children[0]->children[0]->children[1]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0], "dazz");
 
-    test_check_count_and_type(ast->children[0]->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[2], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[2], " led");
 
     kevlar_md_free_ast(ast);
@@ -162,15 +162,15 @@ void test_md_emphasis_and_strong() {
      * -- text
      */
 
-    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "Hello, ");
 
-    test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1]->children[0], "World");
 
-    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[2], "!");
 
     kevlar_md_free_ast(ast);
@@ -187,13 +187,13 @@ void test_md_emphasis_and_strong() {
      * -- text
      */
 
-    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 2, MD_NODE_PARAGRAPH);
 
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "नमस्ते");
 
-    test_check_count_and_type(ast->children[0]->children[1], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1], " दुनिया! 👋🌏");
 
     kevlar_md_free_ast(ast);
@@ -202,13 +202,13 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test C/1");
     ast = kevlar_md_generate_ast("The **quick *brown* fox** jumps __over the lazy dog__");
-    test_check_count_and_type(ast->children[0], 4, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 4, MD_NODE_PARAGRAPH);
 
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "The ");
 
-    test_check_count_and_type(ast->children[0]->children[1], 3, MD_STRONG_NODE);
-    /**/ test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 3, MD_NODE_STRONG);
+    /**/ test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
     /**/ test_match_text_node_text(ast->children[0]->children[1]->children[0], "quick ");
 
     kevlar_md_free_ast(ast);
@@ -218,11 +218,11 @@ void test_md_emphasis_and_strong() {
     puts("Test C/2");
     ast = kevlar_md_generate_ast("**_Hello World_**");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_STRONG_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_STRONG);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_NODE_EMPH);
     test_check_count_and_type(ast->children[0]->children[0]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0]->children[0],
                               "Hello World");
 
@@ -233,11 +233,11 @@ void test_md_emphasis_and_strong() {
     puts("Test C/3");
     ast = kevlar_md_generate_ast("***A***");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_NODE_STRONG);
     test_check_count_and_type(ast->children[0]->children[0]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0]->children[0], "A");
 
     kevlar_md_free_ast(ast);
@@ -257,33 +257,33 @@ void test_md_emphasis_and_strong() {
     // "jumps"
     // " over the lazy dog"
 
-    test_check_count_and_type(ast->children[0], 9, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 9, MD_NODE_PARAGRAPH);
 
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "The ");
 
-    test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1]->children[0], "quick");
 
-    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[2], " ");
 
-    test_check_count_and_type(ast->children[0]->children[3], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[3]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[3], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[3]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[3]->children[0], "brown");
 
-    test_check_count_and_type(ast->children[0]->children[4], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[4], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[4], " ");
 
-    test_check_count_and_type(ast->children[0]->children[5], 1, MD_STRONG_NODE);
-    test_check_count_and_type(ast->children[0]->children[5]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[5], 1, MD_NODE_STRONG);
+    test_check_count_and_type(ast->children[0]->children[5]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[5]->children[0], "fox");
 
-    test_check_count_and_type(ast->children[0]->children[7], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[7]->children[0], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0]->children[7], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[7]->children[0], 1, MD_NODE_STRONG);
     test_check_count_and_type(ast->children[0]->children[7]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[7]->children[0]->children[0], "jumps");
 
     kevlar_md_free_ast(ast);
@@ -300,13 +300,13 @@ void test_md_emphasis_and_strong() {
      * ---- Text "nested emphasis"
      * --- Text " inside"
      */
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 3, MD_STRONG_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 3, MD_NODE_STRONG);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "Bold with ");
-    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_NODE_EMPH);
     test_check_count_and_type(ast->children[0]->children[0]->children[1]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0],
                               "nested emphasis");
     kevlar_md_free_ast(ast);
@@ -315,8 +315,8 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test F");
     ast = kevlar_md_generate_ast("This has *unclosed emphasis");
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "This has *unclosed emphasis");
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -324,13 +324,13 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test G");
     ast = kevlar_md_generate_ast("*no space*immediately*adjacent*");
-    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "no space");
-    test_check_count_and_type(ast->children[0]->children[1], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1], "immediately");
-    test_check_count_and_type(ast->children[0]->children[2], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[2]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[2]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[2]->children[0], "adjacent");
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -339,18 +339,18 @@ void test_md_emphasis_and_strong() {
     puts("Test H");
     ast = kevlar_md_generate_ast("***I got an appointment with _Dr. Monster_***");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 2, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 2, MD_NODE_STRONG);
     test_check_count_and_type(ast->children[0]->children[0]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0]->children[0],
                               "I got an appointment with ");
 
     test_check_count_and_type(ast->children[0]->children[0]->children[0]->children[1], 1,
-                              MD_EM_NODE);
+                              MD_NODE_EMPH);
     test_check_count_and_type(ast->children[0]->children[0]->children[0]->children[1]->children[0],
-                              0, MD_TEXT_NODE);
+                              0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0]->children[1]->children[0],
                               "Dr. Monster");
 
@@ -362,16 +362,16 @@ void test_md_emphasis_and_strong() {
     puts("Test I");
     ast = kevlar_md_generate_ast("*日本語*, **中文**, ***العربية***, עִברִית");
 
-    test_check_count_and_type(ast->children[0], 6, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0], 6, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "日本語");
-    test_check_count_and_type(ast->children[0]->children[2], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 1, MD_NODE_STRONG);
     test_match_text_node_text(ast->children[0]->children[2]->children[0], "中文");
 
-    test_check_count_and_type(ast->children[0]->children[4], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[4]->children[0], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0]->children[4], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[4]->children[0], 1, MD_NODE_STRONG);
     test_check_count_and_type(ast->children[0]->children[4]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[4]->children[0]->children[0], "العربية");
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -379,16 +379,16 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test J");
     ast = kevlar_md_generate_ast("*🔥fire🔥* **💪strong💪** ***🚀rocket🚀***");
-    test_check_count_and_type(ast->children[0], 5, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0], 5, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_EMPH);
     test_match_text_node_text(ast->children[0]->children[0]->children[0], "🔥fire🔥");
-    test_check_count_and_type(ast->children[0]->children[2], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 1, MD_NODE_STRONG);
     test_match_text_node_text(ast->children[0]->children[2]->children[0], "💪strong💪");
 
-    test_check_count_and_type(ast->children[0]->children[4], 1, MD_EM_NODE);
-    test_check_count_and_type(ast->children[0]->children[4]->children[0], 1, MD_STRONG_NODE);
+    test_check_count_and_type(ast->children[0]->children[4], 1, MD_NODE_EMPH);
+    test_check_count_and_type(ast->children[0]->children[4]->children[0], 1, MD_NODE_STRONG);
     test_check_count_and_type(ast->children[0]->children[4]->children[0]->children[0], 0,
-                              MD_TEXT_NODE);
+                              MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[4]->children[0]->children[0],
                               "🚀rocket🚀");
 
@@ -398,9 +398,9 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test K");
     ast = kevlar_md_generate_ast("\\*not emphasis\\* but *this is*");
-    test_check_count_and_type(ast->children[0], 2, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 2, MD_NODE_PARAGRAPH);
     test_match_text_node_text(ast->children[0]->children[0], "*not emphasis* but ");
-    test_check_count_and_type(ast->children[0]->children[1], 1, MD_EM_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_EMPH);
     test_match_text_node_text(ast->children[0]->children[1]->children[0], "this is");
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -408,7 +408,7 @@ void test_md_emphasis_and_strong() {
     /*************************************/
     puts("Test L");
     ast = kevlar_md_generate_ast("     \t\t\t     ");
-    test_check_count_and_type(ast->children[0], 0, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0], 0, MD_NODE_PARAGRAPH);
     kevlar_md_free_ast(ast);
     /*************************************/
 
@@ -418,8 +418,8 @@ void test_md_emphasis_and_strong() {
     memset(long_text, 'a', 9999);
     long_text[9999] = '\0';
     ast = kevlar_md_generate_ast(long_text);
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     kevlar_md_free_ast(ast);
     /*************************************/
 }
@@ -431,9 +431,9 @@ void test_md_code_blocks() {
     puts("Test A");
     ast = kevlar_md_generate_ast("`Namaste, Arigato, Shalom, Hello`");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_INLINE_CODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0]->children[0],
                               "Namaste, Arigato, Shalom, Hello");
 
@@ -444,8 +444,8 @@ void test_md_code_blocks() {
     puts("Test B");
     ast = kevlar_md_generate_ast("\\`Pls escape lol\\`");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "`Pls escape lol`");
 
     kevlar_md_free_ast(ast);
@@ -455,15 +455,15 @@ void test_md_code_blocks() {
     puts("Test C");
     ast = kevlar_md_generate_ast("Foo ``Bar`` Baz");
 
-    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "Foo ");
 
-    test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
-    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_INLINE_CODE);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1]->children[0], "Bar");
 
-    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[2], " Baz");
 
     kevlar_md_free_ast(ast);
@@ -473,16 +473,16 @@ void test_md_code_blocks() {
     puts("Test D");
     ast = kevlar_md_generate_ast("Foo ``**The formatting** _is def_, ***disabled....***`` Baz");
 
-    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 3, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "Foo ");
 
-    test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
-    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_INLINE_CODE);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[1]->children[0],
                               "**The formatting** _is def_, ***disabled....***");
 
-    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[2], " Baz");
 
     kevlar_md_free_ast(ast);
@@ -492,8 +492,8 @@ void test_md_code_blocks() {
     puts("Test E");
     ast = kevlar_md_generate_ast("```Unmatched pairs should NOT close``");
 
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0],
                               "```Unmatched pairs should NOT close``");
 
@@ -505,10 +505,10 @@ void test_md_code_blocks() {
     ast = kevlar_md_generate_ast("```python\n"
                                  "print(\"Hello World\")```");
 
-    test_check_count_and_type(ast->children[0], 1, MD_CODE_BLOCK);
-    assert(strcmp(ast->children[0]->opt.code_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_CODE_BLOCK);
+    assert(strcmp(ast->children[0]->opt.code_block_opt.lang_str, "python") == 0);
 
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "print(\"Hello World\")");
 
     kevlar_md_free_ast(ast);
@@ -521,10 +521,10 @@ void test_md_code_blocks() {
                                  "print(\"When the imposter is sus 😈\")\n"
                                  "```");
 
-    test_check_count_and_type(ast->children[0], 1, MD_CODE_BLOCK);
-    assert(strcmp(ast->children[0]->opt.code_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_CODE_BLOCK);
+    assert(strcmp(ast->children[0]->opt.code_block_opt.lang_str, "python") == 0);
 
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0],
                               "print(\"Hello World\")\n\nprint(\"When the imposter is sus 😈\")\n");
 
@@ -539,18 +539,18 @@ void test_md_code_blocks() {
                                  "```\n"
                                  "That is how we write hello world in python");
 
-    test_check_count_and_type(ast, 3, MD_ROOT_NODE);
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast, 3, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[0]->children[0], "Example: ");
 
-    test_check_count_and_type(ast->children[1], 1, MD_CODE_BLOCK);
-    assert(strcmp(ast->children[1]->opt.code_opt.lang_str, "python") == 0);
-    test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[1], 1, MD_NODE_CODE_BLOCK);
+    assert(strcmp(ast->children[1]->opt.code_block_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[1]->children[0], "print(\"Hello World\")\n");
 
-    test_check_count_and_type(ast->children[2], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[2]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[2], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[2]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[2]->children[0],
                               "That is how we write hello world in python");
 
@@ -566,20 +566,19 @@ void test_md_code_blocks() {
                                  "```\n"
                                  "Got it? Good. Now better get to work");
 
-    test_check_count_and_type(ast, 3, MD_ROOT_NODE);
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
-    test_match_text_node_text(ast->children[0]->children[0],
-                              "Here is some code for you: ");
+    test_check_count_and_type(ast, 3, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
+    test_match_text_node_text(ast->children[0]->children[0], "Here is some code for you: ");
 
-    test_check_count_and_type(ast->children[1], 1, MD_CODE_BLOCK);
-    assert(strcmp(ast->children[1]->opt.code_opt.lang_str, "python") == 0);
-    test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[1], 1, MD_NODE_CODE_BLOCK);
+    assert(strcmp(ast->children[1]->opt.code_block_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[1]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[1]->children[0],
                               "print(\"Hello World\")\n\nprint(\"When the imposter is sus 😈\")\n");
 
-    test_check_count_and_type(ast->children[2], 1, MD_PARA_NODE);
-    test_check_count_and_type(ast->children[2]->children[0], 0, MD_TEXT_NODE);
+    test_check_count_and_type(ast->children[2], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[2]->children[0], 0, MD_NODE_TEXT);
     test_match_text_node_text(ast->children[2]->children[0],
                               "Got it? Good. Now better get to work");
 
@@ -593,8 +592,25 @@ void test_md_code_blocks() {
                                  "print(\"Hello World\")\n"
                                  "\\`\\`\\`\n");
 
-    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
-    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+}
+
+void test_md_unordered_list() {
+    Md_Ast *ast;
+
+    /*************************************/
+    puts("Test A");
+    ast = kevlar_md_generate_ast("- Item 1\n- Item 2\n- Item 3");
+
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_INLINE_CODE);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
+    test_match_text_node_text(ast->children[0]->children[0]->children[0],
+                              "Namaste, Arigato, Shalom, Hello");
 
     kevlar_md_free_ast(ast);
     /*************************************/
@@ -603,7 +619,7 @@ void test_md_code_blocks() {
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
 
-    assert(ast->node_type == MD_ROOT_NODE && "AST must have a root node");
+    assert(ast->node_type == MD_NODE_ROOT && "AST must have a root node");
 
     kevlar_md_free_ast(ast);
 }
@@ -625,4 +641,8 @@ void test_markdown() {
     puts("INFO: test_md_code_blocks()");
     test_md_code_blocks();
     puts("SUCCESS: test_md_code_blocks()");
+
+    puts("INFO: test_md_unordered_list()");
+    test_md_unordered_list();
+    puts("SUCCESS: test_md_unordered_list()");
 };

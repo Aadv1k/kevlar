@@ -94,30 +94,32 @@ void utl_mkdir_crossplatform(char *folder_path) {
 #endif
 }
 
-const char *utl_node_type_to_str(NodeType type) {
+const char *utl_node_type_to_str(Md_Node_Type type) {
     switch (type) {
-    case MD_ROOT_NODE:
-        return "MD_ROOT_NODE";
-    case MD_PARA_NODE:
-        return "MD_PARA_NODE";
-    case MD_EM_NODE:
-        return "MD_EM_NODE";
-    case MD_STRONG_NODE:
-        return "MD_STRONG_NODE";
-    case MD_DEL_NODE:
-        return "MD_DEL_NODE";
-    case MD_TEXT_NODE:
-        return "MD_TEXT_NODE";
-    case MD_HEADING_NODE:
-        return "MD_HEADING_NODE";
-    case MD_STRONG_EM_NODE:
-        return "MD_STRONG_EM_NODE";
-    case MD_INLINE_CODE_BLOCK:
-        return "MD_INLINE_CODE_BLOCK";
-    case MD_LINK_NODE:
-        return "MD_LINK_NODE";
-    case MD_CODE_BLOCK:
-        return "MD_CODE_BLOCK";
+    case MD_NODE_ROOT:
+        return "MD_NODE_ROOT";
+    case MD_NODE_PARAGRAPH:
+        return "MD_NODE_PARAGRAPH";
+    case MD_NODE_EMPH:
+        return "MD_NODE_EMPH";
+    case MD_NODE_STRONG:
+        return "MD_NODE_STRONG";
+    case MD_NODE_STRIKETHRU:
+        return "MD_NODE_STRIKETHRU";
+    case MD_NODE_TEXT:
+        return "MD_NODE_TEXT";
+    case MD_NODE_INLINE_CODE:
+        return "MD_NODE_INLINE_CODE";
+    case MD_NODE_HEADING:
+        return "MD_NODE_HEADING";
+    case MD_NODE_LINK:
+        return "MD_NODE_LINK";
+    case MD_NODE_CODE_BLOCK:
+        return "MD_NODE_CODE_BLOCK";
+    case MD_NODE_LIST:
+        return "MD_NODE_LIST";
+    case MD_NODE_LIST_ITEM:
+        return "MD_NODE_LIST_ITEM";
     default:
         return "UNKNOWN_NODE_TYPE";
     }
@@ -128,20 +130,20 @@ void utl_visualize_ast(Md_Ast *ast, int spaces) {
     memset(indent, ' ', spaces * 2);
 
     printf("%s%s\n", indent, utl_node_type_to_str(ast->node_type));
-    if (ast->node_type == MD_TEXT_NODE) {
+    if (ast->node_type == MD_NODE_TEXT) {
         printf("%s└ Data: \"%s\"\n", indent, ast->opt.text_opt.data);
     }
 
-    if (ast->node_type == MD_HEADING_NODE) {
+    if (ast->node_type == MD_NODE_HEADING) {
         printf("%s└ Level: %d\n", indent, ast->opt.h_opt.level);
     }
 
-    if (ast->node_type == MD_LINK_NODE) {
+    if (ast->node_type == MD_NODE_LINK) {
         printf("%s└ HREF: %s\n", indent, ast->opt.link_opt.href_str);
     }
 
-    if (ast->node_type == MD_CODE_BLOCK) {
-        printf("%s└ LANG: %s\n", indent, ast->opt.code_opt.lang_str);
+    if (ast->node_type == MD_NODE_CODE_BLOCK) {
+        printf("%s└ LANG: %s\n", indent, ast->opt.code_block_opt.lang_str);
     }
 
     for (size_t i = 0; i < ast->c_count; ++i) {

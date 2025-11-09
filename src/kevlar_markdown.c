@@ -47,7 +47,7 @@ Md_Ast *create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
 
     Md_Ast *txt_node = malloc(sizeof(Md_Ast));
 
-    txt_node->node_type = MD_TEXT_NODE;
+    txt_node->node_type = MD_NODE_TEXT;
     txt_node->opt.text_opt.len = buffer_len + 1;
 
     txt_node->opt.text_opt.data = malloc(sizeof(char) * buffer_len + 1);
@@ -56,11 +56,6 @@ Md_Ast *create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
 
     return txt_node;
 }
-
-typedef struct Md_Delem_Properties {
-    bool opening;
-    bool closing;
-} Md_Delem_Properties;
 
 // REF: https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
 Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
@@ -105,7 +100,7 @@ Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, siz
 }
 
 typedef struct Delim {
-    NodeType type;
+    Md_Node_Type type;
     char variant;
     size_t pos;
     int run_offset;
@@ -126,13 +121,13 @@ bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
             bool is_triple = is_double && i + 2 < len && src[i + 2] == src[i];
 
             int delim_run = (is_double && !is_triple) ? 2 : 1;
-            NodeType n_type = (is_double && !is_triple) ? MD_STRONG_NODE : MD_EM_NODE;
+            Md_Node_Type n_type = (is_double && !is_triple) ? MD_NODE_STRONG : MD_NODE_EMPH;
 
             Md_Delem_Properties props = _kevlar_md_delim_properties(src, len, i, delim_run);
 
             if (is_triple && (props.closing || (!props.closing && !props.opening))) {
                 delim_run = 2;
-                n_type = MD_STRONG_NODE;
+                n_type = MD_NODE_STRONG;
                 props = _kevlar_md_delim_properties(src, len, i, delim_run);
             }
 
@@ -284,7 +279,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 size_t sub_pos = i + repeating_count;
 
                 Md_Ast *inline_code_block = malloc(sizeof(Md_Ast));
-                inline_code_block->node_type = MD_INLINE_CODE_BLOCK;
+                inline_code_block->node_type = MD_NODE_INLINE_CODE;
 
                 if ((kevlar_md_process_pair(src, len, suffix, &sub_pos, inline_code_block, false,
                                             MD_DOUBLE_LINE_BREAK)) != NULL) {
@@ -410,7 +405,7 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
         return NULL;
     }
 
-    ast_node->node_type = MD_HEADING_NODE;
+    ast_node->node_type = MD_NODE_HEADING;
 
     size_t src_len = strlen(source);
 
@@ -437,7 +432,7 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
             if (ret != 0)
                 goto parsing_error;
 
-            if (ast_node->c_count > 0 && ast_node->children[0]->node_type == MD_TEXT_NODE) {
+            if (ast_node->c_count > 0 && ast_node->children[0]->node_type == MD_NODE_TEXT) {
                 Md_Ast *txt_node = ast_node->children[0];
 
                 size_t left_offset =
@@ -480,10 +475,10 @@ Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *p
         return NULL;
 
     Md_Ast *code_block_node = malloc(sizeof(Md_Ast));
-    code_block_node->node_type = MD_CODE_BLOCK;
+    code_block_node->node_type = MD_NODE_CODE_BLOCK;
 
-    code_block_node->opt.code_opt.lang_str = strndup(&src[i + 3], new_line_offset);
-    code_block_node->opt.code_opt.lang_str_len = new_line_offset;
+    code_block_node->opt.code_block_opt.lang_str = strndup(&src[i + 3], new_line_offset);
+    code_block_node->opt.code_block_opt.lang_str_len = new_line_offset;
 
     // ```foo\n[bar]
     // ^- i
@@ -515,7 +510,7 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
         return NULL;
     }
 
-    ast->node_type = MD_ROOT_NODE;
+    ast->node_type = MD_NODE_ROOT;
 
     size_t src_len = strlen(source);
 
@@ -534,10 +529,12 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
                 kevlar_md_ast_child_append(ast, code_block_node);
                 continue;
             }
+        } else if (source[i] == '-') {
+            assert(false && "List not impleemnted");
         }
 
         Md_Ast *para_node = malloc(sizeof(Md_Ast));
-        para_node->node_type = MD_PARA_NODE;
+        para_node->node_type = MD_NODE_PARAGRAPH;
 
         int ret = kevlar_md_process_text_node(source, src_len, &i, para_node, MD_SINGLE_LINE_BREAK);
         if (ret == 0)
@@ -549,16 +546,16 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
 
 void kevlar_md_free_ast(Md_Ast *ast) {
     for (size_t i = 0; i < ast->c_count; ++i) {
-        if (ast->children[i]->node_type == MD_TEXT_NODE) {
+        if (ast->children[i]->node_type == MD_NODE_TEXT) {
             free(ast->children[i]->opt.text_opt.data);
         }
 
-        if (ast->children[i]->node_type == MD_LINK_NODE) {
+        if (ast->children[i]->node_type == MD_NODE_LINK) {
             free(ast->children[i]->opt.link_opt.href_str);
         }
 
-        if (ast->children[i]->node_type == MD_CODE_BLOCK) {
-            free(ast->children[i]->opt.code_opt.lang_str);
+        if (ast->children[i]->node_type == MD_NODE_CODE_BLOCK) {
+            free(ast->children[i]->opt.code_block_opt.lang_str);
         }
 
         kevlar_md_free_ast(ast->children[i]);
