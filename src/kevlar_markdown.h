@@ -97,4 +97,6 @@ void kevlar_md_free_ast(Md_Ast *ast);
 
 int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast *parent, unsigned int allowed_line_ends);
 
+Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *pos);
+
 #endif //  _KEVLAR_MARKDOWN_H

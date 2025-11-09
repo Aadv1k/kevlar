@@ -1,30 +1,44 @@
 # Kevlar V3
 
+## Markdown compiler differences from spec
+
+- Unicode support isn't guaranteed (though the compiler has been tested with unicode characters, the support isn't baked in)
+- No indented code blocks support
+- Code blocks aren't automatically closed when EOF is reached, ie
+
+```markdown
+\`\`\`python
+print("Hello, World")
+```
+
+Will translate to a paragraph, and NOT a code block
+
+- During the parsing stage code blocks handle inner text literally thus whitespace (`\n`, `  `) will remain unchanged
+
 ## Goals for V3
 
 > To make kevlar ready for real production use for my personal blog
 
 1. Develop a somewhat spec-compliant markdown compiler. The current version has a lot of rough edges, to name a few
-    - No support for tables
-    - No support for injecting HTML directly into markdown (current version tries to wrap all the HTML tags into `<p>` which breaks it)
-    - Images work, but the alt-text is appended to the raw text instead of actually being an alt tag 
+   - No support for tables
+   - No support for injecting HTML directly into markdown (current version tries to wrap all the HTML tags into `<p>` which breaks it)
+   - Images work, but the alt-text is appended to the raw text instead of actually being an alt tag
 
 2. Improve the code architecture. The current approach has a lot of shorcomings which make adding any new features quite hard, (I will speak about these at length in the blog post about this project), and introduce testing, atleast for the markdown component. Also get rid of the memory leaks, and heavy usage of stack allocation from the code
 
 3. Imporve front-matter parsing to be more robust
-    - Handle dates properly instead of the abomination that is `Order=`
-    - Allow the template author to specify custom front-matter properties, and provide it at the `post` context
+   - Handle dates properly instead of the abomination that is `Order=`
+   - Allow the template author to specify custom front-matter properties, and provide it at the `post` context
 
-4. Better templating, with ``--IF {cond}--`` and ``--ELSE--`` where cond can be a
-  flag that the user set in his global config. The idea is that a template author may
-  use this to write robust templates which work for a wide variety of formats. I
-  really want this to be a highly configuration heavy experience. 
-    - `--IF {some_flag}--`, `--ELIF {some_flag}--`, `--ELSE--`, 
-    - `--CONF {some_opt}--` pick and replace a config option at place
-    - `--LISTING :asc :tag--` 
+4. Better templating, with `--IF {cond}--` and `--ELSE--` where cond can be a
+   flag that the user set in his global config. The idea is that a template author may
+   use this to write robust templates which work for a wide variety of formats. I
+   really want this to be a highly configuration heavy experience.
+   - `--IF {some_flag}--`, `--ELIF {some_flag}--`, `--ELSE--`,
+   - `--CONF {some_opt}--` pick and replace a config option at place
+   - `--LISTING :asc :tag--`
 
 5. Implement a more robust `.ini` parsing. Current implementation is literally a `key=val` parser implemented hastily. We want to pack in a lot of good features such as namespacing, while keeping it lean. Hence, I will be loosely following the [`.ini` wikipedia article](https://en.wikipedia.org/wiki/INI_file) as a convention.
-
 
 An _utterly_ simple and fast Static Site Generator built using C
 

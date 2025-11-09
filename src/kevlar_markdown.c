@@ -169,13 +169,154 @@ bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
     return false;
 }
 
+size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start, const char *tag,
+                                      size_t *index, bool respect_line_break,
+                                      bool respect_double_line_break) {
+    size_t tag_len = strlen(tag);
+
+    for (size_t i = start; i < len; ++i) {
+        size_t matches = 0;
+
+        if (data[i] == '\n') {
+            Md_Line_End_Type line_end = get_line_end_type(data, i);
+            if ((respect_double_line_break && line_end == MD_DOUBLE_LINE_BREAK) ||
+                (respect_line_break && line_end == MD_SINGLE_LINE_BREAK))
+                return false;
+        }
+
+        if (data[i] == '\\' && i + 1 < len && SPECIAL_CHAR_SET[(unsigned char)data[i + 1]]) {
+            i += 1;
+            continue;
+        }
+
+        for (size_t j = 0; j < tag_len; ++j) {
+            if (data[i + j] == tag[j])
+                matches++;
+        }
+
+        if (matches == tag_len) {
+            *index = i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
+                               Md_Ast *parent, bool formatting_enabled,
+                               unsigned int allowed_line_end_type) {
+
+    size_t suffix_len = strlen(suffix), closing_pos;
+
+    bool match_found = kevlar_md_find_next_occurrence(
+        data, len, *pos, suffix, &closing_pos, !(allowed_line_end_type & MD_SINGLE_LINE_BREAK),
+        !(allowed_line_end_type & MD_DOUBLE_LINE_BREAK));
+
+    if (!match_found)
+        return NULL;
+
+    /*
+     * <tag>Foo Bar Baz</tag>
+     *                 ^- closing_pos is here
+     * To get the length we subtract the starting pos, and 1
+     */
+    size_t content_len = closing_pos - *pos;
+
+    if (content_len == 0)
+        return NULL;
+
+    // TODO: this malloc is redundant, here we can directly use lenghts and pointers
+    char *content_buffer = malloc(sizeof(char) * content_len + 1);
+    size_t content_buffer_pos = 0;
+
+    strncpy(content_buffer, &data[*pos], content_len);
+    content_buffer[content_len] = '\0';
+
+    if (!formatting_enabled) {
+        Md_Ast *txt_node = create_text_node_from_buffer_if_valid(content_buffer, content_len);
+
+        if (txt_node) {
+            *pos = closing_pos + suffix_len - 1;
+            kevlar_md_ast_child_append(parent, txt_node);
+        }
+
+        free(content_buffer);
+        return parent;
+    }
+
+    kevlar_md_process_text_node(content_buffer, content_len, &content_buffer_pos, parent,
+                                MD_DOUBLE_LINE_BREAK);
+
+    // </foo>
+    // ^----^-- closing_pos + suffix_len - 1 for adjustment
+    *pos = closing_pos + suffix_len - 1;
+
+    free(content_buffer);
+
+    return parent;
+}
+
 int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast *parent,
                                 unsigned int allowed_line_ends) {
     char text_buffer[MD_MAX_TEXT_BUFFER];
     size_t text_buffer_pos = 0;
 
     for (size_t i = *cursor; i < len; ++i) {
-        if (src[i] == '*' || src[i] == '_') {
+
+        if (src[i] == '`') {
+            size_t repeating_count = utl_count_repeating_char('`', &src[i]);
+
+            // We don't handle block level parsing in this function, hence we return upon
+            // recognizing this
+            if (repeating_count == 3 && (int)i - 1 >= 0 &&
+                (isspace(src[i - 1]) || src[i - 1] == '\n')) {
+                size_t tmp;
+                if (kevlar_md_find_next_occurrence(src, len, i + 2, "```", &tmp, false, false)) {
+                    *cursor = (int)(i - 1) >= 0 ? i - 1 : i;
+                    break;
+                }
+            } else {
+                char *suffix = malloc(sizeof(char) * repeating_count + 1);
+                memset(suffix, '`', repeating_count);
+                suffix[repeating_count] = '\0';
+
+                size_t sub_pos = i + repeating_count;
+
+                Md_Ast *inline_code_block = malloc(sizeof(Md_Ast));
+                inline_code_block->node_type = MD_INLINE_CODE_BLOCK;
+
+                if ((kevlar_md_process_pair(src, len, suffix, &sub_pos, inline_code_block, false,
+                                            MD_DOUBLE_LINE_BREAK)) != NULL) {
+                    if (text_buffer_pos > 0) {
+                        Md_Ast *txt_node =
+                            create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                        kevlar_md_ast_child_append(parent, txt_node);
+
+                        memset(text_buffer, 0, text_buffer_pos);
+                        text_buffer_pos = 0;
+                    }
+
+                    *cursor = sub_pos;
+                    i = *cursor;
+
+                    kevlar_md_ast_child_append(parent, inline_code_block);
+                    free(suffix);
+                    continue;
+                } else {
+                    // Basically append the suffix (ie ``, ```) to the buffer and skip by that much
+                    // amount to ensure a FALSE greedy match doesn't happen
+                    strncpy(&text_buffer[text_buffer_pos], suffix, repeating_count);
+                    text_buffer_pos += repeating_count;
+
+                    *cursor += repeating_count;
+                    i = *cursor;
+                }
+
+                free(inline_code_block);
+                free(suffix);
+            }
+        } else if (src[i] == '*' || src[i] == '_') {
             Delim closing_delim = {0};
             if (_kevlar_md_find_closing_delim(src, len, i, &closing_delim)) {
                 Md_Ast *em_or_strong_node = malloc(sizeof(Md_Ast));
@@ -196,6 +337,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                     Md_Ast *txt_node =
                         create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
                     kevlar_md_ast_child_append(parent, txt_node);
+                    memset(text_buffer, 0, text_buffer_pos);
                     text_buffer_pos = 0;
                 }
                 kevlar_md_ast_child_append(parent, em_or_strong_node);
@@ -224,12 +366,18 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                     kevlar_md_ast_child_append(parent, txt_node);
                 }
 
-                // TODO: remove this down the line
                 assert(
-                    strlen(txt_node->opt.text_opt.data) == text_buffer_pos &&
+                    txt_node != NULL && strlen(txt_node->opt.text_opt.data) == text_buffer_pos &&
                     "If this fails, it means some memory corruption has happened within the text");
 
                 return 0;
+            } else if (line_end == MD_SINGLE_LINE_BREAK &&
+                       (allowed_line_ends & MD_SINGLE_LINE_BREAK)) {
+
+                text_buffer[text_buffer_pos] = ' ';
+                text_buffer_pos++;
+                (*cursor)++;
+                continue;
             }
         }
 
@@ -249,6 +397,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
 
     if (text_buffer_pos != 0 &&
         utl_lstrip_offset(text_buffer, text_buffer_pos) != text_buffer_pos) {
+
         Md_Ast *txt_node = create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
         kevlar_md_ast_child_append(parent, txt_node);
     }
@@ -283,7 +432,8 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
             if (i >= src_len)
                 return ast_node;
 
-            int ret = kevlar_md_process_text_node(source, src_len, pos, ast_node, MD_DOUBLE_LINE_BREAK);
+            int ret =
+                kevlar_md_process_text_node(source, src_len, pos, ast_node, MD_DOUBLE_LINE_BREAK);
             if (ret != 0)
                 goto parsing_error;
 
@@ -315,6 +465,39 @@ parsing_error:
     return NULL;
 }
 
+// NOTE: this function DOES NOT handle the validation or recognition of the code block itself, the
+// onus of doing this is on the caller; Assume the *pos is on the element ON the first of three
+// backticks
+Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *pos) {
+    size_t i = *pos;
+
+    char *new_line_ptr = strchr(&src[i + 2], '\n');
+    if (new_line_ptr == NULL)
+        return NULL;
+
+    size_t new_line_offset = new_line_ptr - &src[i + 3];
+    if (new_line_offset == 0)
+        return NULL;
+
+    Md_Ast *code_block_node = malloc(sizeof(Md_Ast));
+    code_block_node->node_type = MD_CODE_BLOCK;
+
+    code_block_node->opt.code_opt.lang_str = strndup(&src[i + 3], new_line_offset);
+    code_block_node->opt.code_opt.lang_str_len = new_line_offset;
+
+    // ```foo\n[bar]
+    // ^- i
+    // --------^-sub_pos
+    size_t sub_pos = i + 4 + new_line_offset;
+    if (kevlar_md_process_pair(src, len, "```", &sub_pos, code_block_node, false,
+                               MD_SINGLE_LINE_BREAK | MD_DOUBLE_LINE_BREAK) != NULL) {
+        *pos = sub_pos + 1;
+        return code_block_node;
+    }
+
+    return NULL;
+}
+
 Md_Ast *kevlar_md_generate_ast(const char *source) {
     SPECIAL_CHAR_SET['*'] = 1;
     SPECIAL_CHAR_SET['_'] = 1;
@@ -343,20 +526,22 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
                 kevlar_md_ast_child_append(ast, h_node);
                 continue;
             }
+        } else if (i + 2 < src_len && source[i] == '`' && source[i + 1] == '`' &&
+                   source[i + 2] == '`') {
+            Md_Ast *code_block_node;
+            if ((code_block_node = kevlar_md_process_code_block_node(source, src_len, &i)) !=
+                NULL) {
+                kevlar_md_ast_child_append(ast, code_block_node);
+                continue;
+            }
         }
 
         Md_Ast *para_node = malloc(sizeof(Md_Ast));
         para_node->node_type = MD_PARA_NODE;
 
-        int ret =
-            kevlar_md_process_text_node(source, src_len, &i, para_node, MD_DOUBLE_LINE_BREAK);
-
-        if (ret != 0) {
-            free(para_node);
-            kevlar_err("Could not process text node at position %zu\n", i);
-        }
-
-        kevlar_md_ast_child_append(ast, para_node);
+        int ret = kevlar_md_process_text_node(source, src_len, &i, para_node, MD_SINGLE_LINE_BREAK);
+        if (ret == 0)
+            kevlar_md_ast_child_append(ast, para_node);
     }
 
     return ast;
@@ -370,6 +555,10 @@ void kevlar_md_free_ast(Md_Ast *ast) {
 
         if (ast->children[i]->node_type == MD_LINK_NODE) {
             free(ast->children[i]->opt.link_opt.href_str);
+        }
+
+        if (ast->children[i]->node_type == MD_CODE_BLOCK) {
+            free(ast->children[i]->opt.code_opt.lang_str);
         }
 
         kevlar_md_free_ast(ast->children[i]);

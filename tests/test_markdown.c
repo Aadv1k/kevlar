@@ -424,6 +424,182 @@ void test_md_emphasis_and_strong() {
     /*************************************/
 }
 
+void test_md_code_blocks() {
+    Md_Ast *ast;
+#if 1
+    /*************************************/
+    puts("Test A");
+    ast = kevlar_md_generate_ast("`Namaste, Arigato, Shalom, Hello`");
+
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_INLINE_CODE_BLOCK);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0]->children[0],
+                              "Namaste, Arigato, Shalom, Hello");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test B");
+    ast = kevlar_md_generate_ast("\\`Pls escape lol\\`");
+
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "`Pls escape lol`");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test C");
+    ast = kevlar_md_generate_ast("Foo ``Bar`` Baz");
+
+    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "Foo ");
+
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[1]->children[0], "Bar");
+
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[2], " Baz");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test D");
+    ast = kevlar_md_generate_ast("Foo ``**The formatting** _is def_, ***disabled....***`` Baz");
+
+    test_check_count_and_type(ast->children[0], 3, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "Foo ");
+
+    test_check_count_and_type(ast->children[0]->children[1], 1, MD_INLINE_CODE_BLOCK);
+    test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[1]->children[0],
+                              "**The formatting** _is def_, ***disabled....***");
+
+    test_check_count_and_type(ast->children[0]->children[2], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[2], " Baz");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test E");
+    ast = kevlar_md_generate_ast("```Unmatched pairs should NOT close``");
+
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0],
+                              "```Unmatched pairs should NOT close``");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test F");
+    ast = kevlar_md_generate_ast("```python\n"
+                                 "print(\"Hello World\")```");
+
+    test_check_count_and_type(ast->children[0], 1, MD_CODE_BLOCK);
+    assert(strcmp(ast->children[0]->opt.code_opt.lang_str, "python") == 0);
+
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "print(\"Hello World\")");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test G");
+    ast = kevlar_md_generate_ast("```python\n"
+                                 "print(\"Hello World\")\n\n"
+                                 "print(\"When the imposter is sus 😈\")\n"
+                                 "```");
+
+    test_check_count_and_type(ast->children[0], 1, MD_CODE_BLOCK);
+    assert(strcmp(ast->children[0]->opt.code_opt.lang_str, "python") == 0);
+
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0],
+                              "print(\"Hello World\")\n\nprint(\"When the imposter is sus 😈\")\n");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test H");
+    ast = kevlar_md_generate_ast("Example:\n"
+                                 "```python\n"
+                                 "print(\"Hello World\")\n"
+                                 "```\n"
+                                 "That is how we write hello world in python");
+
+    test_check_count_and_type(ast, 3, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0], "Example: ");
+
+    test_check_count_and_type(ast->children[1], 1, MD_CODE_BLOCK);
+    assert(strcmp(ast->children[1]->opt.code_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[1]->children[0], "print(\"Hello World\")\n");
+
+    test_check_count_and_type(ast->children[2], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[2]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[2]->children[0],
+                              "That is how we write hello world in python");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test H/1");
+    ast = kevlar_md_generate_ast("Here is some code for you:\n"
+                                 "```python\n"
+                                 "print(\"Hello World\")\n\n"
+                                 "print(\"When the imposter is sus 😈\")\n"
+                                 "```\n"
+                                 "Got it? Good. Now better get to work");
+
+    test_check_count_and_type(ast, 3, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[0]->children[0],
+                              "Here is some code for you: ");
+
+    test_check_count_and_type(ast->children[1], 1, MD_CODE_BLOCK);
+    assert(strcmp(ast->children[1]->opt.code_opt.lang_str, "python") == 0);
+    test_check_count_and_type(ast->children[1]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[1]->children[0],
+                              "print(\"Hello World\")\n\nprint(\"When the imposter is sus 😈\")\n");
+
+    test_check_count_and_type(ast->children[2], 1, MD_PARA_NODE);
+    test_check_count_and_type(ast->children[2]->children[0], 0, MD_TEXT_NODE);
+    test_match_text_node_text(ast->children[2]->children[0],
+                              "Got it? Good. Now better get to work");
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+#endif
+    /*************************************/
+    puts("Test I");
+    ast = kevlar_md_generate_ast("Escaped!!!\n"
+                                 "```python\n"
+                                 "print(\"Hello World\")\n"
+                                 "\\`\\`\\`\n");
+
+    test_check_count_and_type(ast, 1, MD_ROOT_NODE);
+    test_check_count_and_type(ast->children[0], 1, MD_PARA_NODE);
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+}
+
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
 
@@ -433,6 +609,7 @@ void test_md_basic() {
 }
 
 void test_markdown() {
+#if 1
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
@@ -444,4 +621,8 @@ void test_markdown() {
     puts("INFO: test_md_heading()");
     test_md_heading();
     puts("SUCCESS: test_md_heading()");
+#endif
+    puts("INFO: test_md_code_blocks()");
+    test_md_code_blocks();
+    puts("SUCCESS: test_md_code_blocks()");
 };
