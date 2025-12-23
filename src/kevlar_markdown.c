@@ -12,11 +12,13 @@
 #include <wchar.h>
 
 #define MD_MAX_TEXT_BUFFER 50000 // 50 KiB, should be enough for most?
-#define SPECIAL_CHAR_SET_LEN 128
 
-bool SPECIAL_CHAR_SET[SPECIAL_CHAR_SET_LEN] = {0};
+static bool SPECIAL_CHAR_SET[] = { 
+    ['*'] = 1, ['_'] = 1, ['~'] = 1, ['`'] = 1, ['#'] = 1, ['\\'] = 1, 
+    [']'] = 1, ['['] = 1, [')'] = 1, ['('] = 1 
+};
 
-Md_Line_End_Type get_line_end_type(const char *source, size_t pos) {
+static Md_Line_End_Type _kevlar_md_get_line_end_type(const char *source, size_t pos) {
     size_t len = strlen(source);
 
     if (pos + 1 > len)
@@ -28,20 +30,7 @@ Md_Line_End_Type get_line_end_type(const char *source, size_t pos) {
     return MD_SINGLE_LINE_BREAK;
 }
 
-void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
-    assert(parent != NULL);
-
-    Md_Ast **a;
-    if ((a = realloc(parent->children, sizeof(Md_Ast *) * parent->c_count + 1)) == NULL) {
-        kevlar_err("Could not re-allocate memory!");
-    }
-
-    parent->children = a;
-    parent->children[parent->c_count] = child;
-    parent->c_count++;
-}
-
-Md_Ast *create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
+static Md_Ast* _kevlar_md_create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
     if (buffer_len == 0)
         return NULL;
 
@@ -57,8 +46,22 @@ Md_Ast *create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
     return txt_node;
 }
 
+void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
+    assert(parent != NULL);
+
+    Md_Ast **a;
+    if ((a = realloc(parent->children, sizeof(Md_Ast *) * parent->c_count + 1)) == NULL) {
+        kevlar_err("Could not re-allocate memory!");
+    }
+
+    parent->children = a;
+    parent->children[parent->c_count] = child;
+    parent->c_count++;
+}
+
+
 // REF: https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
-Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
+static Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
                                                 size_t run) {
     Md_Delem_Properties props = {0};
 
@@ -80,10 +83,9 @@ Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, siz
           (ispunct((unsigned char)src[pos - 1]) && has_proceeding_whitespace_or_punct)));
 
     if (src[pos] == '*') {
-        if (is_left_flanking_run)
-            props.opening = true;
-        if (is_right_flanking_run)
-            props.closing = true;
+        if (is_left_flanking_run) props.opening = true;
+        if (is_right_flanking_run) props.closing = true;
+
     } else if (src[pos] == '_') {
         if (is_left_flanking_run &&
             (!is_right_flanking_run ||
@@ -107,7 +109,7 @@ typedef struct Delim {
     bool is_opening;
 } Delim;
 
-bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
+static bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
                                    Delim *closing_delim) {
     // TODO: find a good default for this
     Delim stack[100] = {};
@@ -173,7 +175,7 @@ size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start
         size_t matches = 0;
 
         if (data[i] == '\n') {
-            Md_Line_End_Type line_end = get_line_end_type(data, i);
+            Md_Line_End_Type line_end = _kevlar_md_get_line_end_type(data, i);
             if ((respect_double_line_break && line_end == MD_DOUBLE_LINE_BREAK) ||
                 (respect_line_break && line_end == MD_SINGLE_LINE_BREAK))
                 return false;
@@ -198,7 +200,7 @@ size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start
     return false;
 }
 
-Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
+Md_Ast* kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
                                Md_Ast *parent, bool formatting_enabled,
                                unsigned int allowed_line_end_type) {
 
@@ -229,7 +231,7 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
     content_buffer[content_len] = '\0';
 
     if (!formatting_enabled) {
-        Md_Ast *txt_node = create_text_node_from_buffer_if_valid(content_buffer, content_len);
+        Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(content_buffer, content_len);
 
         if (txt_node) {
             *pos = closing_pos + suffix_len - 1;
@@ -285,7 +287,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                                             MD_DOUBLE_LINE_BREAK)) != NULL) {
                     if (text_buffer_pos > 0) {
                         Md_Ast *txt_node =
-                            create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                            _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
                         kevlar_md_ast_child_append(parent, txt_node);
 
                         memset(text_buffer, 0, text_buffer_pos);
@@ -330,7 +332,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                                             MD_DOUBLE_LINE_BREAK);
                 if (text_buffer_pos != 0) {
                     Md_Ast *txt_node =
-                        create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                        _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
                     kevlar_md_ast_child_append(parent, txt_node);
                     memset(text_buffer, 0, text_buffer_pos);
                     text_buffer_pos = 0;
@@ -343,7 +345,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 continue;
             }
         } else if (src[i] == '\n') {
-            Md_Line_End_Type line_end = get_line_end_type(src, i);
+            Md_Line_End_Type line_end = _kevlar_md_get_line_end_type(src, i);
 
             bool should_break =
                 (line_end == MD_DOUBLE_LINE_BREAK && !(allowed_line_ends & MD_DOUBLE_LINE_BREAK)) ||
@@ -355,7 +357,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 i = *cursor;
 
                 Md_Ast *txt_node =
-                    create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                    _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
 
                 if (txt_node != NULL) {
                     kevlar_md_ast_child_append(parent, txt_node);
@@ -393,14 +395,14 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
     if (text_buffer_pos != 0 &&
         utl_lstrip_offset(text_buffer, text_buffer_pos) != text_buffer_pos) {
 
-        Md_Ast *txt_node = create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+        Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
         kevlar_md_ast_child_append(parent, txt_node);
     }
     return 0;
 }
 
-Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
-    Md_Ast *ast_node;
+Md_Ast* kevlar_md_process_heading_node(const char *source, size_t *pos) {
+    Md_Ast* ast_node;
     if ((ast_node = malloc(sizeof(Md_Ast))) == NULL) {
         return NULL;
     }
@@ -493,18 +495,44 @@ Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *p
     return NULL;
 }
 
-Md_Ast *kevlar_md_generate_ast(const char *source) {
-    SPECIAL_CHAR_SET['*'] = 1;
-    SPECIAL_CHAR_SET['_'] = 1;
-    SPECIAL_CHAR_SET['~'] = 1;
-    SPECIAL_CHAR_SET['`'] = 1;
-    SPECIAL_CHAR_SET['#'] = 1;
-    SPECIAL_CHAR_SET['\\'] = 1;
-    SPECIAL_CHAR_SET[']'] = 1;
-    SPECIAL_CHAR_SET['['] = 1;
-    SPECIAL_CHAR_SET[')'] = 1;
-    SPECIAL_CHAR_SET['('] = 1;
+Md_Ast *kevlar_md_process_unordered_list_node(const char *src, size_t len, size_t *cursor) {
+    Md_Ast *ast_node;
+    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL) {
+        return NULL;
+    }
 
+    char text_buffer[MD_MAX_TEXT_BUFFER] = {0};
+    size_t text_buffer_pos = 0;
+
+    Md_Line_End_Type line_end_type;
+    for (size_t i = *cursor; i < len; ++i) {
+        if (i + 1 >= len ||
+            (src[i] == '\n' && src[i+1] == '-') || (src[i] == '\n' && ((line_end_type = _kevlar_md_get_line_end_type(src, i)) == MD_EOF))) {
+
+            printf("----\n\"%.*s\"\n----\n", (int)text_buffer_pos, text_buffer);
+
+            text_buffer_pos = 0;
+
+
+            if (line_end_type == MD_EOF) break;
+
+
+            continue; 
+        }
+
+        text_buffer[text_buffer_pos] = src[i];
+        text_buffer_pos++;
+    }
+
+    free(ast_node);
+    return NULL;
+}
+
+static inline bool has_triple_backticks(const char *data, size_t len, size_t pos) {
+    return pos + 2 < len && data[pos] == '`' && data[pos + 1] == '`' && data[pos + 2] == '`';
+}
+
+Md_Ast *kevlar_md_generate_ast(const char *source) {
     Md_Ast *ast;
     if ((ast = malloc(sizeof(Md_Ast))) == NULL) {
         return NULL;
@@ -516,13 +544,12 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
 
     for (size_t i = 0; i < src_len; ++i) {
         if (source[i] == '#') {
-            Md_Ast *h_node;
-            if ((h_node = kevlar_md_process_heading_node(source, &i)) != NULL) {
-                kevlar_md_ast_child_append(ast, h_node);
+            Md_Ast *heading_node;
+            if ((heading_node = kevlar_md_process_heading_node(source, &i)) != NULL) {
+                kevlar_md_ast_child_append(ast, heading_node);
                 continue;
             }
-        } else if (i + 2 < src_len && source[i] == '`' && source[i + 1] == '`' &&
-                   source[i + 2] == '`') {
+        } else if (has_triple_backticks(source, src_len, i)) {
             Md_Ast *code_block_node;
             if ((code_block_node = kevlar_md_process_code_block_node(source, src_len, &i)) !=
                 NULL) {
@@ -530,15 +557,21 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
                 continue;
             }
         } else if (source[i] == '-') {
-            assert(false && "List not impleemnted");
+            Md_Ast *list_node;
+            list_node = kevlar_md_process_unordered_list_node(source, src_len, &i);
+            (void)list_node;
         }
 
         Md_Ast *para_node = malloc(sizeof(Md_Ast));
         para_node->node_type = MD_NODE_PARAGRAPH;
 
         int ret = kevlar_md_process_text_node(source, src_len, &i, para_node, MD_SINGLE_LINE_BREAK);
-        if (ret == 0)
-            kevlar_md_ast_child_append(ast, para_node);
+        if (ret != 0) {
+            free(para_node);
+            break;
+        }
+
+        kevlar_md_ast_child_append(ast, para_node);
     }
 
     return ast;
