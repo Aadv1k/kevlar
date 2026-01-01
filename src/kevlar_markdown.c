@@ -13,8 +13,6 @@ This will be parsed as a single paragraph with the space maintained.
 
 2. TODO: mention the difference about em & strong matching and the edge cases
    which might stem from the same
-
-
 */
 
 
@@ -508,27 +506,6 @@ Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *p
 
     return NULL;
 }
-
-/*
-Case #1 \n\n-
-Case #2 \n-
-Case #3 \n\s-
-Case #4 \n\n\s-
-
-Short-circuit: EOF or \n\n [!= -] OR
-
-
-- Item 1
-hello
-world how 
-are you doing
-
-Foo bar baz
-
-Case #1
-
-*/
-
 
 static inline bool has_triple_backticks(const char *data, size_t len, size_t pos) {
     return pos + 2 < len && data[pos] == '`' && data[pos + 1] == '`' && data[pos + 2] == '`';
