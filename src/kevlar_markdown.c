@@ -395,7 +395,30 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 }
             
 
-        } else if (src[i] == '*' || src[i] == '_') {
+        } else if (src[i] == '~' && i + 1 < len && src[i + 1] == '~') {
+            size_t sub_pos = i + 2;
+            Md_Ast *del_node = malloc(sizeof(Md_Ast));
+            if (del_node == NULL)
+                return -1;
+
+            del_node->node_type = MD_NODE_STRIKETHRU;
+
+            if (kevlar_md_process_pair(src, len, "~~", &sub_pos, del_node, true, MD_EOF)) {
+                if (text_buffer_pos > 0) {
+                    Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                    kevlar_md_ast_child_append(parent, txt_node);
+
+                    memset(text_buffer, 0, text_buffer_pos);
+                    text_buffer_pos = 0;
+                }
+
+                *cursor = sub_pos;
+                i = *cursor;
+
+                kevlar_md_ast_child_append(parent, del_node);
+                continue;
+            }
+        }  else if (src[i] == '*' || src[i] == '_') {
             Md_Delim closing_delim = {0};
             if (_kevlar_md_find_closing_delim(src, len, i, &closing_delim)) {
                 Md_Ast *em_or_strong_node = malloc(sizeof(Md_Ast));

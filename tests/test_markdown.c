@@ -600,6 +600,35 @@ void test_md_code_blocks() {
 }
 
 
+void test_md_strikethru() {
+    Md_Ast* ast;
+
+    /*************************************/
+    puts("Test: Strikethrough Alone");
+    ast = kevlar_md_generate_ast("~~deleted text~~");
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_STRIKETHRU);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
+    test_match_text_node_text(ast->children[0]->children[0]->children[0], "deleted text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Strikethrough with Emphasis");
+    ast = kevlar_md_generate_ast("~~deleted *with emphasis*~~");
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 2, MD_NODE_STRIKETHRU);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
+    test_match_text_node_text(ast->children[0]->children[0]->children[0], "deleted ");
+    test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_NODE_EMPH);
+    test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0],
+                              "with emphasis");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+
+}
+
 void test_md_links() {
     Md_Ast* ast;
 
@@ -880,11 +909,14 @@ void test_markdown() {
     test_md_heading();
     puts("SUCCESS: test_md_heading()");
 
+    puts("INFO: test_md_strikethru()");
+    test_md_strikethru();
+    puts("SUCCESS: test_md_strikethru()");
+
     puts("INFO: test_md_code_blocks()");
     test_md_code_blocks();
     puts("SUCCESS: test_md_code_blocks()");
 #endif
-
 
     puts("INFO: test_md_links()");
     test_md_links();
