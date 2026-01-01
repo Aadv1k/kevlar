@@ -13,6 +13,8 @@ This will be parsed as a single paragraph with the space maintained.
 
 2. TODO: mention the difference about em & strong matching and the edge cases
    which might stem from the same
+
+3. Currently links do not support (, or ) within the URLs since we use lazy parsing 
 */
 
 
@@ -234,11 +236,7 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
         return NULL;
 
     // TODO: this malloc is redundant, here we can directly use lenghts and pointers
-    char *content_buffer = malloc(sizeof(char) * content_len + 1);
-    size_t content_buffer_pos = 0;
-
-    strncpy(content_buffer, &data[*pos], content_len);
-    content_buffer[content_len] = '\0';
+    char *content_buffer = strndup(&data[*pos], content_len);
 
     if (!formatting_enabled) {
         Md_Ast *txt_node =
@@ -253,16 +251,44 @@ Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
         return parent;
     }
 
-    kevlar_md_process_text_node(content_buffer, content_len, &content_buffer_pos, parent,
-                                MD_DOUBLE_LINE_BREAK);
+    size_t _garbage = 0;
+    kevlar_md_process_text_node(content_buffer, content_len, &_garbage, parent,
+                                allowed_line_end_type);
 
     // </foo>
     // ^----^-- closing_pos + suffix_len - 1 for adjustment
     *pos = closing_pos + suffix_len - 1;
 
-    free(content_buffer);
 
     return parent;
+}
+
+bool _kevlar_md_strip_escaped_chars(char **buffer, size_t *buffer_len) {
+    char tmp_buffer[MD_MAX_TEXT_BUFFER];
+    size_t tmp_buffer_pos = 0;
+
+    for (size_t i = 0; i < *buffer_len; ++i) {
+        if ((*buffer)[i] == '\\' && i + 1 < *buffer_len &&
+            SPECIAL_CHAR_SET[(unsigned char)(*buffer)[i + 1]]) {
+            continue;
+        }
+
+        tmp_buffer[tmp_buffer_pos] = (*buffer)[i];
+        tmp_buffer_pos++;
+    }
+
+    tmp_buffer[tmp_buffer_pos] = '\0';
+
+    char *new_buffer = strndup(tmp_buffer, tmp_buffer_pos);
+    if (!new_buffer) {
+        *buffer = NULL;
+        return false;
+    }
+    free(*buffer);
+    *buffer = new_buffer;
+    *buffer_len = tmp_buffer_pos;
+
+    return true;
 }
 
 int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_Ast *parent,
@@ -324,6 +350,51 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 free(inline_code_block);
                 free(suffix);
             }
+        }  else if (src[i] == '[') {
+            size_t sub_pos = i + 1;
+            Md_Ast *link_title_component = malloc(sizeof(Md_Ast));
+            if (link_title_component == NULL)
+                return -1;
+
+            link_title_component->node_type = MD_NODE_LINK;
+            kevlar_md_process_pair(src, len, "]", &sub_pos, link_title_component, true, MD_SINGLE_LINE_BREAK);
+
+            if (src[sub_pos + 1] != '(')
+                free(link_title_component);
+
+            if (link_title_component != NULL && src[sub_pos + 1] == '(') {
+                size_t href_str_begin = sub_pos + 2;
+                size_t href_str_end = href_str_begin;
+
+                 if (kevlar_md_find_next_occurrence(src, len, href_str_begin, ")", &href_str_end, true, true)) {
+                    link_title_component->opt.link_opt.href_len = href_str_end - href_str_begin;
+                    link_title_component->opt.link_opt.href_str = strndup(&src[href_str_begin], href_str_end - href_str_begin);
+
+                    _kevlar_md_strip_escaped_chars(&link_title_component->opt.link_opt.href_str, &link_title_component->opt.link_opt.href_len);
+
+                    /* TODO: this would mean that in the actual link escaping
+                     * doesn't happen, which is not ideal
+                    _md_handle_escaping(&link_title_component->opt.link_opt.href_str,
+                                        &link_title_component->opt.link_opt.href_len);
+                                        */
+
+                    if (text_buffer_pos > 0) {
+                        Md_Ast *txt_node =
+                            _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                        kevlar_md_ast_child_append(parent, txt_node);
+                        text_buffer_pos = 0;
+                    }
+
+                    kevlar_md_ast_child_append(parent, link_title_component);
+
+                    *cursor = href_str_end;
+                    i = *cursor;
+
+                    continue;
+                 }
+                }
+            
+
         } else if (src[i] == '*' || src[i] == '_') {
             Md_Delim closing_delim = {0};
             if (_kevlar_md_find_closing_delim(src, len, i, &closing_delim)) {
@@ -382,7 +453,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
             } else if (line_end == MD_SINGLE_LINE_BREAK &&
                        (allowed_line_ends & MD_SINGLE_LINE_BREAK)) {
 
-                text_buffer[text_buffer_pos] = ' ';
+                text_buffer[text_buffer_pos] = '\n';
                 text_buffer_pos++;
                 (*cursor)++;
                 continue;

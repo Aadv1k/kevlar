@@ -542,7 +542,7 @@ void test_md_code_blocks() {
     test_check_count_and_type(ast, 3, MD_NODE_ROOT);
     test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
     test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
-    test_match_text_node_text(ast->children[0]->children[0], "Example: ");
+    test_match_text_node_text(ast->children[0]->children[0], "Example:\n");
 
     test_check_count_and_type(ast->children[1], 1, MD_NODE_CODE_BLOCK);
     assert(strcmp(ast->children[1]->opt.code_block_opt.lang_str, "python") == 0);
@@ -569,7 +569,7 @@ void test_md_code_blocks() {
     test_check_count_and_type(ast, 3, MD_NODE_ROOT);
     test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
     test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
-    test_match_text_node_text(ast->children[0]->children[0], "Here is some code for you: ");
+    test_match_text_node_text(ast->children[0]->children[0], "Here is some code for you:\n");
 
     test_check_count_and_type(ast->children[1], 1, MD_NODE_CODE_BLOCK);
     assert(strcmp(ast->children[1]->opt.code_block_opt.lang_str, "python") == 0);
@@ -599,6 +599,265 @@ void test_md_code_blocks() {
     /*************************************/
 }
 
+
+void test_md_links() {
+    Md_Ast* ast;
+
+#if 1
+    /*************************************/
+    puts("Test: Simple Link");
+    ast = kevlar_md_generate_ast("[link text](https://example.com)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("https://example.com"));
+        assert(strncmp(ast->children[0]->children[0]->opt.link_opt.href_str, "https://example.com",
+               ast->children[0]->children[0]->opt.link_opt.href_len) == 0);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "link text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Link in Sentence");
+    ast = kevlar_md_generate_ast("Check out [this site](https://example.com) for more info.");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 3, MD_NODE_PARAGRAPH);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0], "Check out ");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_LINK);
+            assert(ast->children[0]->children[1]->opt.link_opt.href_len == strlen("https://example.com"));
+            assert(strncmp(ast->children[0]->children[1]->opt.link_opt.href_str, "https://example.com",
+                   ast->children[0]->children[1]->opt.link_opt.href_len) == 0);
+            test_check_count_and_type(ast->children[0]->children[1]->children[0], 0, MD_NODE_TEXT);
+            test_match_text_node_text(ast->children[0]->children[1]->children[0], "this site");
+        test_check_count_and_type(ast->children[0]->children[2], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[2], " for more info.");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Link with Multiple Formatting");
+    ast = kevlar_md_generate_ast("[*em* **strong** `code`](url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 5, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url"));
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_NODE_EMPH);
+            test_match_text_node_text(ast->children[0]->children[0]->children[0]->children[0], "em");
+        test_check_count_and_type(ast->children[0]->children[0]->children[1], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0]->children[1], " ");
+        test_check_count_and_type(ast->children[0]->children[0]->children[2], 1, MD_NODE_STRONG);
+            test_match_text_node_text(ast->children[0]->children[0]->children[2]->children[0], "strong");
+        test_check_count_and_type(ast->children[0]->children[0]->children[3], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0]->children[3], " ");
+        test_check_count_and_type(ast->children[0]->children[0]->children[4], 1, MD_NODE_INLINE_CODE);
+            test_match_text_node_text(ast->children[0]->children[0]->children[4]->children[0], "code");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Emphasis Around Link");
+    ast = kevlar_md_generate_ast("*emphasis [link](url) text*");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 3, MD_NODE_EMPH);
+        test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "emphasis ");
+        test_check_count_and_type(ast->children[0]->children[0]->children[1], 1, MD_NODE_LINK);
+            assert(ast->children[0]->children[0]->children[1]->opt.link_opt.href_len == strlen("url"));
+            test_match_text_node_text(ast->children[0]->children[0]->children[1]->children[0], "link");
+        test_check_count_and_type(ast->children[0]->children[0]->children[2], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0]->children[2], " text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    // /*************************************/
+    // puts("Test: Link with Empty URL");
+    // ast = kevlar_md_generate_ast("[link text]()");
+    // test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    // test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    // test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+    //     assert(ast->children[0]->children[0]->opt.link_opt.href_len == 0);
+    //     test_match_text_node_text(ast->children[0]->children[0]->children[0], "link text");
+    // kevlar_md_free_ast(ast);
+    // /*************************************/
+
+    /*************************************/
+    puts("Test: Link with Query Parameters");
+    ast = kevlar_md_generate_ast("[text](https://example.com?foo=bar&baz=qux)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("https://example.com?foo=bar&baz=qux"));
+        assert(strncmp(ast->children[0]->children[0]->opt.link_opt.href_str, "https://example.com?foo=bar&baz=qux",
+               ast->children[0]->children[0]->opt.link_opt.href_len) == 0);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Adjacent Links");
+    ast = kevlar_md_generate_ast("[first](url1)[second](url2)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 2, MD_NODE_PARAGRAPH);
+        test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+            assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url1"));
+            test_match_text_node_text(ast->children[0]->children[0]->children[0], "first");
+        test_check_count_and_type(ast->children[0]->children[1], 1, MD_NODE_LINK);
+            assert(ast->children[0]->children[1]->opt.link_opt.href_len == strlen("url2"));
+            test_match_text_node_text(ast->children[0]->children[1]->children[0], "second");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unclosed Link Bracket");
+    ast = kevlar_md_generate_ast("[unclosed link(url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0], "[unclosed link(url)");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unclosed Link Parenthesis");
+    ast = kevlar_md_generate_ast("[text](unclosed");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0], "[text](unclosed");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Space Between Bracket and Parenthesis");
+    ast = kevlar_md_generate_ast("[text] (url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+        test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_TEXT);
+        test_match_text_node_text(ast->children[0]->children[0], "[text] (url)");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Bracket in Link Text");
+    ast = kevlar_md_generate_ast("[text \\[with bracket\\]](url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url"));
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "text [with bracket]");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Escaped Parenthesis in URL");
+    ast = kevlar_md_generate_ast("[text](url\\(with\\)parens)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url(with)parens"));
+        assert(strncmp(ast->children[0]->children[0]->opt.link_opt.href_str, "url(with)parens",
+               ast->children[0]->children[0]->opt.link_opt.href_len) == 0);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+#endif
+
+    /*************************************/
+    puts("Test: Link with Newline in Text - Soft Break");
+    ast = kevlar_md_generate_ast("[link\ntext](url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url"));
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "link\ntext");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Link Cannot Span Paragraphs");
+    ast = kevlar_md_generate_ast("[text\n\nmore](url)");
+    test_check_count_and_type(ast, 2, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+        test_match_text_node_text(ast->children[0]->children[0], "[text");
+    test_check_count_and_type(ast->children[1], 1, MD_NODE_PARAGRAPH);
+        test_match_text_node_text(ast->children[1]->children[0], "more](url)");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unicode in Link Text");
+    ast = kevlar_md_generate_ast("[日本語 🌏](url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url"));
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "日本語 🌏");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Unicode in URL");
+    ast = kevlar_md_generate_ast("[text](https://例え.jp/パス)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("https://例え.jp/パス"));
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "text");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    // TODO: this requires a stack based parser which we do not have as of yet
+    // /*************************************/
+    // puts("Test: Link with Parentheses in URL - Unescaped");
+    // ast = kevlar_md_generate_ast("[text](https://en.wikipedia.org/wiki/C_(programming_language))");
+    // utl_visualize_ast(ast, 0);
+    // test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    // test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    // test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+    //     // Parser should handle balanced parens in URL
+    //     assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("https://en.wikipedia.org/wiki/C_(programming_language)"));
+    //     test_match_text_node_text(ast->children[0]->children[0]->children[0], "text");
+    // kevlar_md_free_ast(ast);
+    // /*************************************/
+
+    /*************************************/
+    puts("Test: Long URL");
+    ast = kevlar_md_generate_ast("[link](https://example.com/very/long/path/with/many/segments/and/query?param1=value1&param2=value2&param3=value3#fragment)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len > 50);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "link");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Just Fragment URL");
+    ast = kevlar_md_generate_ast("[top](#)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == 1);
+        assert(strncmp(ast->children[0]->children[0]->opt.link_opt.href_str, "#", 1) == 0);
+        test_match_text_node_text(ast->children[0]->children[0]->children[0], "top");
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+    /*************************************/
+    puts("Test: Link with Only Whitespace in Text");
+    ast = kevlar_md_generate_ast("[   ](url)");
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
+    test_check_count_and_type(ast->children[0]->children[0], 0, MD_NODE_LINK);
+        assert(ast->children[0]->children[0]->opt.link_opt.href_len == strlen("url"));
+    kevlar_md_free_ast(ast);
+    /*************************************/
+}
+
+
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
 
@@ -608,6 +867,7 @@ void test_md_basic() {
 }
 
 void test_markdown() {
+#if 1
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
@@ -623,4 +883,11 @@ void test_markdown() {
     puts("INFO: test_md_code_blocks()");
     test_md_code_blocks();
     puts("SUCCESS: test_md_code_blocks()");
+#endif
+
+
+    puts("INFO: test_md_links()");
+    test_md_links();
+    puts("SUCCESS: test_md_links()");
+
 };
