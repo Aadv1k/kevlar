@@ -26,10 +26,18 @@ typedef enum Md_Line_End_Type {
     MD_EOF = 1 << 2,
 } Md_Line_End_Type;
 
-typedef struct Md_Delem_Properties {
+typedef struct Md_Delim_Properties {
     bool opening;
     bool closing;
-} Md_Delem_Properties;
+} Md_Delim_Properties;
+
+typedef struct Md_Delim {
+    Md_Node_Type type;
+    char variant;
+    size_t pos;
+    int run_offset;
+    bool is_opening;
+} Md_Delim;
 
 typedef struct Md_Text_Opt {
     char *data;

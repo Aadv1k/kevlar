@@ -1,3 +1,23 @@
+/* NOTE: Here is a list of situations where this markdown compiler differs from
+ * the commonmark spec
+
+1. We DO NOT support indentation as a valid construct for a block in any
+   context.
+
+Some content
+    print("hello, world")
+End of content
+
+This will be parsed as a single paragraph with the space maintained.
+
+
+2. TODO: mention the difference about em & strong matching and the edge cases
+   which might stem from the same
+
+
+*/
+
+
 #include "kevlar_markdown.h"
 #include "kevlar_errors.h"
 #include "utils.h"
@@ -13,15 +33,13 @@
 
 #define MD_MAX_TEXT_BUFFER 50000 // 50 KiB, should be enough for most?
 
-static bool SPECIAL_CHAR_SET[] = { 
-    ['*'] = 1, ['_'] = 1, ['~'] = 1, ['`'] = 1, ['#'] = 1, ['\\'] = 1, 
-    [']'] = 1, ['['] = 1, [')'] = 1, ['('] = 1 
-};
+static bool SPECIAL_CHAR_SET[] = {['*'] = 1,  ['_'] = 1, ['~'] = 1, ['`'] = 1, ['#'] = 1,
+                                  ['\\'] = 1, [']'] = 1, ['['] = 1, [')'] = 1, ['('] = 1};
 
 static Md_Line_End_Type _kevlar_md_get_line_end_type(const char *source, size_t pos) {
     size_t len = strlen(source);
 
-    if (pos + 1 > len)
+    if (pos + 1 >= len)
         return MD_EOF;
 
     if (source[pos] == '\n' && source[pos + 1] == '\n')
@@ -30,7 +48,7 @@ static Md_Line_End_Type _kevlar_md_get_line_end_type(const char *source, size_t 
     return MD_SINGLE_LINE_BREAK;
 }
 
-static Md_Ast* _kevlar_md_create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
+static Md_Ast *_kevlar_md_create_text_node_from_buffer_if_valid(char *buffer, size_t buffer_len) {
     if (buffer_len == 0)
         return NULL;
 
@@ -59,11 +77,10 @@ void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
     parent->c_count++;
 }
 
-
-// REF: https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
-static Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
-                                                size_t run) {
-    Md_Delem_Properties props = {0};
+// NOTE: implemented directly from https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
+static Md_Delim_Properties _kevlar_md_delim_properties(const char *src, size_t len, size_t pos,
+                                                       size_t run) {
+    Md_Delim_Properties props = {0};
 
     bool has_preceeding_whitespace_or_punct =
         (int)(pos - 1) < 0 ? true : (isspace(src[pos - 1]) || ispunct((unsigned char)src[pos - 1]));
@@ -83,8 +100,10 @@ static Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t l
           (ispunct((unsigned char)src[pos - 1]) && has_proceeding_whitespace_or_punct)));
 
     if (src[pos] == '*') {
-        if (is_left_flanking_run) props.opening = true;
-        if (is_right_flanking_run) props.closing = true;
+        if (is_left_flanking_run)
+            props.opening = true;
+        if (is_right_flanking_run)
+            props.closing = true;
 
     } else if (src[pos] == '_') {
         if (is_left_flanking_run &&
@@ -101,18 +120,11 @@ static Md_Delem_Properties _kevlar_md_delim_properties(const char *src, size_t l
     return props;
 }
 
-typedef struct Delim {
-    Md_Node_Type type;
-    char variant;
-    size_t pos;
-    int run_offset;
-    bool is_opening;
-} Delim;
 
 static bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cursor,
-                                   Delim *closing_delim) {
+                                          Md_Delim *closing_delim) {
     // TODO: find a good default for this
-    Delim stack[100] = {};
+    Md_Delim stack[100] = {};
     size_t stack_pos = 0;
 
     for (size_t i = cursor; i < len; ++i) {
@@ -125,7 +137,7 @@ static bool _kevlar_md_find_closing_delim(const char *src, size_t len, size_t cu
             int delim_run = (is_double && !is_triple) ? 2 : 1;
             Md_Node_Type n_type = (is_double && !is_triple) ? MD_NODE_STRONG : MD_NODE_EMPH;
 
-            Md_Delem_Properties props = _kevlar_md_delim_properties(src, len, i, delim_run);
+            Md_Delim_Properties props = _kevlar_md_delim_properties(src, len, i, delim_run);
 
             if (is_triple && (props.closing || (!props.closing && !props.opening))) {
                 delim_run = 2;
@@ -200,7 +212,7 @@ size_t kevlar_md_find_next_occurrence(const char *data, size_t len, size_t start
     return false;
 }
 
-Md_Ast* kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
+Md_Ast *kevlar_md_process_pair(const char *data, size_t len, const char *suffix, size_t *pos,
                                Md_Ast *parent, bool formatting_enabled,
                                unsigned int allowed_line_end_type) {
 
@@ -231,7 +243,8 @@ Md_Ast* kevlar_md_process_pair(const char *data, size_t len, const char *suffix,
     content_buffer[content_len] = '\0';
 
     if (!formatting_enabled) {
-        Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(content_buffer, content_len);
+        Md_Ast *txt_node =
+            _kevlar_md_create_text_node_from_buffer_if_valid(content_buffer, content_len);
 
         if (txt_node) {
             *pos = closing_pos + suffix_len - 1;
@@ -286,8 +299,8 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 if ((kevlar_md_process_pair(src, len, suffix, &sub_pos, inline_code_block, false,
                                             MD_DOUBLE_LINE_BREAK)) != NULL) {
                     if (text_buffer_pos > 0) {
-                        Md_Ast *txt_node =
-                            _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                        Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(
+                            text_buffer, text_buffer_pos);
                         kevlar_md_ast_child_append(parent, txt_node);
 
                         memset(text_buffer, 0, text_buffer_pos);
@@ -314,7 +327,7 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 free(suffix);
             }
         } else if (src[i] == '*' || src[i] == '_') {
-            Delim closing_delim = {0};
+            Md_Delim closing_delim = {0};
             if (_kevlar_md_find_closing_delim(src, len, i, &closing_delim)) {
                 Md_Ast *em_or_strong_node = malloc(sizeof(Md_Ast));
                 em_or_strong_node->node_type = closing_delim.type;
@@ -331,8 +344,8 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                 kevlar_md_process_text_node(buffer, buf_len, &sub_sub_cur, em_or_strong_node,
                                             MD_DOUBLE_LINE_BREAK);
                 if (text_buffer_pos != 0) {
-                    Md_Ast *txt_node =
-                        _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+                    Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(
+                        text_buffer, text_buffer_pos);
                     kevlar_md_ast_child_append(parent, txt_node);
                     memset(text_buffer, 0, text_buffer_pos);
                     text_buffer_pos = 0;
@@ -395,14 +408,15 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
     if (text_buffer_pos != 0 &&
         utl_lstrip_offset(text_buffer, text_buffer_pos) != text_buffer_pos) {
 
-        Md_Ast *txt_node = _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
+        Md_Ast *txt_node =
+            _kevlar_md_create_text_node_from_buffer_if_valid(text_buffer, text_buffer_pos);
         kevlar_md_ast_child_append(parent, txt_node);
     }
     return 0;
 }
 
-Md_Ast* kevlar_md_process_heading_node(const char *source, size_t *pos) {
-    Md_Ast* ast_node;
+Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
+    Md_Ast *ast_node;
     if ((ast_node = malloc(sizeof(Md_Ast))) == NULL) {
         return NULL;
     }
@@ -458,7 +472,7 @@ Md_Ast* kevlar_md_process_heading_node(const char *source, size_t *pos) {
     return NULL;
 
 parsing_error:
-    free(ast_node);
+    kevlar_md_free_ast(ast_node);
     return NULL;
 }
 
@@ -495,38 +509,26 @@ Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *p
     return NULL;
 }
 
-Md_Ast *kevlar_md_process_unordered_list_node(const char *src, size_t len, size_t *cursor) {
-    Md_Ast *ast_node;
-    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL) {
-        return NULL;
-    }
+/*
+Case #1 \n\n-
+Case #2 \n-
+Case #3 \n\s-
+Case #4 \n\n\s-
 
-    char text_buffer[MD_MAX_TEXT_BUFFER] = {0};
-    size_t text_buffer_pos = 0;
-
-    Md_Line_End_Type line_end_type;
-    for (size_t i = *cursor; i < len; ++i) {
-        if (i + 1 >= len ||
-            (src[i] == '\n' && src[i+1] == '-') || (src[i] == '\n' && ((line_end_type = _kevlar_md_get_line_end_type(src, i)) == MD_EOF))) {
-
-            printf("----\n\"%.*s\"\n----\n", (int)text_buffer_pos, text_buffer);
-
-            text_buffer_pos = 0;
+Short-circuit: EOF or \n\n [!= -] OR
 
 
-            if (line_end_type == MD_EOF) break;
+- Item 1
+hello
+world how 
+are you doing
 
+Foo bar baz
 
-            continue; 
-        }
+Case #1
 
-        text_buffer[text_buffer_pos] = src[i];
-        text_buffer_pos++;
-    }
+*/
 
-    free(ast_node);
-    return NULL;
-}
 
 static inline bool has_triple_backticks(const char *data, size_t len, size_t pos) {
     return pos + 2 < len && data[pos] == '`' && data[pos + 1] == '`' && data[pos + 2] == '`';
@@ -556,11 +558,7 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
                 kevlar_md_ast_child_append(ast, code_block_node);
                 continue;
             }
-        } else if (source[i] == '-') {
-            Md_Ast *list_node;
-            list_node = kevlar_md_process_unordered_list_node(source, src_len, &i);
-            (void)list_node;
-        }
+        } 
 
         Md_Ast *para_node = malloc(sizeof(Md_Ast));
         para_node->node_type = MD_NODE_PARAGRAPH;

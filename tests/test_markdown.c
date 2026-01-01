@@ -426,7 +426,7 @@ void test_md_emphasis_and_strong() {
 
 void test_md_code_blocks() {
     Md_Ast *ast;
-#if 1
+
     /*************************************/
     puts("Test A");
     ast = kevlar_md_generate_ast("`Namaste, Arigato, Shalom, Hello`");
@@ -584,7 +584,7 @@ void test_md_code_blocks() {
 
     kevlar_md_free_ast(ast);
     /*************************************/
-#endif
+
     /*************************************/
     puts("Test I");
     ast = kevlar_md_generate_ast("Escaped!!!\n"
@@ -599,23 +599,6 @@ void test_md_code_blocks() {
     /*************************************/
 }
 
-void test_md_unordered_list() {
-    Md_Ast *ast;
-
-    /*************************************/
-    puts("Test A");
-    ast = kevlar_md_generate_ast("- Item 1\n- Item 2\n- Item 3");
-
-    test_check_count_and_type(ast->children[0], 1, MD_NODE_PARAGRAPH);
-    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_INLINE_CODE);
-    test_check_count_and_type(ast->children[0]->children[0]->children[0], 0, MD_NODE_TEXT);
-    test_match_text_node_text(ast->children[0]->children[0]->children[0],
-                              "Namaste, Arigato, Shalom, Hello");
-
-    kevlar_md_free_ast(ast);
-    /*************************************/
-}
-
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
 
@@ -625,7 +608,6 @@ void test_md_basic() {
 }
 
 void test_markdown() {
-#if 1
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
@@ -637,12 +619,8 @@ void test_markdown() {
     puts("INFO: test_md_heading()");
     test_md_heading();
     puts("SUCCESS: test_md_heading()");
-#endif
+
     puts("INFO: test_md_code_blocks()");
     test_md_code_blocks();
     puts("SUCCESS: test_md_code_blocks()");
-
-    puts("INFO: test_md_unordered_list()");
-    test_md_unordered_list();
-    puts("SUCCESS: test_md_unordered_list()");
 };
