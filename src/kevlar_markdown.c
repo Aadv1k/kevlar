@@ -10,11 +10,24 @@ End of content
 
 This will be parsed as a single paragraph with the space maintained.
 
-
 2. TODO: mention the difference about em & strong matching and the edge cases
    which might stem from the same
 
 3. Currently links do not support (, or ) within the URLs since we use lazy parsing 
+
+4. Lists of any kind must be started by a list item at the top-level; this means
+indented list bullets are non-starters and will be parsed as regular text
+
+5. Unicode support isn't guaranteed (though the compiler has been tested with unicode characters, the support isn't baked in)
+
+6. Code blocks aren't automatically closed when EOF is reached, ie
+
+```python
+print("Hello, World")EOF
+
+Will translate to a paragraph, and NOT a code block
+
+7. During the parsing stage code blocks handle inner text literally thus whitespace (`\n`, `  `) will remain unchanged
 */
 
 
@@ -35,6 +48,8 @@ This will be parsed as a single paragraph with the space maintained.
 
 static bool SPECIAL_CHAR_SET[] = {['*'] = 1,  ['_'] = 1, ['~'] = 1, ['`'] = 1, ['#'] = 1,
                                   ['\\'] = 1, [']'] = 1, ['['] = 1, [')'] = 1, ['('] = 1};
+
+static bool UNORDERED_BULLET_SET[] = {['*'] = 1, ['-'] = 1, ['+'] = 1};
 
 static Md_Line_End_Type _kevlar_md_get_line_end_type(const char *source, size_t pos) {
     size_t len = strlen(source);
@@ -297,7 +312,6 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
     size_t text_buffer_pos = 0;
 
     for (size_t i = *cursor; i < len; ++i) {
-
         if (src[i] == '`') {
             size_t repeating_count = utl_count_repeating_char('`', &src[i]);
 
@@ -370,13 +384,9 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                     link_title_component->opt.link_opt.href_len = href_str_end - href_str_begin;
                     link_title_component->opt.link_opt.href_str = strndup(&src[href_str_begin], href_str_end - href_str_begin);
 
-                    _kevlar_md_strip_escaped_chars(&link_title_component->opt.link_opt.href_str, &link_title_component->opt.link_opt.href_len);
-
-                    /* TODO: this would mean that in the actual link escaping
-                     * doesn't happen, which is not ideal
-                    _md_handle_escaping(&link_title_component->opt.link_opt.href_str,
-                                        &link_title_component->opt.link_opt.href_len);
-                                        */
+                    _kevlar_md_strip_escaped_chars(
+                            &link_title_component->opt.link_opt.href_str, 
+                            &link_title_component->opt.link_opt.href_len);
 
                     if (text_buffer_pos > 0) {
                         Md_Ast *txt_node =
@@ -393,8 +403,6 @@ int kevlar_md_process_text_node(const char *src, size_t len, size_t *cursor, Md_
                     continue;
                  }
                 }
-            
-
         } else if (src[i] == '~' && i + 1 < len && src[i + 1] == '~') {
             size_t sub_pos = i + 2;
             Md_Ast *del_node = malloc(sizeof(Md_Ast));
@@ -598,6 +606,18 @@ Md_Ast *kevlar_md_process_code_block_node(const char *src, size_t len, size_t *p
         return code_block_node;
     }
 
+    free(code_block_node);
+    return NULL;
+}
+
+/*
+- Item 1
+- Item 2 
+
+*/
+Md_Ast *kevlar_md_process_ul_node(const char *src, size_t len, size_t *cursor) {
+    assert(UNORDERED_BULLET_SET[(unsigned char)src[*cursor]] && *cursor+1 < len && isspace(src[*cursor+1]));
+
     return NULL;
 }
 
@@ -629,7 +649,13 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
                 kevlar_md_ast_child_append(ast, code_block_node);
                 continue;
             }
-        } 
+        }  else if (UNORDERED_BULLET_SET[(unsigned char)source[i]] && i+1 < src_len && isspace(source[i+1])) {
+            Md_Ast *ul_node;
+            if ((ul_node = kevlar_md_process_ul_node(source, src_len, &i)) != NULL) {
+                kevlar_md_ast_child_append(ast, ul_node);
+                continue;
+            }
+        }
 
         Md_Ast *para_node = malloc(sizeof(Md_Ast));
         para_node->node_type = MD_NODE_PARAGRAPH;

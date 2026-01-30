@@ -886,6 +886,24 @@ void test_md_links() {
     /*************************************/
 }
 
+void test_md_ul() {
+    Md_Ast* ast;
+
+    /*************************************/
+    puts("Test A");
+    ast = kevlar_md_generate_ast("- Item 1");
+    utl_visualize_ast(ast, 0);
+    test_check_count_and_type(ast, 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0], 1, MD_NODE_ROOT);
+    test_check_count_and_type(ast->children[0]->children[0], 1, MD_NODE_LIST);
+    test_check_count_and_type(ast->children[0]->children[0]->children[0], 1, MD_NODE_LIST_ITEM);
+
+
+    kevlar_md_free_ast(ast);
+    /*************************************/
+
+
+}
 
 void test_md_basic() {
     Md_Ast *ast = kevlar_md_generate_ast("Hello, World!");
@@ -896,7 +914,7 @@ void test_md_basic() {
 }
 
 void test_markdown() {
-#if 1
+#if 0
     puts("INFO: test_md_basic()");
     test_md_basic();
     puts("SUCCESS: test_md_basic()");
@@ -916,10 +934,13 @@ void test_markdown() {
     puts("INFO: test_md_code_blocks()");
     test_md_code_blocks();
     puts("SUCCESS: test_md_code_blocks()");
-#endif
 
     puts("INFO: test_md_links()");
     test_md_links();
     puts("SUCCESS: test_md_links()");
+#endif
 
+    puts("INFO: test_md_ul()");
+    test_md_ul();
+    puts("SUCCESS: test_md_ul()");
 };

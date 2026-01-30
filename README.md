@@ -1,20 +1,5 @@
 # Kevlar V3
 
-## Markdown compiler differences from spec
-
-- Unicode support isn't guaranteed (though the compiler has been tested with unicode characters, the support isn't baked in)
-- No indented code blocks support
-- Code blocks aren't automatically closed when EOF is reached, ie
-
-```markdown
-\`\`\`python
-print("Hello, World")
-```
-
-Will translate to a paragraph, and NOT a code block
-
-- During the parsing stage code blocks handle inner text literally thus whitespace (`\n`, `  `) will remain unchanged
-
 ## Goals for V3
 
 > To make kevlar ready for real production use for my personal blog
