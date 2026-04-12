@@ -1,11 +1,13 @@
 #include "kevlar_ini.h"
 #include <assert.h>
+#include <string.h>
+#include <stdint.h>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static ini_table _global_ini_config;
+static ini_table* _global_ini_config;
 
 // Source: https://www.ietf.org/archive/id/draft-eastlake-fnv-22.html
 uint64_t fnv1_hash(const char *input) {
@@ -22,11 +24,55 @@ uint64_t fnv1_hash(const char *input) {
     return hash;
 }
 
-static int _h_table_set(ini_table *table, const char *key, const char *value) { return -1; }
+int _h_table_set_str(ini_table *table, const char *key, const char *value) {
+    uint64_t key_hash = fnv1_hash(key),
+            key_node_idx = key_hash % table->buckets;
 
-static ini_table_node *_h_table_get(ini_table *table, const char *key) { return NULL; }
+    if (table->nodes[key_node_idx] == NULL) {
+        ini_table_node* node = malloc(sizeof(ini_table_node));
+        node->key = strdup(key);
+        node->type = INI_TABLE_NODE_TYPE_FLAT;
+        node->as.val = strdup(value);
 
-static void _h_table_destroy(ini_table *table) {
+        table->nodes[key_node_idx] = node;
+        table->nodes_count++;
+        return 0;
+    }
+
+    ini_table_node* cur_node = table->nodes[key_node_idx];
+    ini_table_node* last_tail_node = NULL;
+
+    // Exhaust all cases where the key is already present within the linked
+    // list, i.e we are overriding an existing key rather than setting
+    // completely new one
+    while (cur_node != NULL) {
+        if (strcmp(cur_node->key, key) == 0) {
+            // TODO: what happens in the cause user want's the override the type? We need to figure it out
+            ini_table_node* node = table->nodes[key_node_idx];
+
+            assert(node->type == INI_TABLE_NODE_TYPE_FLAT && "Expected str assignement to only happen to a flat node type");
+            assert(node->as.val != NULL);
+
+            free(node->as.val);
+            node->as.val = strdup(value);
+
+            return 0;
+        }
+
+        last_tail_node = cur_node;
+        cur_node = cur_node->next;
+    }
+
+    // Not possible to reach here unless some node's neighbour was  null
+    assert(last_tail_node != NULL);
+
+    // TODO: malloc and return
+
+
+    return 0;
+}
+
+void _h_table_destroy(ini_table *table) {
     assert(table != NULL);
 
     for (size_t i = 0; i < table->buckets; ++i) {
@@ -52,14 +98,24 @@ static void _h_table_destroy(ini_table *table) {
     free(table->nodes);
 }
 
+ini_table* _h_table_init() {
+    ini_table* table = malloc(sizeof(ini_table));
+
+    table->buckets = INI_TABLE_INIT_SIZE;
+        if ((table->nodes = (ini_table_node **)malloc(
+                 sizeof(ini_table_node *) * table->buckets)) == NULL) {
+            return NULL;
+        }
+        table->nodes_count = 0;
+        return table;
+}
 
 int kevlar_ini_table_init(const char *source) {
-    _global_ini_config.buckets = INI_TABLE_INIT_SIZE;
-    if ((_global_ini_config.nodes = (ini_table_node **)malloc(
-             sizeof(ini_table_node *) * _global_ini_config.buckets)) == NULL) {
+    ini_table* table;
+    if ((table = _h_table_init()) == NULL)  {
         return -1;
     }
-    _global_ini_config.nodes_count = INI_TABLE_INIT_SIZE;
+    _global_ini_config = table;
     return 0;
 }
 
@@ -77,4 +133,7 @@ void kevlar_ini_table_node_destroy(ini_table_node *node) {
     free(node->key);
 }
 
-void kevlar_ini_table_destroy() { _h_table_destroy(&_global_ini_config); }
+void kevlar_ini_table_destroy() {
+    _h_table_destroy(_global_ini_config);
+    free(_global_ini_config);
+}

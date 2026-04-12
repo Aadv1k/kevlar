@@ -35,6 +35,10 @@ struct ini_table {
 
 uint64_t fnv1_hash(const char* input);
 
+int _h_table_set_str(ini_table *table, const char *key, const char *value);
+void _h_table_destroy(ini_table *table);
+ini_table* _h_table_init();
+
 int kevlar_ini_table_init(const char* source);
 ini_table_node* kevlar_ini_table_get(const char* key);
 void kevlar_ini_table_node_destroy(ini_table_node *node);
