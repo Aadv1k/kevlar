@@ -125,6 +125,7 @@ ini_table *_h_table_init() {
     table->buckets = INI_TABLE_INIT_SIZE;
     if ((table->nodes = (ini_table_node **)malloc(sizeof(ini_table_node *) * table->buckets)) ==
         NULL) {
+        kevlar_err("Out of memory: failed to allocate hash table node array");
         return NULL;
     }
     table->nodes_count = 0;
@@ -194,11 +195,11 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
     }
 
     if (*cur >= len || src[*cur] != ']') {
-        ini_parser_panic("malformed section label", *cur, *lnum);
+        ini_parser_panic("Malformed section label, missing closing ']'", *cur, *lnum);
     }
 
     size_t end = *cur;
-    (*cur)++; /* consume ']' */
+    (*cur)++;
 
     size_t content_len = end - start;
 
@@ -211,7 +212,7 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
     }
 
     if (content_len == 0 || all_spaces) {
-        ini_parser_panic("empty or blank section label", *cur, *lnum);
+        ini_parser_panic("Section label cannot be empty or whitespace-only", *cur, *lnum);
     }
 
     if (_current_section_label != NULL) {
@@ -220,7 +221,8 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
 
     _current_section_label = malloc(content_len + 1);
     if (!_current_section_label) {
-        ini_parser_panic("OOM allocating section label", *cur, *lnum);
+        kevlar_err("Out of memory: failed to allocate section label");
+        return;
     }
 
     memcpy(_current_section_label, src + start, content_len);
@@ -237,12 +239,12 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
         }
 
         if (src[i] == ']') {
-            ini_parser_panic("unmatched square bracket", i, *lnum);
+            ini_parser_panic("Unexpected ']' without opening '['", i, *lnum);
         }
 
         if (IS_DELIM(src[i])) {
             if (i <= *cur)
-                ini_parser_panic("Expected a valid key preceeding a delimeter.", i, lnum);
+                ini_parser_panic("Expected a valid key preceding the delimiter", i, lnum);
 
             assert(*cur < i);
 
@@ -250,7 +252,10 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
             size_t section_label_size = (_current_section_label != NULL) ? strlen(_current_section_label) : 0;
             size_t dot = (_current_section_label != NULL) ? 1 : 0;
             char* key_buffer = (char*)malloc(section_label_size + dot + k_size + 1);
-            if (!key_buffer) ini_parser_panic("OOM allocating key buffer", *cur, *lnum);
+            if (!key_buffer) {
+                kevlar_err("Out of memory: failed to allocate key buffer at line %zu", *lnum);
+                return;
+            }
 
             if (_current_section_label != NULL) {
                 snprintf(key_buffer, section_label_size + dot + k_size + 1, "%s.%.*s", _current_section_label, (int)k_size, &src[*cur]);
@@ -262,12 +267,12 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
             i++;
             char* value = _kevlar_ini_parse_val(src, len, &i, lnum);
             if (value == NULL) {
-                ini_parser_panic("Could not parse value", i, *lnum);
+                ini_parser_panic("Failed to parse value", i, *lnum);
             }
             i--;
 
             if (kevlar_ini_table_set(key_buffer, value) == -1) {
-                ini_parser_panic("Failed to set value to map", i, *lnum);
+                ini_parser_panic("Failed to insert key-value pair into table", i, *lnum);
             }
 
             free(key_buffer);
