@@ -11,18 +11,9 @@
 
 typedef struct ini_table ini_table;
 
-typedef enum {
-    INI_TABLE_NODE_TYPE_FLAT,
-    INI_TABLE_NODE_TYPE_NESTED
-} ini_table_node_type;
-
 typedef struct ini_table_node {
-    ini_table_node_type type;
     char* key;
-    union {
-        char* val;
-        struct ini_table* table;
-    } as;
+    char* val;
 
     struct ini_table_node* next;
 } ini_table_node;

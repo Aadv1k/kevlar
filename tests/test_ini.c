@@ -52,7 +52,7 @@ check_if_key_in_table:
     for (size_t i = 0; i < table->buckets; ++i) {
         if (table->nodes[i] == NULL) continue;
         if (strcmp(table->nodes[i]->key, "foo") == 0) {
-            if (strcmp(table->nodes[i]->as.val, val) == 0) found = true;
+            if (strcmp(table->nodes[i]->val, val) == 0) found = true;
         }
     }
 }

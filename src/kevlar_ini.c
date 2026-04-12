@@ -31,8 +31,7 @@ int _h_table_set_str(ini_table *table, const char *key, const char *value) {
     if (table->nodes[key_node_idx] == NULL) {
         ini_table_node* node = malloc(sizeof(ini_table_node));
         node->key = strdup(key);
-        node->type = INI_TABLE_NODE_TYPE_FLAT;
-        node->as.val = strdup(value);
+        node->val = strdup(value);
 
         table->nodes[key_node_idx] = node;
         table->nodes_count++;
@@ -47,14 +46,12 @@ int _h_table_set_str(ini_table *table, const char *key, const char *value) {
     // completely new one
     while (cur_node != NULL) {
         if (strcmp(cur_node->key, key) == 0) {
-            // TODO: what happens in the cause user want's the override the type? We need to figure it out
             ini_table_node* node = table->nodes[key_node_idx];
 
-            assert(node->type == INI_TABLE_NODE_TYPE_FLAT && "Expected str assignement to only happen to a flat node type");
-            assert(node->as.val != NULL);
+            assert(node->val != NULL);
 
-            free(node->as.val);
-            node->as.val = strdup(value);
+            free(node->val);
+            node->val = strdup(value);
 
             return 0;
         }
@@ -122,14 +119,7 @@ int kevlar_ini_table_init(const char *source) {
 ini_table_node *kevlar_ini_table_get(const char *key) { return NULL; }
 
 void kevlar_ini_table_node_destroy(ini_table_node *node) {
-    switch (node->type) {
-        case INI_TABLE_NODE_TYPE_FLAT:
-            free(node->as.val);
-            break;
-        case INI_TABLE_NODE_TYPE_NESTED:
-            _h_table_destroy(node->as.table);
-            break;
-    }
+    free(node->val);
     free(node->key);
 }
 
