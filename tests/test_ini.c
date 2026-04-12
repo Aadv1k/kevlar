@@ -18,47 +18,96 @@ void test__h_table_set_str_should_setNewValCorrectly(void) {
     ini_table* table = _h_table_init();
     TEST_ASSERT_NOT_NULL(table);
 
+#define CHECK_KEY_VAL(k, v)                                          \
+    do {                                                             \
+        bool found = false;                                          \
+        for (size_t i = 0; i < table->buckets; ++i) {               \
+            if (table->nodes[i] == NULL) continue;                   \
+            if (strcmp(table->nodes[i]->key, (k)) == 0 &&           \
+                strcmp(table->nodes[i]->val, (v)) == 0) {           \
+                found = true;                                        \
+                break;                                               \
+            }                                                        \
+        }                                                            \
+        TEST_ASSERT_TRUE(found);                                     \
+    } while (0)
+
     _h_table_set_str(table, "foo", "bar");
-    TEST_ASSERT_EQUAL(table->nodes_count, 1);
+    TEST_ASSERT_EQUAL(1, table->nodes_count);
+    CHECK_KEY_VAL("foo", "bar");
 
-    bool found = false;
-    char* val = "bar";
-
-    // The poor man's inline functions
-
-    goto check_if_key_in_table;
-
-    TEST_ASSERT_TRUE(found);
-
-    found = false;
-    val = "bazaar";
     _h_table_set_str(table, "foo", "bazaar");
+    TEST_ASSERT_EQUAL(1, table->nodes_count);
+    CHECK_KEY_VAL("foo", "bazaar");
 
-    goto check_if_key_in_table;
-
-    TEST_ASSERT_TRUE(found);
-
-    found = false;
-    val = "bazaar";
     _h_table_set_str(table, "foo", "ballistic");
+    CHECK_KEY_VAL("foo", "ballistic");
 
-    goto check_if_key_in_table;
+    _h_table_set_str(table, "section.key", "val1");
+    TEST_ASSERT_EQUAL(2, table->nodes_count);
+    CHECK_KEY_VAL("section.key", "val1");
 
-    TEST_ASSERT_TRUE(found);
+    _h_table_set_str(table, "section.key", "val2");
+    TEST_ASSERT_EQUAL(2, table->nodes_count);
+    CHECK_KEY_VAL("section.key", "val2");
+
+    _h_table_set_str(table, "123", "numval");
+    TEST_ASSERT_EQUAL(3, table->nodes_count);
+    CHECK_KEY_VAL("123", "numval");
+
+    _h_table_set_str(table, "123", "replaced");
+    TEST_ASSERT_EQUAL(3, table->nodes_count);
+    CHECK_KEY_VAL("123", "replaced");
+
+#undef CHECK_KEY_VAL
 
     _h_table_destroy(table);
+}
 
-check_if_key_in_table:
-    for (size_t i = 0; i < table->buckets; ++i) {
-        if (table->nodes[i] == NULL) continue;
-        if (strcmp(table->nodes[i]->key, "foo") == 0) {
-            if (strcmp(table->nodes[i]->val, val) == 0) found = true;
-        }
-    }
+void test__h_table_get_should_returnCorrectly(void) {
+    ini_table* table = _h_table_init();
+    TEST_ASSERT_NOT_NULL(table);
+
+#define CHECK_GET(k, v) \
+    TEST_ASSERT_EQUAL_STRING((v), _h_table_get(table, (k)))
+
+    TEST_ASSERT_NULL(_h_table_get(table, "foo"));
+
+    _h_table_set_str(table, "foo", "bar");
+    CHECK_GET("foo", "bar");
+
+    _h_table_set_str(table, "foo", "baz");
+    CHECK_GET("foo", "baz");
+
+    TEST_ASSERT_NULL(_h_table_get(table, "missing"));
+
+    _h_table_set_str(table, "a.b.c", "val");
+    CHECK_GET("a.b.c", "val");
+    TEST_ASSERT_NULL(_h_table_get(table, "a.b"));
+
+    _h_table_set_str(table, "42", "num");
+    CHECK_GET("42", "num");
+
+#undef CHECK_GET
+
+    _h_table_destroy(table);
+}
+
+void test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly(void) {
+    kevlar_ini_table_init("foo=bar");
+
+    const char* val = kevlar_ini_table_get("foo");
+    TEST_ASSERT_NOT_NULL(val);
+    TEST_ASSERT_EQUAL_STRING(val, "bar");
+
+    kevlar_ini_table_destroy();
 }
 
 void test_ini(void) {
-    RUN_TEST(test_function_should_hashCorrectly);
-    RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
-    RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
+    // RUN_TEST(test_function_should_hashCorrectly);
+    // RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
+    // RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
+    // RUN_TEST(test__h_table_get_should_returnCorrectly);
+
+    RUN_TEST(test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly);
 }
