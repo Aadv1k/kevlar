@@ -1,0 +1,21 @@
+name: Enusre tests are passing 
+
+on:
+  push:
+    branches: [ "kevlar-v3" ]
+  pull_request:
+    branches: [ "kevlar-v3" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build unit tests
+      run: make test
+
+    - name: Run test
+      run: chmod +x ./bin/test && ./bin/test
