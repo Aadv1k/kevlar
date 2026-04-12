@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include "../lib/unity/unity_internals.h"
 
-void test_function_should_parseSimplestConfig();
+void setUp() { }
+void tearDown() { }
+
+void test_ini();
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_function_should_parseSimplestConfig);
+    test_ini();
     return UNITY_END();
 }
