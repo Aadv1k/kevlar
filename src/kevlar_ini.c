@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -10,6 +11,7 @@
 #pragma GCC diagnostic ignored "-Wunused-function"
 
 static ini_table *_global_ini_config;
+static char* _current_section_label;
 
 // Source: https://www.ietf.org/archive/id/draft-eastlake-fnv-22.html
 uint64_t fnv1_hash(const char *input) {
@@ -147,6 +149,7 @@ void kevlar_ini_table_node_destroy(ini_table_node *node) {
 
 void kevlar_ini_table_destroy() {
     _h_table_destroy(_global_ini_config);
+    if (_current_section_label != NULL) free(_current_section_label);
     free(_global_ini_config);
 }
 
@@ -157,7 +160,7 @@ void kevlar_ini_table_destroy() {
 
 char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum) {
     for (size_t i = *cur; i <= len; ++i) {
-        if (src[i] == '\n' || i+1 > len) {
+        if (src[i] == '\n' || (i+1 > len)) {
             (void)*lnum++;
 
             if (WITHIN_BOUNDS(i+1, len) && src[i+1] == '\t') {
@@ -166,11 +169,15 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
             }
 
             assert(*cur < i);
-            size_t val_size = i - *cur + 1;
-            char* val_buffer = (char*)malloc(val_size*sizeof(char));
-            strncpy(val_buffer, &src[*cur], i-1);
+            size_t val_size = i - *cur;
 
-            *cur = i;
+            char* val_buffer = (char*)malloc(val_size + 1);
+
+            strncpy(val_buffer, &src[*cur], val_size);
+            val_buffer[val_size] = '\0';
+
+            *cur = i + 1;
+
             return val_buffer;
         }
     }
@@ -178,23 +185,86 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
     return NULL;
 }
 
-void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum, const char* section_label) {
+
+static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur, size_t* lnum) {
+    size_t start = *cur;
+
+    while (*cur < len && src[*cur] != ']' && src[*cur] != '[' && src[*cur] != '\n') {
+        (*cur)++;
+    }
+
+    if (*cur >= len || src[*cur] != ']') {
+        ini_parser_panic("malformed section label", *cur, *lnum);
+    }
+
+    size_t end = *cur;
+    (*cur)++; /* consume ']' */
+
+    size_t content_len = end - start;
+
+    int all_spaces = 1;
+    for (size_t i = start; i < end; i++) {
+        if (src[i] != ' ' && src[i] != '\t') {
+            all_spaces = 0;
+            break;
+        }
+    }
+
+    if (content_len == 0 || all_spaces) {
+        ini_parser_panic("empty or blank section label", *cur, *lnum);
+    }
+
+    if (_current_section_label != NULL) {
+        free(_current_section_label);
+    }
+
+    _current_section_label = malloc(content_len + 1);
+    if (!_current_section_label) {
+        ini_parser_panic("OOM allocating section label", *cur, *lnum);
+    }
+
+    memcpy(_current_section_label, src + start, content_len);
+    _current_section_label[content_len] = '\0';
+}
+
+void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
     for (size_t i = *cur; i <= len; ++i) {
+
+        if (src[i] == '[') {
+            i++;
+            _kevlar_parse_section_label(src, len, &i, lnum);
+            *cur = i + 1;
+        }
+
+        if (src[i] == ']') {
+            ini_parser_panic("unmatched square bracket", i, *lnum);
+        }
+
         if (IS_DELIM(src[i])) {
-            if (i - 1 <= *cur)
+            if (i <= *cur)
                 ini_parser_panic("Expected a valid key preceeding a delimeter.", i, lnum);
 
             assert(*cur < i);
 
-            size_t k_size = i - *cur + 1;
-            char* key_buffer = (char*)malloc(sizeof(k_size));
-            strncpy(key_buffer, &src[*cur], i);
+            size_t k_size = i - *cur;
+            size_t section_label_size = (_current_section_label != NULL) ? strlen(_current_section_label) : 0;
+            size_t dot = (_current_section_label != NULL) ? 1 : 0;
+            char* key_buffer = (char*)malloc(section_label_size + dot + k_size + 1);
+            if (!key_buffer) ini_parser_panic("OOM allocating key buffer", *cur, *lnum);
+
+            if (_current_section_label != NULL) {
+                snprintf(key_buffer, section_label_size + dot + k_size + 1, "%s.%.*s", _current_section_label, (int)k_size, &src[*cur]);
+            } else {
+                snprintf(key_buffer, k_size + 1, "%.*s", (int)k_size, &src[*cur]);
+            }
+
 
             i++;
             char* value = _kevlar_ini_parse_val(src, len, &i, lnum);
             if (value == NULL) {
                 ini_parser_panic("Could not parse value", i, *lnum);
             }
+            i--;
 
             if (kevlar_ini_table_set(key_buffer, value) == -1) {
                 ini_parser_panic("Failed to set value to map", i, *lnum);
@@ -202,6 +272,8 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum, c
 
             free(key_buffer);
             free(value);
+
+            *cur = i + 1;
         }
     }
 }
@@ -218,7 +290,7 @@ int kevlar_ini_table_init(const char *source) {
     size_t cursor = 0,
             lnum = 1;
 
-    _kevlar_ini_parse(source, src_len, &cursor, &lnum, "");
+    _kevlar_ini_parse(source, src_len, &cursor, &lnum);
 
     return 0;
 }

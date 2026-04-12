@@ -98,7 +98,40 @@ void test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly(void) {
 
     const char* val = kevlar_ini_table_get("foo");
     TEST_ASSERT_NOT_NULL(val);
-    TEST_ASSERT_EQUAL_STRING(val, "bar");
+    TEST_ASSERT_EQUAL_STRING("bar", val);
+
+    kevlar_ini_table_destroy();
+
+    kevlar_ini_table_init("foo:bar\n" \
+                        "baz:qux");
+
+    const char* val2 = kevlar_ini_table_get("foo");
+    TEST_ASSERT_NOT_NULL(val2);
+    TEST_ASSERT_EQUAL_STRING("bar", val2);
+
+    const char* val3 = kevlar_ini_table_get("baz");
+    TEST_ASSERT_NOT_NULL(val3);
+    TEST_ASSERT_EQUAL_STRING("qux", val3);
+
+    kevlar_ini_table_destroy();
+
+    kevlar_ini_table_init("baz:qux\n\thello\n\tworld");
+
+    const char* val4 = kevlar_ini_table_get("baz");
+    TEST_ASSERT_NOT_NULL(val4);
+
+    // TODO: at some point, filter out the \t in multi-line strs
+    TEST_ASSERT_EQUAL_STRING("qux\n\thello\n\tworld", val4);
+
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_table_init_should_parseSectionLabels(void) {
+    kevlar_ini_table_init("[foo]\nbar=baz");
+
+    const char* val = kevlar_ini_table_get("foo.bar");
+    TEST_ASSERT_NOT_NULL(val);
+    TEST_ASSERT_EQUAL_STRING(val, "baz");
 
     kevlar_ini_table_destroy();
 }
@@ -108,6 +141,6 @@ void test_ini(void) {
     // RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
     // RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
     // RUN_TEST(test__h_table_get_should_returnCorrectly);
-
-    RUN_TEST(test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly);
+    // RUN_TEST(test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly);
+    RUN_TEST(test_kevlar_ini_table_init_should_parseSectionLabels);
 }
