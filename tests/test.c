@@ -1,11 +1,10 @@
 #include <stdio.h>
+#include "../lib/unity/unity_internals.h"
 
-void test_markdown();
+void test_function_should_parseSimplestConfig();
 
 int main(void) {
-    test_markdown();
-
-    printf("INFO: All tests successful!\n");
-
-    return 0;
+    UNITY_BEGIN();
+    RUN_TEST(test_function_should_parseSimplestConfig);
+    return UNITY_END();
 }

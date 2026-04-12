@@ -16,3 +16,16 @@ dist/
 .idea/
 
 ./obj
+
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails / metadata
+._*
+
+# Files that might appear on external drives
+.Spotlight-V100
+.Trashes

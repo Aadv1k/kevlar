@@ -3,7 +3,7 @@ CC = gcc
 
 SRC_FILES = $(wildcard ./src/*.c)
 TEST_FILES = $(wildcard ./tests/*.c)
-
+VENDOR_SRC_UNITY = $(wildcard ./lib/unity/*.c)
 
 OBJ_FILES := $(patsubst ./src/%.c,./bin/obj/%.o,$(SRC_FILES))
 
@@ -28,7 +28,7 @@ endif
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: test
-test: $(TEST_FILES) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
+test: $(TEST_FILES) $(VENDOR_SRC_UNITY) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
 	$(CC) $(CFLAGS) -g -ggdb -o ./bin/test $^
 
 .PHONY: clean

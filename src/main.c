@@ -2,10 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-#include "kevlar_build.h"
 #include "kevlar_errors.h"
-#include "kevlar_new.h"
 
 #define MAX_CMD_SIZE 16
 
@@ -42,19 +41,16 @@ int main(int argc, char **argv) {
         kevlar_usage_exit(argv[0]);
         break;
     case cmdNew:
-        if (argc == 2) {
-            kevlar_err("you need to provide a name for your project!");
-        }
-        kevlar_handle_new_command(argv[2]);
+        assert(false && "Not Implemented");
         break;
     case cmdBuild:
-        kevlar_handle_build_command(".");
+        assert(false && "Not Implemented");
         break;
     case cmdNewPost:
         if (argc == 2) {
             kevlar_err("you need to provide a title for your post!");
         }
-        kevlar_generate_new_post(".", argv[2]);
+        assert(false && "Not Implemented");
         break;
     default:
         kevlar_err("couldn't find command \"%s\"", argv[1]);
