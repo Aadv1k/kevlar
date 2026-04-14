@@ -18,6 +18,25 @@ void utl_prepend_str(char prefix[], char str[]) {
     strcat(str, temp_str);
 }
 
+// Strip from both ends; " foo  \0"  -> "foo\0"
+int utl_strip(char *data) {
+    size_t len = strlen(data), start = 0, end = len - 1;
+
+    while (start < len && isspace(data[start]))
+        ++start;
+
+    while (end > 0 && isspace(data[end]))
+        --end;
+
+    if (start == len || end == 0)
+        return 1;
+
+    memmove(data, &data[start], end - start + 1);
+    data[end - start + 1] = '\0';
+
+    return 0;
+}
+
 size_t utl_lstrip_offset(char *data, size_t length) {
     // "        foo bar" -> "foo bar"
 

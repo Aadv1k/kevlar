@@ -1,5 +1,6 @@
 #include "kevlar_ini.h"
 #include "kevlar_errors.h"
+#include "utils.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -103,16 +104,10 @@ void _h_table_destroy(ini_table *table) {
 
         ini_table_node *next;
 
-        for (;;) {
-            if (cur->next == NULL) {
-                kevlar_ini_table_node_destroy(cur);
-                free(cur);
-                break;
-            }
+        while (cur) {
             next = cur->next;
             kevlar_ini_table_node_destroy(cur);
             free(cur);
-
             cur = next;
         }
     }
@@ -162,7 +157,7 @@ void kevlar_ini_table_destroy() {
 char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum) {
     for (size_t i = *cur; i <= len; ++i) {
         if (src[i] == '\n' || (i+1 > len)) {
-            (void)*lnum++;
+            (*lnum)++;
 
             if (WITHIN_BOUNDS(i+1, len) && src[i+1] == '\t') {
                 (void)i++;
@@ -262,13 +257,14 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
             } else {
                 snprintf(key_buffer, k_size + 1, "%.*s", (int)k_size, &src[*cur]);
             }
-
+            utl_strip(key_buffer);
 
             i++;
             char* value = _kevlar_ini_parse_val(src, len, &i, lnum);
             if (value == NULL) {
                 ini_parser_panic("Failed to parse value", i, *lnum);
             }
+            utl_strip(value);
             i--;
 
             if (kevlar_ini_table_set(key_buffer, value) == -1) {

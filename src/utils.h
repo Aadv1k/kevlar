@@ -11,6 +11,8 @@ void utl_prepend(char *string, const char *prefix);
 
 size_t utl_lstrip_offset(char *data, size_t length);
 
+int utl_strip(char *data);
+
 void utl_truncateLast(char *str);
 char *utl_get_date_time_unsafe();
 
