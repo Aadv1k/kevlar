@@ -10,7 +10,7 @@ void test_function_should_hashCorrectly(void) {
 }
 
 void test_kevlarIniTableInit_should_initSuccessfully(void) {
-    TEST_ASSERT_EQUAL(kevlar_ini_table_init(""), 0);
+    TEST_ASSERT_EQUAL(0, kevlar_ini_table_init());
     kevlar_ini_table_destroy();
 }
 
@@ -34,7 +34,16 @@ void test__h_table_set_str_should_setNewValCorrectly(void) {
 
     _h_table_set_str(table, "foo", "bar");
     TEST_ASSERT_EQUAL(1, table->nodes_count);
-    CHECK_KEY_VAL("foo", "bar");
+    bool found = false;
+    for (size_t i = 0; i <= table->buckets; ++i) {
+        if (table->nodes[i] == NULL) continue;
+        if (strcmp(table->nodes[i]->key, "foo") == 0 &&
+            strcmp(table->nodes[i]->val, "bar") == 0) {
+            found = true;
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(found);
 
     _h_table_set_str(table, "foo", "bazaar");
     TEST_ASSERT_EQUAL(1, table->nodes_count);
@@ -93,66 +102,123 @@ void test__h_table_get_should_returnCorrectly(void) {
     _h_table_destroy(table);
 }
 
-void test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly(void) {
-    kevlar_ini_table_init("foo=bar");
+void test_kevlar_ini_parse_should_parseSimpleKeyValCorrectly(void) {
+    ini_parser_error error;
 
-    const char* val = kevlar_ini_table_get("foo");
-    TEST_ASSERT_NOT_NULL(val);
-    TEST_ASSERT_EQUAL_STRING("bar", val);
-
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("foo=bar", &error));
+    TEST_ASSERT_EQUAL_STRING("bar", kevlar_ini_table_get("foo"));
     kevlar_ini_table_destroy();
 
-    kevlar_ini_table_init("foo:bar\n" \
-                        "baz:qux");
-
-    const char* val2 = kevlar_ini_table_get("foo");
-    TEST_ASSERT_NOT_NULL(val2);
-    TEST_ASSERT_EQUAL_STRING("bar", val2);
-
-    const char* val3 = kevlar_ini_table_get("baz");
-    TEST_ASSERT_NOT_NULL(val3);
-    TEST_ASSERT_EQUAL_STRING("qux", val3);
-
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("foo:bar\nbaz:qux", &error));
+    TEST_ASSERT_EQUAL_STRING("bar", kevlar_ini_table_get("foo"));
+    TEST_ASSERT_EQUAL_STRING("qux", kevlar_ini_table_get("baz"));
     kevlar_ini_table_destroy();
 
-    kevlar_ini_table_init("baz:qux\n\thello\n\tworld");
-
-    const char* val4 = kevlar_ini_table_get("baz");
-    TEST_ASSERT_NOT_NULL(val4);
-
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("baz:qux\n\thello\n\tworld", &error));
+    TEST_ASSERT_NOT_NULL(kevlar_ini_table_get("baz"));
     // TODO: at some point, filter out the \t in multi-line strs
-    TEST_ASSERT_EQUAL_STRING("qux\n\thello\n\tworld", val4);
-
+    TEST_ASSERT_EQUAL_STRING("qux\n\thello\n\tworld", kevlar_ini_table_get("baz"));
     kevlar_ini_table_destroy();
 }
 
-void test_kevlar_ini_table_init_should_parseSectionLabels(void) {
-    kevlar_ini_table_init("[foo]\nbar=baz");
+void test_kevlar_ini_parse_should_parseSectionLabels(void) {
+    ini_parser_error error;
 
-    const char* val = kevlar_ini_table_get("foo.bar");
-    TEST_ASSERT_NOT_NULL(val);
-    TEST_ASSERT_EQUAL_STRING(val, "baz");
-
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("[foo]\nbar=baz", &error));
+    TEST_ASSERT_EQUAL_STRING("baz", kevlar_ini_table_get("foo.bar"));
     kevlar_ini_table_destroy();
 }
 
-void test_kevlar_ini_table_init_should_parseWhitespaceInKeyAndVal(void) {
-    kevlar_ini_table_init("       foo     =      baz     ");
+void test_kevlar_ini_parse_should_parseWhitespaceInKeyAndVal(void) {
+    ini_parser_error error;
 
-    const char* val = kevlar_ini_table_get("foo");
-    TEST_ASSERT_NOT_NULL(val);
-    TEST_ASSERT_EQUAL_STRING(val, "baz");
-
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("       foo     =      baz     ", &error));
+    TEST_ASSERT_EQUAL_STRING("baz", kevlar_ini_table_get("foo"));
     kevlar_ini_table_destroy();
 }
 
+void test_kevlar_ini_parse_should_failOnUnexpectedClosingBracket(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("]foo", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_SYNTAX, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_failOnEmptySectionLabel(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("[]", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_LABEL, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_failOnWhitespaceOnlySectionLabel(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("[   ]", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_LABEL, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_failOnMissingClosingBracket(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("[foo", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_LABEL, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_failOnMissingKey(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("=bar", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_KEY, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_failOnEmptyValue(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("foo=", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_SYNTAX, error.code);
+    kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_reportCorrectLineOnError(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(-1, kevlar_ini_parse("foo=bar\n=baz", &error));
+    TEST_ASSERT_EQUAL(INI_ERR_INVALID_KEY, error.code);
+    TEST_ASSERT_EQUAL(2, error.line);
+    kevlar_ini_table_destroy();
+}
 
 void test_ini(void) {
     RUN_TEST(test_function_should_hashCorrectly);
     RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
     RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
     RUN_TEST(test__h_table_get_should_returnCorrectly);
-    RUN_TEST(test_kevlar_ini_table_init_should_parseSimpleKeyValCorrectly);
-    RUN_TEST(test_kevlar_ini_table_init_should_parseWhitespaceInKeyAndVal);
-    RUN_TEST(test_kevlar_ini_table_init_should_parseSectionLabels);
+    RUN_TEST(test_kevlar_ini_parse_should_parseSimpleKeyValCorrectly);
+    RUN_TEST(test_kevlar_ini_parse_should_parseWhitespaceInKeyAndVal);
+    RUN_TEST(test_kevlar_ini_parse_should_parseSectionLabels);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnUnexpectedClosingBracket);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnEmptySectionLabel);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnWhitespaceOnlySectionLabel);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnMissingClosingBracket);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnMissingKey);
+    RUN_TEST(test_kevlar_ini_parse_should_failOnEmptyValue);
+    RUN_TEST(test_kevlar_ini_parse_should_reportCorrectLineOnError);
 }

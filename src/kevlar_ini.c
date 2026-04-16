@@ -54,6 +54,7 @@ int _h_table_set_str(ini_table *table, const char *key, const char *value) {
         ini_table_node *node = malloc(sizeof(ini_table_node));
         node->key = strdup(key);
         node->val = strdup(value);
+        node->next = NULL;
 
         table->nodes[key_node_idx] = node;
         table->nodes_count++;
@@ -118,7 +119,7 @@ ini_table *_h_table_init() {
     ini_table *table = malloc(sizeof(ini_table));
 
     table->buckets = INI_TABLE_INIT_SIZE;
-    if ((table->nodes = (ini_table_node **)malloc(sizeof(ini_table_node *) * table->buckets)) ==
+    if ((table->nodes = (ini_table_node **)calloc(table->buckets, sizeof(ini_table_node *))) ==
         NULL) {
         kevlar_err("Out of memory: failed to allocate hash table node array");
         return NULL;
@@ -146,6 +147,8 @@ void kevlar_ini_table_node_destroy(ini_table_node *node) {
 void kevlar_ini_table_destroy() {
     _h_table_destroy(_global_ini_config);
     if (_current_section_label != NULL) free(_current_section_label);
+    _current_section_label = NULL;
+
     free(_global_ini_config);
 }
 
@@ -154,7 +157,7 @@ void kevlar_ini_table_destroy() {
 
 #define ini_parser_panic(m, c, l) kevlar_err("Bad .ini syntax at line %zu, col %zu: %s", l, c, m)
 
-char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum) {
+char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum, ini_parser_error* error) {
     for (size_t i = *cur; i <= len; ++i) {
         if (src[i] == '\n' || (i+1 > len)) {
             (*lnum)++;
@@ -164,10 +167,26 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
                 continue;
             }
 
-            assert(*cur < i);
             size_t val_size = i - *cur;
 
+            if (val_size == 0) {
+                error->line = *lnum;
+                error->col= i;
+                error->code = INI_ERR_INVALID_SYNTAX;
+                snprintf(error->message, INI_ERR_MSG_SIZE, "Key has no value");
+                return NULL;
+            }
+
+            assert(*cur < i);
+
             char* val_buffer = (char*)malloc(val_size + 1);
+            if (!val_buffer) {
+                error->line = *lnum;
+                error->col = i;
+                error->code = INI_ERR_OOM;
+                snprintf(error->message, INI_ERR_MSG_SIZE, "Out of memory: failed to allocate %zu bytes for value", val_size + 1);
+                return NULL;
+            }
 
             strncpy(val_buffer, &src[*cur], val_size);
             val_buffer[val_size] = '\0';
@@ -182,7 +201,7 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
 }
 
 
-static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur, size_t* lnum) {
+static int _kevlar_parse_section_label(const char* src, size_t len, size_t* cur, size_t* lnum, ini_parser_error* error) {
     size_t start = *cur;
 
     while (*cur < len && src[*cur] != ']' && src[*cur] != '[' && src[*cur] != '\n') {
@@ -190,7 +209,11 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
     }
 
     if (*cur >= len || src[*cur] != ']') {
-        ini_parser_panic("Malformed section label, missing closing ']'", *cur, *lnum);
+        error->line = *lnum;
+        error->col = *cur;
+        error->code = INI_ERR_INVALID_LABEL;
+        snprintf(error->message, INI_ERR_MSG_SIZE, "Malformed section label, missing closing ']'");
+        return -1;
     }
 
     size_t end = *cur;
@@ -207,7 +230,11 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
     }
 
     if (content_len == 0 || all_spaces) {
-        ini_parser_panic("Section label cannot be empty or whitespace-only", *cur, *lnum);
+        error->line = *lnum;
+        error->col = *cur;
+        error->code = INI_ERR_INVALID_LABEL;
+        snprintf(error->message, INI_ERR_MSG_SIZE, "Section label cannot be empty or whitespace-only");
+        return -1;
     }
 
     if (_current_section_label != NULL) {
@@ -216,40 +243,61 @@ static void _kevlar_parse_section_label(const char* src, size_t len, size_t* cur
 
     _current_section_label = malloc(content_len + 1);
     if (!_current_section_label) {
-        kevlar_err("Out of memory: failed to allocate section label");
-        return;
+        error->line = *lnum;
+        error->col = *cur;
+        error->code = INI_ERR_OOM;
+        snprintf(error->message, INI_ERR_MSG_SIZE, "Out of memory: failed to allocate %zu bytes for section label", content_len + 1);
+        return -1;
     }
 
     memcpy(_current_section_label, src + start, content_len);
     _current_section_label[content_len] = '\0';
+
+    return 0;
 }
 
-void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
+int _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum, ini_parser_error* error) {
     for (size_t i = *cur; i <= len; ++i) {
 
         if (src[i] == '[') {
             i++;
-            _kevlar_parse_section_label(src, len, &i, lnum);
+            if (_kevlar_parse_section_label(src, len, &i, lnum, error) == -1) {
+                return -1;
+            }
             *cur = i + 1;
         }
 
         if (src[i] == ']') {
-            ini_parser_panic("Unexpected ']' without opening '['", i, *lnum);
+            error->line = *lnum;
+            error->col = i;
+            error->code = INI_ERR_INVALID_SYNTAX;
+            snprintf(error->message, INI_ERR_MSG_SIZE, "Unexpected ']' without opening '['");
+
+            return -1;
         }
 
         if (IS_DELIM(src[i])) {
-            if (i <= *cur)
-                ini_parser_panic("Expected a valid key preceding the delimiter", i, lnum);
+            if (i <= *cur) {
+                error->line = *lnum;
+                error->col = i;
+                error->code = INI_ERR_INVALID_KEY;
+                snprintf(error->message, INI_ERR_MSG_SIZE, "Expected a valid key preceding the delimiter");
+                return -1;
+            }
 
             assert(*cur < i);
 
             size_t k_size = i - *cur;
             size_t section_label_size = (_current_section_label != NULL) ? strlen(_current_section_label) : 0;
             size_t dot = (_current_section_label != NULL) ? 1 : 0;
-            char* key_buffer = (char*)malloc(section_label_size + dot + k_size + 1);
+            size_t total_key_size = section_label_size + dot + k_size + 1;
+            char* key_buffer = (char*)malloc(total_key_size);
             if (!key_buffer) {
-                kevlar_err("Out of memory: failed to allocate key buffer at line %zu", *lnum);
-                return;
+                error->line = *lnum;
+                error->col = i;
+                error->code = INI_ERR_OOM;
+                snprintf(error->message, INI_ERR_MSG_SIZE, "Out of memory: failed to allocate %zu bytes for key", total_key_size);
+                return -1;
             }
 
             if (_current_section_label != NULL) {
@@ -260,9 +308,10 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
             utl_strip(key_buffer);
 
             i++;
-            char* value = _kevlar_ini_parse_val(src, len, &i, lnum);
+            char* value = _kevlar_ini_parse_val(src, len, &i, lnum, error);
             if (value == NULL) {
-                ini_parser_panic("Failed to parse value", i, *lnum);
+                free(key_buffer);
+                return -1;
             }
             utl_strip(value);
             i--;
@@ -277,9 +326,11 @@ void _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum) {
             *cur = i + 1;
         }
     }
+
+    return 0;
 }
 
-int kevlar_ini_table_init(const char *source) {
+int kevlar_ini_table_init() {
     ini_table *table;
     if ((table = _h_table_init()) == NULL) {
         return -1;
@@ -287,11 +338,13 @@ int kevlar_ini_table_init(const char *source) {
     _global_ini_config = table;
 
 
-    size_t src_len = strlen(source);
+    return 0;
+}
+
+int kevlar_ini_parse(const char* src, ini_parser_error* error) {
+    size_t src_len = strlen(src);
     size_t cursor = 0,
             lnum = 1;
 
-    _kevlar_ini_parse(source, src_len, &cursor, &lnum);
-
-    return 0;
+    return _kevlar_ini_parse(src, src_len, &cursor, &lnum, error);
 }
