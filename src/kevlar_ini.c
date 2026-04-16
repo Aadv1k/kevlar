@@ -193,6 +193,19 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
 
             *cur = i + 1;
 
+            const char* pos;
+            size_t val_size_cpy = val_size;
+
+            size_t offset = 1;
+
+            while ((pos = strstr(val_buffer, "\n\t"))) {
+                val_size_cpy -= 1;
+                size_t tail = (pos - val_buffer);
+                memmove(&val_buffer[tail], &val_buffer[tail+offset], val_size_cpy);
+                val_buffer[tail] = ' ';
+            }
+            val_buffer[val_size_cpy] = '\0';
+
             return val_buffer;
         }
     }

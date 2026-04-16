@@ -18,6 +18,12 @@ void utl_prepend_str(char prefix[], char str[]) {
     strcat(str, temp_str);
 }
 
+void utl_replace_char(char* data, size_t len, char x, char y) {
+    for (size_t i = 0; i <= len; ++i) {
+        if (data[i] == x) data[i] = y;
+    }
+}
+
 // Strip from both ends; " foo  \0"  -> "foo\0"
 int utl_strip(char *data) {
     size_t len = strlen(data), start = 0, end = len - 1;

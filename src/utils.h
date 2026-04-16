@@ -13,6 +13,8 @@ size_t utl_lstrip_offset(char *data, size_t length);
 
 int utl_strip(char *data);
 
+void utl_replace_char(char* data, size_t len, char x, char y);
+
 void utl_truncateLast(char *str);
 char *utl_get_date_time_unsafe();
 

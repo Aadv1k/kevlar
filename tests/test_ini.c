@@ -119,8 +119,7 @@ void test_kevlar_ini_parse_should_parseSimpleKeyValCorrectly(void) {
     kevlar_ini_table_init();
     TEST_ASSERT_EQUAL(0, kevlar_ini_parse("baz:qux\n\thello\n\tworld", &error));
     TEST_ASSERT_NOT_NULL(kevlar_ini_table_get("baz"));
-    // TODO: at some point, filter out the \t in multi-line strs
-    TEST_ASSERT_EQUAL_STRING("qux\n\thello\n\tworld", kevlar_ini_table_get("baz"));
+    TEST_ASSERT_EQUAL_STRING("qux hello world", kevlar_ini_table_get("baz"));
     kevlar_ini_table_destroy();
 }
 
@@ -204,6 +203,9 @@ void test_kevlar_ini_parse_should_reportCorrectLineOnError(void) {
     TEST_ASSERT_EQUAL(INI_ERR_INVALID_KEY, error.code);
     TEST_ASSERT_EQUAL(2, error.line);
     kevlar_ini_table_destroy();
+}
+
+void test_kevlar_ini_parse_should_parseARealisticFileCorrectly(void) {
 }
 
 void test_ini(void) {
