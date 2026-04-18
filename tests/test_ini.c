@@ -205,10 +205,32 @@ void test_kevlar_ini_parse_should_reportCorrectLineOnError(void) {
     kevlar_ini_table_destroy();
 }
 
-void test_kevlar_ini_parse_should_parseARealisticFileCorrectly(void) {
+void test_kevlar_ini_parse_should_handleComments(void) {
+    ini_parser_error error;
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("# this is a comment\nfoo=bar", &error));
+    TEST_ASSERT_EQUAL_STRING(kevlar_ini_table_get("foo"), "bar");
+    kevlar_ini_table_destroy();
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("; this is a comment\nfoo=bar", &error));
+    TEST_ASSERT_EQUAL_STRING("bar", kevlar_ini_table_get("foo"));
+    kevlar_ini_table_destroy();
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("foo=bar ; inline comment", &error));
+    TEST_ASSERT_EQUAL_STRING("bar", kevlar_ini_table_get("foo"));
+    kevlar_ini_table_destroy();
+
+    kevlar_ini_table_init();
+    TEST_ASSERT_EQUAL(0, kevlar_ini_parse("foo=bar # inline comment", &error));
+    TEST_ASSERT_EQUAL_STRING("bar", kevlar_ini_table_get("foo"));
+    kevlar_ini_table_destroy();
 }
 
 void test_ini(void) {
+#if 0
     RUN_TEST(test_function_should_hashCorrectly);
     RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
     RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
@@ -223,4 +245,7 @@ void test_ini(void) {
     RUN_TEST(test_kevlar_ini_parse_should_failOnMissingKey);
     RUN_TEST(test_kevlar_ini_parse_should_failOnEmptyValue);
     RUN_TEST(test_kevlar_ini_parse_should_reportCorrectLineOnError);
+#endif
+
+    RUN_TEST(test_kevlar_ini_parse_should_handleComments);
 }

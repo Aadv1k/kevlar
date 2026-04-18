@@ -153,13 +153,15 @@ void kevlar_ini_table_destroy() {
 }
 
 #define IS_DELIM(c) ((c) == '=' || (c) == ':')
+#define IS_COMMENT(c) ((c) == ';' || (c) == '#')
 #define WITHIN_BOUNDS(i, b) ((i) <= (b))
 
 #define ini_parser_panic(m, c, l) kevlar_err("Bad .ini syntax at line %zu, col %zu: %s", l, c, m)
 
 char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum, ini_parser_error* error) {
     for (size_t i = *cur; i <= len; ++i) {
-        if (src[i] == '\n' || (i+1 > len)) {
+
+        if (src[i] == '\n' || (i+1 > len) || IS_COMMENT(src[i])) {
             (*lnum)++;
 
             if (WITHIN_BOUNDS(i+1, len) && src[i+1] == '\t') {
@@ -287,6 +289,16 @@ int _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum, in
             snprintf(error->message, INI_ERR_MSG_SIZE, "Unexpected ']' without opening '['");
 
             return -1;
+        }
+
+        if (IS_COMMENT(src[i])) {
+            char *new_l = strrchr(&src[i], '\n');
+
+            // Single line in the entire sourcd which is a comment, functionally empty
+            if (!new_l) return 0; 
+
+            *cur = (new_l - &src[i]) + 1;
+            continue;
         }
 
         if (IS_DELIM(src[i])) {
