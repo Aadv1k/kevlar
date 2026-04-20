@@ -1,9 +1,12 @@
 #include "../lib/unity/unity.h"
 #include "../src/kevlar_ini.h"
+#include "../src/utils.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <libgen.h>
 
 void test_function_should_hashCorrectly(void) {
     TEST_ASSERT_EQUAL_HEX(0xCC857C54, fnv1_hash("Hello, World!"));
@@ -229,8 +232,79 @@ void test_kevlar_ini_parse_should_handleComments(void) {
     kevlar_ini_table_destroy();
 }
 
+void test_kevlar_ini_parse_should_handleRealisticFile(void) {
+    ini_parser_error error;
+    kevlar_ini_table_init();
+    char path[1024];
+    strcpy(path, __FILE__);
+    char *dir = dirname(path);
+    char fp[1024] = "/__fixtures__/test_ini_file_1.ini";
+    utl_prepend(fp, dir);
+    FILE *f = fopen(fp, "r");
+    TEST_ASSERT_NOT_NULL(f);
+    fseek(f, 0, SEEK_END); 
+    size_t file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char* file_buffer = malloc(file_size + 1);
+    fread(file_buffer, 1, file_size, f);
+    file_buffer[file_size] = '\0';
+    int ec = kevlar_ini_parse(file_buffer, &error);
+    TEST_ASSERT_EQUAL(0, ec);
+
+    // [site]
+    TEST_ASSERT_EQUAL_STRING("Aadvik's Wicked Blog", kevlar_ini_table_get("site.title"));
+    TEST_ASSERT_EQUAL_STRING("https://aadvikpandey.com", kevlar_ini_table_get("site.base_url"));
+    TEST_ASSERT_EQUAL_STRING("A personal blog about systems programming, career, random musings, and (sometimes) fitness", kevlar_ini_table_get("site.description"));
+
+    // [build]
+    TEST_ASSERT_EQUAL_STRING("./dist", kevlar_ini_table_get("build.output_dir"));
+    TEST_ASSERT_EQUAL_STRING("./posts", kevlar_ini_table_get("build.posts_dir"));
+    TEST_ASSERT_EQUAL_STRING("true", kevlar_ini_table_get("build.minify_html"));
+    TEST_ASSERT_EQUAL_STRING("README.md .gitignore LICENSE", kevlar_ini_table_get("build.ignore"));
+
+    // [author]
+    TEST_ASSERT_EQUAL_STRING("Aadvik", kevlar_ini_table_get("author.name"));
+    TEST_ASSERT_EQUAL_STRING("hi@example.com", kevlar_ini_table_get("author.email"));
+    TEST_ASSERT_EQUAL_STRING("Self-taught engineer based in Bangalore. Interested in compilers and systems. Currently building Kevlar.", kevlar_ini_table_get("author.bio"));
+
+    // [author.social]
+    TEST_ASSERT_EQUAL_STRING("https://github.com/aadv1k", kevlar_ini_table_get("author.social.github"));
+    TEST_ASSERT_EQUAL_STRING("none", kevlar_ini_table_get("author.social.twitter"));
+
+    // [theme]
+    TEST_ASSERT_EQUAL_STRING("default", kevlar_ini_table_get("theme.name"));
+    TEST_ASSERT_EQUAL_STRING("10", kevlar_ini_table_get("theme.posts_per_page"));
+
+    // [theme.default]
+    TEST_ASSERT_EQUAL_STRING("true", kevlar_ini_table_get("theme.default.show_dates"));
+    TEST_ASSERT_EQUAL_STRING("dark", kevlar_ini_table_get("theme.default.accent"));
+    TEST_ASSERT_EQUAL_STRING("Built with Kevlar. Fast and simple.", kevlar_ini_table_get("theme.default.footer_text"));
+
+    // [theme.default.colors]
+    TEST_ASSERT_EQUAL_STRING("#1a1a1a", kevlar_ini_table_get("theme.default.colors.background"));
+    TEST_ASSERT_EQUAL_STRING("#f0f0f0", kevlar_ini_table_get("theme.default.colors.foreground"));
+    TEST_ASSERT_EQUAL_STRING("#ff6600", kevlar_ini_table_get("theme.default.colors.accent"));
+
+    // [theme.default.colors.dark]
+    TEST_ASSERT_EQUAL_STRING("#000000", kevlar_ini_table_get("theme.default.colors.dark.background"));
+    TEST_ASSERT_EQUAL_STRING("#ffffff", kevlar_ini_table_get("theme.default.colors.dark.foreground"));
+
+    // [edge] — this is where your parser earns its keep
+    TEST_ASSERT_EQUAL_STRING("https://example.com/path/to/something?q=1&p=2", kevlar_ini_table_get("edge.url"));
+    TEST_ASSERT_EQUAL_STRING("./some/deeply/nested/../normalized/path", kevlar_ini_table_get("edge.path"));
+    TEST_ASSERT_EQUAL_STRING(".", kevlar_ini_table_get("edge.empty_ish"));
+    TEST_ASSERT_EQUAL_STRING("42", kevlar_ini_table_get("edge.number"));
+    TEST_ASSERT_EQUAL_STRING("3.14", kevlar_ini_table_get("edge.float_ish"));
+    TEST_ASSERT_EQUAL_STRING("value with = sign inside", kevlar_ini_table_get("edge.colon_sep"));
+    TEST_ASSERT_EQUAL_STRING("value with : colon inside", kevlar_ini_table_get("edge.eq_sep"));
+
+    free(file_buffer);
+    kevlar_ini_table_destroy();
+}
+
+
 void test_ini(void) {
-#if 0
+#if 0 
     RUN_TEST(test_function_should_hashCorrectly);
     RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
     RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
@@ -245,7 +319,8 @@ void test_ini(void) {
     RUN_TEST(test_kevlar_ini_parse_should_failOnMissingKey);
     RUN_TEST(test_kevlar_ini_parse_should_failOnEmptyValue);
     RUN_TEST(test_kevlar_ini_parse_should_reportCorrectLineOnError);
-#endif
-
     RUN_TEST(test_kevlar_ini_parse_should_handleComments);
+#endif
+    RUN_TEST(test_kevlar_ini_parse_should_handleRealisticFile);
+    
 }

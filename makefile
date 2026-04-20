@@ -1,4 +1,7 @@
 CFLAGS = -Wall -Werror -Wextra -g -ggdb
+#
+# CFLAGS += -fsanitize=address,undefined
+
 CC = gcc
 
 SRC_FILES = $(wildcard ./src/*.c)
@@ -29,6 +32,8 @@ endif
 
 .PHONY: test
 test: $(TEST_FILES) $(VENDOR_SRC_UNITY) $(filter-out ./bin/obj/main.o, $(OBJ_FILES))
+	rm -rf ./bin/__fixtures__
+	cp -rf ./tests/__fixtures__ ./bin/__fixtures__
 	$(CC) $(CFLAGS) -g -ggdb -o ./bin/test $^
 
 .PHONY: clean

@@ -11,6 +11,13 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
 
+#define IS_DELIM(c) ((c) == '=' || (c) == ':')
+#define IS_COMMENT(c) ((c) == ';' || (c) == '#')
+#define WITHIN_BOUNDS(i, b) ((i) <= (b))
+
+#define ini_parser_panic(m, c, l) kevlar_err("Bad .ini syntax at line %zu, col %zu: %s", l, c, m)
+
+
 static ini_table *_global_ini_config;
 static char* _current_section_label;
 
@@ -69,12 +76,10 @@ int _h_table_set_str(ini_table *table, const char *key, const char *value) {
     // completely new one
     while (cur_node != NULL) {
         if (strcmp(cur_node->key, key) == 0) {
-            ini_table_node *node = table->nodes[key_node_idx];
+            assert(cur_node->val != NULL);
 
-            assert(node->val != NULL);
-
-            free(node->val);
-            node->val = strdup(value);
+            free(cur_node->val);
+            cur_node->val = strdup(value);
 
             return 0;
         }
@@ -90,6 +95,7 @@ int _h_table_set_str(ini_table *table, const char *key, const char *value) {
 
     node->key = strdup(key);
     node->val = strdup(value);
+    node->next = NULL;
     last_tail_node->next = node;
 
     return 0;
@@ -152,17 +158,12 @@ void kevlar_ini_table_destroy() {
     free(_global_ini_config);
 }
 
-#define IS_DELIM(c) ((c) == '=' || (c) == ':')
-#define IS_COMMENT(c) ((c) == ';' || (c) == '#')
-#define WITHIN_BOUNDS(i, b) ((i) <= (b))
-
-#define ini_parser_panic(m, c, l) kevlar_err("Bad .ini syntax at line %zu, col %zu: %s", l, c, m)
-
 char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* lnum, ini_parser_error* error) {
     for (size_t i = *cur; i <= len; ++i) {
 
-        if (src[i] == '\n' || (i+1 > len) || IS_COMMENT(src[i])) {
+        if (src[i] == '\n' || (i+1 > len) || (IS_COMMENT(src[i]) && i+1 <= len && src[i+1] == ' ')) {
             (*lnum)++;
+
 
             if (WITHIN_BOUNDS(i+1, len) && src[i+1] == '\t') {
                 (void)i++;
@@ -203,7 +204,7 @@ char* _kevlar_ini_parse_val(const char* src, size_t len, size_t* cur, size_t* ln
             while ((pos = strstr(val_buffer, "\n\t"))) {
                 val_size_cpy -= 1;
                 size_t tail = (pos - val_buffer);
-                memmove(&val_buffer[tail], &val_buffer[tail+offset], val_size_cpy);
+                memmove(&val_buffer[tail], &val_buffer[tail+offset], val_size_cpy - tail);
                 val_buffer[tail] = ' ';
             }
             val_buffer[val_size_cpy] = '\0';
@@ -292,10 +293,10 @@ int _kevlar_ini_parse(const char* src, size_t len, size_t* cur, size_t* lnum, in
         }
 
         if (IS_COMMENT(src[i])) {
-            char *new_l = strrchr(&src[i], '\n');
+            char *new_l = strchr(&src[i], '\n');
 
             // Single line in the entire sourcd which is a comment, functionally empty
-            if (!new_l) return 0; 
+            if (!new_l) return 0;
 
             *cur = (new_l - &src[i]) + 1;
             continue;
