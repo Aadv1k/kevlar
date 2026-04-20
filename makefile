@@ -1,6 +1,6 @@
 CFLAGS = -Wall -Werror -Wextra -g -ggdb
-#
-# CFLAGS += -fsanitize=address,undefined
+
+#CFLAGS += -fsanitize=address,undefined
 
 CC = gcc
 

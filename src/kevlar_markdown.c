@@ -29,8 +29,8 @@ Md_Line_End_Type get_line_end_type(const char *source, size_t pos) {
 void kevlar_md_ast_child_append(Md_Ast *parent, Md_Ast *child) {
     assert(parent != NULL);
 
-    Md_Ast **a;
-    if ((a = realloc(parent->children, sizeof(Md_Ast *) * parent->c_count + 1)) == NULL) {
+    Md_Ast **a = realloc(parent->children, sizeof(Md_Ast *) * (parent->c_count + 1));
+    if (a == NULL) {
         kevlar_err("Could not re-allocate memory!");
     }
 
@@ -178,7 +178,7 @@ bool _md_handle_escaping(char **buffer, size_t *buffer_len) {
 
 Md_Ast *kevlar_md_process_text_node(const char *source, size_t *pos, bool allow_line_breaks) {
     Md_Ast *ast_node;
-    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL)
+    if ((ast_node = calloc(1, sizeof(Md_Ast))) == NULL)
         return NULL;
 
     // TODO: this is a place holder. For a fucntion that processes markdown text, it inherently
@@ -396,7 +396,7 @@ return_ast_and_exit:
 
 Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
     Md_Ast *ast_node;
-    if ((ast_node = malloc(sizeof(Md_Ast))) == NULL) {
+    if ((ast_node = calloc(1, sizeof(Md_Ast))) == NULL) {
         return NULL;
     }
 
@@ -431,6 +431,8 @@ Md_Ast *kevlar_md_process_heading_node(const char *source, size_t *pos) {
             ast_node->children = root_txt_node->children;
             ast_node->c_count = root_txt_node->c_count;
 
+            root_txt_node->children = NULL;
+            root_txt_node->c_count = 0;
             free(root_txt_node);
 
             if (ast_node->c_count > 0 && ast_node->children[0]->node_type == MD_TEXT_NODE) {
@@ -474,7 +476,7 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
     SPECIAL_CHAR_SET['('] = 1;
 
     Md_Ast *ast;
-    if ((ast = malloc(sizeof(Md_Ast))) == NULL) {
+    if ((ast = calloc(1, sizeof(Md_Ast))) == NULL) {
         return NULL;
     }
 
@@ -536,6 +538,8 @@ Md_Ast *kevlar_md_generate_ast(const char *source) {
 }
 
 void kevlar_md_free_ast(Md_Ast *ast) {
+    assert(ast != NULL);
+
     for (size_t i = 0; i < ast->c_count; ++i) {
         if (ast->children[i]->node_type == MD_TEXT_NODE) {
             free(ast->children[i]->opt.text_opt.data);
@@ -548,5 +552,6 @@ void kevlar_md_free_ast(Md_Ast *ast) {
         kevlar_md_free_ast(ast->children[i]);
     }
 
+    free(ast->children);
     free(ast);
 }

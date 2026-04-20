@@ -304,7 +304,6 @@ void test_kevlar_ini_parse_should_handleRealisticFile(void) {
 
 
 void test_ini(void) {
-#if 0 
     RUN_TEST(test_function_should_hashCorrectly);
     RUN_TEST(test_kevlarIniTableInit_should_initSuccessfully);
     RUN_TEST(test__h_table_set_str_should_setNewValCorrectly);
@@ -320,7 +319,5 @@ void test_ini(void) {
     RUN_TEST(test_kevlar_ini_parse_should_failOnEmptyValue);
     RUN_TEST(test_kevlar_ini_parse_should_reportCorrectLineOnError);
     RUN_TEST(test_kevlar_ini_parse_should_handleComments);
-#endif
     RUN_TEST(test_kevlar_ini_parse_should_handleRealisticFile);
-    
 }
